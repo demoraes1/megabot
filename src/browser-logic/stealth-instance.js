@@ -869,6 +869,36 @@ process.on('message', async (message) => {
             });
         }
     }
+    // Se a mensagem tem action 'inject-script', é um comando de injeção de script
+    else if (message.action === 'inject-script' && message.script && global.browserPage) {
+        try {
+            const navigatorId = global.browserNavigatorId;
+            console.log(`[Navegador ${navigatorId}] Injetando script...`);
+            
+            // Injetar e executar o script na página
+            const result = await global.browserPage.evaluate(message.script);
+            
+            console.log(`[Navegador ${navigatorId}] Script injetado com sucesso`);
+            
+            // Enviar confirmação de sucesso
+            process.send({ 
+                status: 'script_injection_success', 
+                navigatorId, 
+                result,
+                message: 'Script injetado com sucesso' 
+            });
+            
+        } catch (error) {
+            console.error(`[Navegador ${global.browserNavigatorId}] Erro na injeção de script:`, error);
+            
+            // Enviar erro
+            process.send({ 
+                status: 'script_injection_error', 
+                navigatorId: global.browserNavigatorId, 
+                error: error.message 
+            });
+        }
+    }
 });
 
 // Função para normalizar URLs

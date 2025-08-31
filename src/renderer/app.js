@@ -390,7 +390,7 @@ function initializeButtons() {
         { id: 'play-btn', action: () => console.log('Jogar') },
         { id: 'home-btn', action: () => console.log('Página inicial') },
         { id: 'reports-btn', action: () => console.log('Relatórios') },
-        { id: 'refresh-pages-btn', action: () => console.log('Atualizar páginas') },
+        { id: 'refresh-pages-btn', action: () => atualizarPaginas() },
         { id: 'mirror-mode-btn', action: () => console.log('Modo Espelho') },
         { id: 'manage-extensions-btn', action: () => showPopup('extensions-popup-overlay') },
         { id: 'pix-btn', action: () => showPopup('pix-popup-overlay') },
@@ -2103,5 +2103,34 @@ function initializeChromeDownloadSystem() {
     });
 }
 
+/**
+ * Função para atualizar todas as páginas dos navegadores ativos
+ * Usa o módulo de injeção para carregar o script reload.js
+ */
+async function atualizarPaginas() {
+    try {
+        console.log('🔄 Iniciando atualização de páginas...');
+        
+        // Mostrar notificação de início
+        showNotification('Atualizando páginas dos navegadores...', 'info');
+        
+        // Usar o módulo de injeção para carregar o script reload.js
+        const result = await window.electronAPI.injectScript('reload');
+        
+        if (result.success) {
+            console.log('✅ Páginas atualizadas com sucesso:', result.message);
+            showNotification(result.message, 'success');
+        } else {
+            console.error('❌ Erro ao atualizar páginas:', result.message);
+            showNotification(`Erro: ${result.message}`, 'error');
+        }
+        
+    } catch (error) {
+        console.error('Erro inesperado ao atualizar páginas:', error);
+        showNotification(`Erro inesperado: ${error.message}`, 'error');
+    }
+}
+
 console.log('app.js carregado com sucesso');
 console.log('Sistema de download do Chrome inicializado');
+console.log('Função atualizarPaginas() configurada para usar módulo de injeção');

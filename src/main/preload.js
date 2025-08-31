@@ -129,6 +129,50 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('chrome-download-error', (event, error) => callback(error));
   },
 
+  // Função para injetar script por nome em todos os navegadores
+  injectScript: async (scriptName) => {
+    try {
+      const result = await ipcRenderer.invoke('inject-script', scriptName);
+      return result;
+    } catch (error) {
+      console.error('Erro ao injetar script via IPC:', error);
+      throw error;
+    }
+  },
+
+  // Função para injetar script customizado em todos os navegadores
+  injectCustomScript: async (scriptCode) => {
+    try {
+      const result = await ipcRenderer.invoke('inject-custom-script', scriptCode);
+      return result;
+    } catch (error) {
+      console.error('Erro ao injetar script customizado via IPC:', error);
+      throw error;
+    }
+  },
+
+  // Função para obter scripts disponíveis
+  getAvailableScripts: async () => {
+    try {
+      const result = await ipcRenderer.invoke('get-available-scripts');
+      return result;
+    } catch (error) {
+      console.error('Erro ao obter scripts disponíveis via IPC:', error);
+      throw error;
+    }
+  },
+
+  // Função para recarregar lista de scripts
+  reloadScripts: async () => {
+    try {
+      const result = await ipcRenderer.invoke('reload-scripts');
+      return result;
+    } catch (error) {
+      console.error('Erro ao recarregar scripts via IPC:', error);
+      throw error;
+    }
+  },
+
   // Função para remover listeners
   removeAllListeners: (channel) => {
     ipcRenderer.removeAllListeners(channel);

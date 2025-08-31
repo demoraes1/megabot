@@ -291,9 +291,74 @@ async function navigateAllBrowsers(urls) {
     };
 }
 
+/**
+ * Injeta script em um navegador específico
+ * @param {string} navigatorId - ID do navegador
+ * @param {string} scriptContent - Conteúdo do script a ser injetado
+ * @returns {Promise<boolean>} - Sucesso da operação
+ */
+function injectScriptInBrowser(navigatorId, scriptContent) {
+    return new Promise((resolve) => {
+        const browserProcess = activeBrowsers.get(navigatorId);
+        
+        if (!browserProcess) {
+            console.error(`Navegador ${navigatorId} não encontrado nos processos ativos`);
+            resolve(false);
+            return;
+        }
+        
+        try {
+            browserProcess.send({
+                action: 'inject-script',
+                script: scriptContent
+            });
+            
+            console.log(`Script injetado no navegador ${navigatorId}`);
+            resolve(true);
+        } catch (error) {
+            console.error(`Erro ao injetar script no navegador ${navigatorId}:`, error);
+            resolve(false);
+        }
+    });
+}
+
+/**
+ * Injeta script em todos os navegadores ativos
+ * @param {string} scriptContent - Conteúdo do script a ser injetado
+ * @returns {Promise<Object>} - Resultado da operação
+ */
+async function injectScriptInAllBrowsers(scriptContent) {
+    const activeBrowserIds = getActiveBrowsers();
+    
+    if (activeBrowserIds.length === 0) {
+        return {
+            success: false,
+            message: 'Nenhum navegador ativo encontrado',
+            results: []
+        };
+    }
+    
+    const results = [];
+    
+    for (const browserId of activeBrowserIds) {
+        const success = await injectScriptInBrowser(browserId, scriptContent);
+        results.push({ browserId, success });
+    }
+    
+    const successCount = results.filter(r => r.success).length;
+    
+    return {
+        success: successCount > 0,
+        message: `Script injetado em ${successCount}/${activeBrowserIds.length} navegador(es)`,
+        results: results
+    };
+}
+
 module.exports = { 
     launchInstances, 
     navigateToUrl, 
     getActiveBrowsers, 
-    navigateAllBrowsers 
+    navigateAllBrowsers,
+    injectScriptInBrowser,
+    injectScriptInAllBrowsers
 };

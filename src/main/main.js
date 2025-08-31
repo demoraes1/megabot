@@ -2,8 +2,9 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs').promises;
 const { detectarMonitores, calcularCapacidadeMonitor, salvarDadosMonitores, carregarDadosMonitores } = require('./monitor-detector');
-const { launchInstances, navigateToUrl, navigateAllBrowsers, getActiveBrowsers } = require('./browser-manager');
+const { launchInstances, navigateToUrl, navigateAllBrowsers, getActiveBrowsers, injectScriptInBrowser, injectScriptInAllBrowsers } = require('./browser-manager');
 const ChromiumDownloader = require('../infrastructure/chromium-downloader');
+const scriptInjector = require('../automation/injection');
 
 // Função para criar a janela principal
 function createWindow() {
@@ -281,6 +282,74 @@ ipcMain.handle('get-active-browsers', async () => {
     return {
       success: false,
       error: error.message
+    };
+  }
+});
+
+// Handler para injetar script por nome em todos os navegadores
+ipcMain.handle('inject-script', async (event, scriptName) => {
+  try {
+    console.log(`Injetando script '${scriptName}' em todos os navegadores`);
+    const result = await scriptInjector.injectScript(scriptName);
+    return result;
+  } catch (error) {
+    console.error('Erro ao injetar script:', error);
+    return {
+      success: false,
+      message: error.message,
+      results: []
+    };
+  }
+});
+
+// Handler para injetar script customizado em todos os navegadores
+ipcMain.handle('inject-custom-script', async (event, scriptCode) => {
+  try {
+    console.log('Injetando script customizado em todos os navegadores');
+    const result = await scriptInjector.injectCustomScript(scriptCode);
+    return result;
+  } catch (error) {
+    console.error('Erro ao injetar script customizado:', error);
+    return {
+      success: false,
+      message: error.message,
+      results: []
+    };
+  }
+});
+
+// Handler para listar scripts disponíveis
+ipcMain.handle('get-available-scripts', async () => {
+  try {
+    const scripts = scriptInjector.getAvailableScripts();
+    return {
+      success: true,
+      scripts
+    };
+  } catch (error) {
+    console.error('Erro ao obter scripts disponíveis:', error);
+    return {
+      success: false,
+      error: error.message,
+      scripts: []
+    };
+  }
+});
+
+// Handler para recarregar lista de scripts
+ipcMain.handle('reload-scripts', async () => {
+  try {
+    const scripts = scriptInjector.reloadScripts();
+    return {
+      success: true,
+      scripts
+    };
+  } catch (error) {
+    console.error('Erro ao recarregar scripts:', error);
+    return {
+      success: false,
+      error: error.message,
+      scripts: []
     };
   }
 });

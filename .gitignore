@@ -77,3 +77,6 @@ browser/
 
 # User profiles
 profiles/
+
+#config
+src/config/
