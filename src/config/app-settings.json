@@ -1,13 +1,13 @@
 {
   "links": [
-    "https://google.com"
+    "https://cccalfa.net"
   ],
   "proxies": [],
   "pixKeys": [],
   "extensions": [],
   "settings": {
     "delay": 5,
-    "openings": 3,
+    "openings": 2,
     "toggles": {
       "proxy-mode-list": false,
       "proxy-mode-rotating": false,
@@ -17,7 +17,7 @@
       "mute-audio-toggle": false,
       "delay-toggle": false
     },
-    "lastSaved": "2025-08-31T18:16:14.854Z"
+    "lastSaved": "2025-08-31T20:23:06.236Z"
   },
   "automation": {
     "generateWithdraw": false,

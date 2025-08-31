@@ -382,19 +382,18 @@ function initializeTabSystem() {
 
 // Inicializar botões principais
 function initializeButtons() {
-    // Botões principais
+    // Botões principais (exceto os que usam sistema de injeção padronizado)
     const mainButtons = [
         { id: 'create-accounts-btn', action: () => console.log('Criar contas') },
         { id: 'withdraw-btn', action: () => console.log('Saque') },
         { id: 'deposit-btn', action: () => console.log('Depositar') },
         { id: 'play-btn', action: () => console.log('Jogar') },
-        { id: 'home-btn', action: () => console.log('Página inicial') },
-        { id: 'reports-btn', action: () => console.log('Relatórios') },
         { id: 'refresh-pages-btn', action: () => atualizarPaginas() },
         { id: 'mirror-mode-btn', action: () => console.log('Modo Espelho') },
         { id: 'manage-extensions-btn', action: () => showPopup('extensions-popup-overlay') },
         { id: 'pix-btn', action: () => showPopup('pix-popup-overlay') },
         { id: 'add-proxies-btn', action: () => showPopup('proxy-popup-overlay') }
+        // Nota: home-btn e reports-btn agora usam o sistema padronizado de injeção
     ];
     
     mainButtons.forEach(({ id, action }) => {
@@ -403,6 +402,9 @@ function initializeButtons() {
             button.addEventListener('click', action);
         }
     });
+    
+    // Sistema padronizado de injeção de scripts
+    initializeScriptInjectionButtons();
     
     // Botão Criar Contas (funcionalidade especial)
     const criarContasBtn = document.getElementById('criar-contas-btn');
@@ -421,6 +423,53 @@ function initializeButtons() {
         });
     }
 }
+
+// Sistema padronizado de injeção de scripts
+function initializeScriptInjectionButtons() {
+    // Busca todos os botões com data-inject-script
+    const scriptButtons = document.querySelectorAll('[data-inject-script]');
+    
+    scriptButtons.forEach(button => {
+        const scriptName = button.getAttribute('data-inject-script');
+        const notificationMessage = button.getAttribute('data-notification') || `Script ${scriptName} executado`;
+        const confirmMessage = button.getAttribute('data-confirm');
+        
+        button.addEventListener('click', async () => {
+            try {
+                // Verifica se precisa de confirmação
+                if (confirmMessage && !confirm(confirmMessage)) {
+                    return;
+                }
+                
+                // Executa a injeção do script
+                await window.electronAPI.injectScript(scriptName);
+                
+                // Mostra notificação de sucesso
+                showNotification(notificationMessage, 'success');
+                
+                console.log(`Script ${scriptName} injetado com sucesso em todos os navegadores`);
+            } catch (error) {
+                console.error(`Erro ao injetar script ${scriptName}:`, error);
+                showNotification(`Erro ao executar script ${scriptName}`, 'error');
+            }
+        });
+    });
+}
+
+// Função para injetar script customizado
+async function injectCustomScript(scriptCode, notificationMessage = 'Script customizado executado') {
+    try {
+        await window.electronAPI.injectCustomScript(scriptCode);
+        showNotification(notificationMessage, 'success');
+        console.log('Script customizado injetado com sucesso');
+    } catch (error) {
+        console.error('Erro ao injetar script customizado:', error);
+        showNotification('Erro ao executar script customizado', 'error');
+    }
+}
+
+// Expor função globalmente para uso em outros contextos
+window.injectCustomScript = injectCustomScript;
 
 // Sistema de popups
 function initializePopups() {
