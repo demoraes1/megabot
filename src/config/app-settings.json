@@ -1,0 +1,30 @@
+{
+  "links": [
+    "https://google.com"
+  ],
+  "proxies": [],
+  "pixKeys": [],
+  "extensions": [],
+  "settings": {
+    "delay": 5,
+    "openings": 1,
+    "toggles": {
+      "proxy-mode-list": false,
+      "proxy-mode-rotating": false,
+      "proxy-mode-none": true,
+      "default-resolution-checkbox": true,
+      "generate-withdraw-toggle": false,
+      "mute-audio-toggle": false,
+      "delay-toggle": false
+    },
+    "lastSaved": "2025-08-31T17:41:07.882Z"
+  },
+  "automation": {
+    "generateWithdraw": false,
+    "muteAudio": false,
+    "depositMin": 0,
+    "depositMax": 0,
+    "delayEnabled": false,
+    "delaySeconds": 5
+  }
+}

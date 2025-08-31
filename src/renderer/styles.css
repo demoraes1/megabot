@@ -1,0 +1,317 @@
+/* Estilos personalizados para complementar o Tailwind */
+
+/* Reset global */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #374151;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #6B7280;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #9CA3AF;
+}
+
+/* Estados específicos dos popups */
+.popup-overlay.active {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.popup-overlay.active > div {
+    transform: translateX(0) !important;
+}
+
+/* Estilos para toggles de radio personalizados */
+input[type="radio"]:checked + span {
+    background-color: #1e3a8a !important;
+}
+
+input[type="radio"]:checked + span::before {
+    transform: translateX(24px) !important;
+}
+
+/* Estilos para toggles checkbox personalizados */
+input[type="checkbox"]:checked + span {
+    background-color: #1e3a8a !important;
+}
+
+input[type="checkbox"]:checked + span::before {
+    transform: translateX(24px) !important;
+}
+
+/* Estados da tab ativa */
+.tab-btn.active {
+    background-color: #1d4ed8 !important;
+    color: white !important;
+}
+
+/* Lista de itens dinâmicos */
+.url-item {
+    background: #1F2937;
+    border: 1px solid #374151;
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.2s;
+}
+
+.url-item:hover {
+    background: #374151;
+    border-color: #4B5563;
+}
+
+.url-text {
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 500;
+    flex: 1;
+    word-break: break-all;
+}
+
+.url-remove {
+    background: #EF4444;
+    border: 1px solid #DC2626;
+    border-radius: 6px;
+    color: white;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.url-remove:hover {
+    background: #DC2626;
+    border-color: #B91C1C;
+}
+
+/* Itens de extensão */
+.extension-item {
+    background: #1F2937;
+    border: 1px solid #374151;
+    border-radius: 8px;
+    padding: 16px;
+    transition: all 0.2s;
+}
+
+.extension-item:hover {
+    background: #374151;
+    border-color: #4B5563;
+}
+
+.extension-info {
+    flex: 1;
+}
+
+.extension-name {
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.extension-description {
+    color: #9CA3AF;
+    font-size: 14px;
+}
+
+.extension-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.extension-remove {
+    background: #EF4444;
+    border: 1px solid #DC2626;
+    border-radius: 6px;
+    color: white;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.extension-remove:hover {
+    background: #DC2626;
+    border-color: #B91C1C;
+}
+
+/* Badge para tipo de proxy */
+.proxy-type-badge {
+    background: #1e3a8a;
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 12px;
+    text-transform: uppercase;
+}
+
+.proxy-type-badge.rotating {
+    background: #059669;
+}
+
+/* Input de links específico */
+.link-input-field:focus {
+    outline: 2px solid #1d4ed8;
+    border-color: transparent;
+}
+
+.link-input-field:hover {
+    border-color: #4B5563;
+}
+
+/* Estilos para o botão "Criar contas" com dropdown ativo */
+#criar-contas-btn.dropdown-active {
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%) !important;
+    border-color: #1e40af !important;
+    transform: translateY(0) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+}
+
+#criar-contas-btn.dropdown-active:hover {
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important;
+    border-color: #1d4ed8 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.4) !important;
+}
+
+/* Garantir que a seta mantenha o padrão visual */
+#criar-contas-btn #dropdown-arrow {
+    transition: transform 0.2s ease-in-out;
+    opacity: 0.8;
+}
+
+#criar-contas-btn.dropdown-active #dropdown-arrow {
+    transform: rotate(180deg);
+    opacity: 1;
+}
+
+/* Estilos específicos para manter consistência do botão */
+#criar-contas-btn {
+    position: relative;
+    overflow: visible;
+}
+
+#criar-contas-btn.dropdown-active {
+    z-index: 51;
+}
+
+/* Estilos para o dropdown de links */
+#links-dropdown {
+    animation: slideDown 0.2s ease-out;
+    border-top: 2px solid #1e40af;
+    margin-top: 2px;
+    backdrop-filter: blur(8px);
+    background: rgba(31, 41, 55, 0.95);
+}
+
+#links-dropdown.hidden {
+    animation: slideUp 0.15s ease-in;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.98);
+    }
+}
+
+/* Melhorar aparência dos itens do dropdown */
+#links-dropdown-content .hover\:bg-app-gray-700:hover {
+    background-color: #374151 !important;
+    border-radius: 4px;
+    margin: 0 4px;
+}
+
+/* Garantir que o botão mantenha proporções corretas */
+#criar-contas-btn {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+#criar-contas-btn #dropdown-arrow {
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+/* Melhorar o texto do botão quando há múltiplos links */
+#criar-contas-text {
+    flex: 1;
+    text-align: left;
+}
+
+/* Estilos para garantir que o dropdown não interfira com outros elementos */
+.relative {
+    z-index: auto;
+}
+
+.relative:has(#links-dropdown:not(.hidden)) {
+    z-index: 50;
+}
+
+/* Media queries para responsividade */
+@media (max-width: 1024px) {
+    .sidebar {
+        width: 250px;
+    }
+
+    .url-section {
+        flex-direction: column;
+        gap: 8px;
+    }
+}
+
+@media (max-width: 768px) {
+    .app-container {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        height: auto;
+        max-height: 200px;
+    }
+
+    .popup-sidebar {
+        width: 100% !important;
+    }
+}

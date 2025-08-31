@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puppeteer Chrome Launcher</title>
+    <link rel="stylesheet" href="tailwind-compiled.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="font-sans bg-app-dark text-white overflow-hidden h-screen">
+    <div class="flex h-[calc(100vh-100px)] bg-app-dark pb-4">
+        <!-- Left Sidebar -->
+        <aside class="w-72 bg-app-dark p-5 flex flex-col gap-5 overflow-y-auto">
+            <!-- Account Section -->
+            <div class="flex flex-col gap-2.5">
+                <div class="relative">
+                    <button id="criar-contas-btn" class="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gradient-to-br from-app-blue-900 to-app-blue-700 hover:from-app-blue-800 hover:to-app-blue-700 text-white border border-app-blue-800 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)] whitespace-nowrap">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                        </svg>
+                        <span id="criar-contas-text" class="whitespace-nowrap overflow-hidden text-ellipsis">Criar contas</span>
+                        <svg id="dropdown-arrow" class="w-5 h-5 ml-1 hidden" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M7 10l5 5 5-5z"/>
+                        </svg>
+                    </button>
+                    
+                    <!-- Lista suspensa para múltiplos links -->
+                    <div id="links-dropdown" class="absolute top-full left-0 right-0 mt-1 bg-app-gray-800 border border-app-gray-700 rounded-lg shadow-lg z-50 hidden">
+                        <div class="py-1" id="links-dropdown-content">
+                            <!-- Links serão adicionados aqui dinamicamente -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex gap-2.5">
+                    <button id="saque-btn" class="flex items-center justify-center gap-2 flex-1 px-4 py-2.5 bg-gradient-to-br from-app-blue-900 to-app-blue-700 hover:from-app-blue-800 hover:to-app-blue-700 text-white border border-app-blue-800 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                        Saque
+                    </button>
+                    <button class="flex items-center justify-center gap-2 flex-1 px-4 py-2.5 bg-gradient-to-br from-app-blue-900 to-app-blue-700 hover:from-app-blue-800 hover:to-app-blue-700 text-white border border-app-blue-800 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/>
+                        </svg>
+                        Depositar
+                    </button>
+                </div>
+                
+                <button class="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gradient-to-br from-app-blue-900 to-app-blue-700 hover:from-app-blue-800 hover:to-app-blue-700 text-white border border-app-blue-800 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
+                    Jogar
+                </button>
+                
+                <div class="flex gap-2.5">
+                    <button id="home-navigation-btn" class="flex items-center justify-center gap-2 flex-1 px-4 py-2.5 bg-gradient-to-br from-app-blue-900 to-app-blue-700 hover:from-app-blue-800 hover:to-app-blue-700 text-white border border-app-blue-800 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                        </svg>
+                        Página inicial
+                    </button>
+                    <button class="flex items-center justify-center gap-2 flex-1 px-4 py-2.5 bg-gradient-to-br from-app-blue-900 to-app-blue-700 hover:from-app-blue-800 hover:to-app-blue-700 text-white border border-app-blue-800 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+                        </svg>
+                        Relatórios
+                    </button>
+                </div>
+                
+                <button id="refresh-pages-btn" class="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gradient-to-br from-app-blue-900 to-app-blue-700 hover:from-app-blue-800 hover:to-app-blue-700 text-white border border-app-blue-800 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                    </svg>
+                    Atualizar páginas
+                </button>
+            </div>
+            
+            <!-- Mirror Mode -->
+            <div class="flex flex-col gap-2.5">
+                <button class="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gradient-to-br from-app-red-500 to-app-red-600 hover:from-app-red-600 hover:to-red-700 text-white border border-white rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]" id="mirror-mode-btn">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M3 3v18h18V3H3zm16 16H5V5h14v14zm-2-2H7V7h10v10z"/>
+                    </svg>
+                    Modo Espelho
+                </button>
+            </div>
+            
+            <!-- Extensions Panel -->
+            <div class="flex flex-col gap-2.5">
+                <button class="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gradient-to-br from-app-gray-500 to-app-gray-600 hover:from-app-gray-600 hover:to-app-gray-700 text-white border border-white rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]" id="manage-extensions-btn">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M20.5 11H19V7c0-1.1-.9-2-2-2h-4V3.5C13 2.12 11.88 1 10.5 1S8 2.12 8 3.5V5H4c-1.1 0-1.99.9-1.99 2v3.8H3.5c1.49 0 2.7 1.21 2.7 2.7s-1.21 2.7-2.7 2.7H2V20c0 1.1.9 2 2 2h3.8v-1.5c0-1.49 1.21-2.7 2.7-2.7 1.49 0 2.7 1.21 2.7 2.7V22H17c1.1 0 2-.9 2-2v-4h1.5c1.38 0 2.5-1.12 2.5-2.5S21.88 11 20.5 11z"/>
+                    </svg>
+                    Gerenciar extensões
+                </button>
+            </div>
+
+            <div class="flex flex-col gap-2.5">
+                
+
+            </div>
+            
+            
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-5 overflow-y-auto">
+            <!-- Tab Configuração -->
+            <div id="tab-configuracao" class="tab-content space-y-6">
+                
+                <div class="flex gap-2.5 mb-5">
+                    <button class="flex items-center justify-center gap-2 flex-1 px-4 py-2.5 bg-gradient-to-br from-app-blue-900 to-app-blue-700 hover:from-app-blue-800 hover:to-app-blue-700 text-white border border-app-blue-800 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]" id="links-btn" onclick="window.testLinks()">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H6.9C4.01 7 1.9 9.11 1.9 12s2.11 5 5 5h4v-1.9H6.9c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9.1-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.89 0 5-2.11 5-5s-2.11-5-5-5z"/>
+                        </svg>
+                        Adicionar Links
+                    </button>
+                    <button class="flex items-center justify-center gap-2 flex-1 px-4 py-2.5 bg-gradient-to-br from-app-green-600 to-app-green-700 hover:from-app-green-700 hover:to-green-800 text-white border border-white rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]" id="pix-btn" onclick="window.testPix()">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+                        </svg>
+                        Adicionar Chaves PIX
+                    </button>
+                </div>
+                
+                <!-- Proxy Section -->
+                <div class="bg-app-gray-800 rounded-lg p-4 border border-app-gray-700 mb-6">
+                    <div class="mb-4">
+                        <button class="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-br from-app-blue-900 to-app-blue-700 hover:from-app-blue-800 hover:to-app-blue-700 text-white border border-app-blue-800 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]" id="add-proxies-btn" onclick="window.testProxies()">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                            </svg>
+                            Adicionar Proxies
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                        <div class="flex items-center justify-between p-3 bg-app-gray-900 rounded-lg border border-app-gray-600">
+                            <span class="text-white font-medium text-sm">Lista</span>
+                            <label class="relative inline-block w-12 h-6">
+                                <input type="radio" name="proxy-mode" id="proxy-mode-list" value="list" class="opacity-0 w-0 h-0 peer">
+                                <span class="absolute cursor-pointer top-0 left-0 right-0 bottom-0 bg-app-gray-700 transition-all duration-300 rounded-full before:absolute before:content-[''] before:h-4 before:w-4 before:left-1 before:bottom-1 before:bg-white before:transition-all before:duration-300 before:rounded-full peer-checked:bg-app-blue-900 peer-checked:before:translate-x-6"></span>
+                            </label>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-app-gray-900 rounded-lg border border-app-gray-600">
+                            <span class="text-white font-medium text-sm">Rotativos</span>
+                            <label class="relative inline-block w-12 h-6">
+                                <input type="radio" name="proxy-mode" id="proxy-mode-rotating" value="rotating" class="opacity-0 w-0 h-0 peer">
+                                <span class="absolute cursor-pointer top-0 left-0 right-0 bottom-0 bg-app-gray-700 transition-all duration-300 rounded-full before:absolute before:content-[''] before:h-4 before:w-4 before:left-1 before:bottom-1 before:bg-white before:transition-all before:duration-300 before:rounded-full peer-checked:bg-app-blue-900 peer-checked:before:translate-x-6"></span>
+                            </label>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-app-gray-900 rounded-lg border border-app-gray-600">
+                            <span class="text-white font-medium text-sm">Sem Proxy</span>
+                            <label class="relative inline-block w-12 h-6">
+                                <input type="radio" name="proxy-mode" id="proxy-mode-none" value="none" checked class="opacity-0 w-0 h-0 peer">
+                                <span class="absolute cursor-pointer top-0 left-0 right-0 bottom-0 bg-app-gray-700 transition-all duration-300 rounded-full before:absolute before:content-[''] before:h-4 before:w-4 before:left-1 before:bottom-1 before:bg-white before:transition-all before:duration-300 before:rounded-full peer-checked:bg-app-blue-900 peer-checked:before:translate-x-6"></span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <span id="proxy-counter-text" class="text-app-gray-400 text-sm">0 proxies restantes</span>
+                    </div>
+                </div>
+
+                <!-- Configuração de Telas (Monitors e Layout) -->
+                <div class="bg-app-gray-800 rounded-lg p-4 border border-app-gray-700">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                        <!-- Monitor -->
+                        <div class="space-y-2">
+                            <label class="block text-white font-medium text-sm">Monitor</label>
+                            <select id="monitor-select" class="w-full px-3 py-2 bg-app-gray-900 border border-app-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-app-blue-600 focus:border-transparent transition-all duration-200">
+                                <option value="0">Monitor 1</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Layout -->
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <label class="block text-white font-medium text-sm">Resolução</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="checkbox" id="default-resolution-checkbox" class="w-4 h-4 text-app-blue-600 bg-app-gray-700 border-app-gray-600 rounded focus:ring-app-blue-500 focus:ring-2" checked>
+                                    <label for="default-resolution-checkbox" class="text-white font-medium text-sm">Padrão</label>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <input type="number" id="width-input" class="w-full px-3 py-2 bg-app-gray-900 border border-app-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-app-blue-600 focus:border-transparent transition-all duration-200" placeholder="Largura (X)">
+                                </div>
+                                <div>
+                                    <input type="number" id="height-input" class="w-full px-3 py-2 bg-app-gray-900 border border-app-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-app-blue-600 focus:border-transparent transition-all duration-200" placeholder="Altura (Y)">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Informações do Monitor -->
+                    <div class="bg-app-gray-900 rounded-lg p-2 border border-app-gray-600">
+                        <div class="flex justify-center items-center text-sm text-app-gray-400">
+                            <span>Capacidade: <span class="text-white font-medium" id="monitor-capacity">Calculando...</span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Aberturas simultâneas -->
+                <div class="space-y-4">
+                    <div class="flex flex-col items-center space-y-3">
+                        <label class="text-white font-medium text-sm">Aberturas simultâneas</label>
+                        <div class="flex items-center justify-center space-x-4">
+                            <button class="w-10 h-10 bg-app-gray-700 hover:bg-app-gray-600 border border-app-gray-600 rounded-lg text-white font-medium transition-all duration-200 hover:scale-105" id="decrease-openings">-</button>
+                            <span class="text-xl font-bold text-white min-w-[3rem] text-center" id="openings-count">1</span>
+                            <button class="w-10 h-10 bg-app-gray-700 hover:bg-app-gray-600 border border-app-gray-600 rounded-lg text-white font-medium transition-all duration-200 hover:scale-105" id="increase-openings">+</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Botão Abrir Navegadores -->
+                    <div class="flex justify-center">
+                        <button class="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-br from-app-green-600 to-app-green-700 hover:from-app-green-700 hover:to-green-800 text-white border border-white rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]" id="open-browsers-btn">
+                        Abrir Navegadores
+                    </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab Automação -->
+            <div id="tab-automacao" class="tab-content space-y-6 hidden">
+                <h3 class="text-xl font-bold text-white mb-4">Configurações de Automação</h3>
+                
+
+                
+                <!-- Senha de saque -->
+                <div class="flex items-center justify-between p-3 bg-app-gray-800 rounded-lg border border-app-gray-700">
+                    <span class="text-white font-medium text-sm">Gerar senha de saque</span>
+                    <label class="relative inline-block w-12 h-6">
+                        <input type="checkbox" id="generate-withdraw-toggle" class="opacity-0 w-0 h-0 peer">
+                        <span class="absolute cursor-pointer top-0 left-0 right-0 bottom-0 bg-app-gray-700 transition-all duration-300 rounded-full before:absolute before:content-[''] before:h-4 before:w-4 before:left-1 before:bottom-1 before:bg-white before:transition-all before:duration-300 before:rounded-full peer-checked:bg-app-blue-900 peer-checked:before:translate-x-6"></span>
+                    </label>
+                </div>
+
+                <!-- Sem Som -->
+                <div class="flex items-center justify-between p-3 bg-app-gray-800 rounded-lg border border-app-gray-700">
+                    <span class="text-white font-medium text-sm">Sem som</span>
+                    <label class="relative inline-block w-12 h-6">
+                        <input type="checkbox" id="mute-audio-toggle" class="opacity-0 w-0 h-0 peer">
+                        <span class="absolute cursor-pointer top-0 left-0 right-0 bottom-0 bg-app-gray-700 transition-all duration-300 rounded-full before:absolute before:content-[''] before:h-4 before:w-4 before:left-1 before:bottom-1 before:bg-white before:transition-all before:duration-300 before:rounded-full peer-checked:bg-app-blue-900 peer-checked:before:translate-x-6"></span>
+                    </label>
+                </div>
+
+                <!-- Depósitos -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="block text-white font-medium text-sm">Depósito mínimo</label>
+                        <input type="number" id="deposit-min" class="w-full px-3 py-2 bg-app-gray-800 border border-app-gray-700 rounded-lg text-white placeholder-app-gray-400 focus:outline-none focus:ring-2 focus:ring-app-blue-600 focus:border-transparent" placeholder="0.00">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-white font-medium text-sm">Depósito máximo</label>
+                        <input type="number" id="deposit-max" class="w-full px-3 py-2 bg-app-gray-800 border border-app-gray-700 rounded-lg text-white placeholder-app-gray-400 focus:outline-none focus:ring-2 focus:ring-app-blue-600 focus:border-transparent" placeholder="0.00">
+                    </div>
+                </div>
+                
+                <!-- Delay entre criações -->
+                <div class="bg-app-gray-800 rounded-lg p-4 border border-app-gray-700">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-white font-medium text-sm">Delay entre criações</span>
+                        <label class="relative inline-block w-12 h-6">
+                            <input type="checkbox" id="delay-toggle" class="opacity-0 w-0 h-0 peer">
+                            <span class="absolute cursor-pointer top-0 left-0 right-0 bottom-0 bg-app-gray-700 transition-all duration-300 rounded-full before:absolute before:content-[''] before:h-4 before:w-4 before:left-1 before:bottom-1 before:bg-white before:transition-all before:duration-300 before:rounded-full peer-checked:bg-app-blue-900 peer-checked:before:translate-x-6"></span>
+                        </label>
+                    </div>
+                    
+                    <div id="delay-controls" class="hidden">
+                        <div class="flex items-center justify-center space-x-4">
+                            <button class="w-10 h-10 bg-app-gray-700 hover:bg-app-gray-600 border border-app-gray-600 rounded-lg text-white font-medium transition-all duration-200 hover:scale-105" id="decrease-delay">-</button>
+                            <div class="text-center">
+                                <span class="text-lg font-bold text-white min-w-[4rem] text-center" id="delay-count">5</span>
+                                <div class="text-xs text-app-gray-400">segundos</div>
+                            </div>
+                            <button class="w-10 h-10 bg-app-gray-700 hover:bg-app-gray-600 border border-app-gray-600 rounded-lg text-white font-medium transition-all duration-200 hover:scale-105" id="increase-delay">+</button>
+                        </div>
+                        <p class="text-xs text-app-gray-400 mt-2 text-center">Aguarda entre cada criação quando múltiplos navegadores ativos</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Contas -->
+            <div id="tab-contas" class="tab-content space-y-6 hidden">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-bold text-white">Perfis Criados</h3>
+                    <button class="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-br from-app-red-500 to-app-red-600 hover:from-app-red-600 hover:to-red-700 text-white border border-red-700 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]" id="delete-all-profiles-btn">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                        </svg>
+                        Excluir Todos
+                    </button>
+                </div>
+
+                <!-- Filtros de Perfis -->
+                <div class="bg-app-gray-800 rounded-lg p-4 border border-app-gray-700 mb-4">
+                    <div class="flex items-center gap-4 flex-wrap">
+                        <div class="flex items-center gap-2">
+                            <label class="text-sm text-app-gray-300">Filtrar por:</label>
+                            <select id="profile-filter" class="bg-app-gray-700 border border-app-gray-600 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-app-blue-500">
+                                <option value="all">Todos os Perfis</option>
+                                <option value="link1">Link 1</option>
+                                <option value="link2">Link 2</option>
+                                <option value="link3">Link 3</option>
+                                <option value="link4">Link 4</option>
+                                <option value="link5">Link 5</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <label class="text-sm text-app-gray-300">Status:</label>
+                            <select id="status-filter" class="bg-app-gray-700 border border-app-gray-600 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-app-blue-500">
+                                <option value="all">Todos</option>
+                                <option value="active">Ativos</option>
+                                <option value="created">Criados</option>
+                                <option value="failed">Falhados</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input type="text" id="search-profiles" placeholder="Buscar por ID ou usuário..." class="bg-app-gray-700 border border-app-gray-600 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-app-blue-500 w-48">
+                        </div>
+                        <button id="clear-filters" class="px-3 py-2 bg-app-gray-600 hover:bg-app-gray-500 text-white rounded-lg text-sm transition-all duration-200">
+                            Limpar Filtros
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Barra de Progresso de Exclusão -->
+                <div id="delete-progress-container" class="bg-app-gray-800 rounded-lg p-4 border border-app-gray-700 mb-4 hidden">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="text-white font-medium">Excluindo Perfis</h4>
+                        <span id="delete-progress-text" class="text-sm text-app-gray-300">0 / 0</span>
+                    </div>
+                    <div class="w-full bg-app-gray-700 rounded-full h-2 mb-2">
+                        <div id="delete-progress-bar" class="bg-gradient-to-r from-red-500 to-red-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                    <p id="delete-current-item" class="text-xs text-app-gray-400">Preparando...</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="profiles-container">
+                    <!-- Os perfis serão carregados aqui dinamicamente -->
+                </div>
+                
+                <div class="text-center py-8" id="no-profiles-message">
+                    <p class="text-app-gray-400">Nenhum perfil encontrado. Crie perfis usando o botão "Criar contas".</p>
+                </div>
+            </div>
+
+            <!-- Tab Perfil (vazia por enquanto) -->
+            <div id="tab-perfil" class="tab-content space-y-6 hidden">
+                <h3 class="text-xl font-bold text-white mb-4">Perfil do Usuário</h3>
+                <p class="text-app-gray-400">Em desenvolvimento...</p>
+            </div>
+        </main>
+    </div>
+    
+    <!-- URL Configuration Popup -->
+    <div class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 opacity-0 invisible transition-all duration-300" id="url-popup-overlay">
+        <div class="fixed top-0 right-0 h-full w-96 bg-app-gray-900 border-l border-app-gray-700 transform translate-x-full transition-transform duration-300 animate-slide-in-right">
+            <div class="flex items-center justify-between p-4 border-b border-app-gray-700">
+                <h3 id="popup-title" class="text-lg font-bold text-white">Configurar URL's</h3>
+                <button class="w-8 h-8 bg-app-gray-700 hover:bg-app-red-600 rounded-lg text-white text-lg font-bold transition-colors duration-200" id="close-url-popup">×</button>
+            </div>
+            <div class="p-4 h-[calc(100%-80px)] overflow-y-auto">
+                <p class="text-app-gray-400 text-sm mb-4" id="popup-description">Configure as URL's para poder operar</p>
+                
+                <!-- Botões para Links -->
+                <div class="space-y-4" id="links-buttons">
+                    <div id="links-container" class="space-y-3">
+                        <div class="space-y-2" id="link-group-1">
+                            <div class="flex items-center gap-2">
+                                <div class="flex-1">
+                                    <label for="link-input-1" class="block text-white font-medium text-sm mb-1">Link 1:</label>
+                                    <input type="text" id="link-input-1" class="w-full px-3 py-2 bg-app-gray-800 border border-app-gray-700 rounded-lg text-white placeholder-app-gray-400 focus:outline-none focus:ring-2 focus:ring-app-blue-600 focus:border-transparent transition-all duration-200" placeholder="Digite o link (ex: https://exemplo.com)">
+                                </div>
+                                <button class="w-8 h-8 bg-app-red-600 hover:bg-app-red-500 rounded-lg text-white text-sm font-bold transition-colors duration-200 mt-5" onclick="console.log('BOTÃO X CLICADO LINK 1 (HTML)'); window.removeLinkInputGlobal(1)" title="Remover este campo">×</button>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gradient-to-br from-app-blue-900 to-app-blue-700 hover:from-app-blue-800 hover:to-app-blue-700 text-white border border-app-blue-800 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]" id="add-item-btn">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                        </svg>
+                        Adicionar Link
+                    </button>
+                </div>
+                
+                <!-- Configuração de Proxies -->
+                <div class="space-y-4 hidden" id="proxies-buttons">
+                    <!-- Seção de Lista de Proxies -->
+                    <div class="bg-app-gray-800 rounded-lg p-4 border border-app-gray-700">
+                        <h4 class="text-white font-medium text-sm mb-3">Lista de Proxies</h4>
+                        <div class="space-y-3">
+                            <div>
+                                <label for="proxy-list" class="block text-white font-medium text-sm mb-2">Lista de Proxies:</label>
+                                <textarea id="proxy-list" rows="6" class="w-full px-3 py-2 bg-app-gray-900 border border-app-gray-600 rounded-lg text-white placeholder-app-gray-400 focus:outline-none focus:ring-2 focus:ring-app-blue-600 focus:border-transparent resize-vertical" placeholder="Insira os proxies, um por linha"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Seção de Proxy Rotativo -->
+                    <div class="bg-app-gray-800 rounded-lg p-4 border border-app-gray-700">
+                        <h4 class="text-white font-medium text-sm mb-3">Proxy Rotativo</h4>
+                        <div class="space-y-3">
+                            <div>
+                                <label for="rotating-proxy-list" class="block text-white font-medium text-sm mb-2">Proxy:</label>
+                                <input type="text" id="rotating-proxy-list" class="w-full px-3 py-2 bg-app-gray-900 border border-app-gray-600 rounded-lg text-white placeholder-app-gray-400 focus:outline-none focus:ring-2 focus:ring-app-blue-600 focus:border-transparent" placeholder="Ex: proxy1.com:8080">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Informações de Formatos -->
+                    <div class="bg-app-gray-900 rounded-lg p-3 border border-app-gray-600">
+                        <h5 class="text-white font-medium text-xs mb-2">Formatos Permitidos:</h5>
+                        <div class="space-y-1 text-xs text-app-gray-400">
+                            <div><span class="text-app-blue-400 font-mono">host:porta</span> - Ex: proxy1.com:8080</div>
+                            <div><span class="text-app-blue-400 font-mono">protocolo://host:porta</span> - Ex: http://proxy1.com:8080</div>
+                            <div><span class="text-app-blue-400 font-mono">usuario:senha@host:porta</span> - Ex: user:pass@proxy1.com:8080</div>
+                            <div><span class="text-app-blue-400 font-mono">protocolo://usuario:senha@host:porta</span> - Ex: http://user:pass@proxy1.com:8080</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6 space-y-3" id="item-list">
+                    <!-- URLs/Proxies serão adicionados aqui dinamicamente -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PIX Keys Configuration Popup -->
+    <div class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 opacity-0 invisible transition-all duration-300" id="pix-popup-overlay">
+        <div class="fixed top-0 right-0 h-full w-96 bg-app-gray-900 border-l border-app-gray-700 transform translate-x-full transition-transform duration-300 animate-slide-in-right">
+            <div class="flex items-center justify-between p-4 border-b border-app-gray-700">
+                <h3 class="text-lg font-bold text-white">Configurar Chaves PIX</h3>
+                <button class="w-8 h-8 bg-app-gray-700 hover:bg-app-red-600 rounded-lg text-white text-lg font-bold transition-colors duration-200" id="close-pix-popup">×</button>
+            </div>
+            <div class="p-4 h-[calc(100%-80px)] overflow-y-auto">
+                <p class="text-app-gray-400 text-sm mb-4">Configure as chaves PIX para poder operar</p>
+                
+                <div class="bg-app-gray-800 rounded-lg p-4 border border-app-gray-700 mb-4">
+                    <h4 class="text-white font-medium text-sm mb-3">Formatos aceitos:</h4>
+                    <ul class="space-y-1 text-sm text-app-gray-400">
+                        <li><span class="text-white font-medium">CPF:</span> Com pontuação (ex: 123.456.789-00)</li>
+                        <li><span class="text-white font-medium">Telefone:</span> Somente números (ex: 11987654321)</li>
+                        <li><span class="text-white font-medium">E-mail:</span> Formato válido (ex: usuario@email.com)</li>
+                        <li><span class="text-white font-medium">Chave Aleatória:</span> UUID (ex: 123e4567-e89b-12d3-a456-426614174000)</li>
+                    </ul>
+                </div>
+                
+                <button class="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gradient-to-br from-app-green-600 to-app-green-700 hover:from-app-green-700 hover:to-green-800 text-white border border-green-800 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]" id="add-pix-file-btn">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z"/>
+                    </svg>
+                    Adicionar Chaves
+                </button>
+                
+                <div class="mt-6 space-y-3" id="pix-list">
+                    <!-- Chaves PIX serão adicionadas aqui dinamicamente -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Extensions Management Popup -->
+    <div class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 opacity-0 invisible transition-all duration-300" id="extensions-popup-overlay">
+        <div class="fixed top-0 right-0 h-full w-96 bg-app-gray-900 border-l border-app-gray-700 transform translate-x-full transition-transform duration-300 animate-slide-in-right">
+            <div class="flex items-center justify-between p-4 border-b border-app-gray-700">
+                <h3 class="text-lg font-bold text-white">Gerenciar Extensões</h3>
+                <button class="w-8 h-8 bg-app-gray-700 hover:bg-app-red-600 rounded-lg text-white text-lg font-bold transition-colors duration-200" id="close-extensions-popup">×</button>
+            </div>
+            <div class="p-4 h-[calc(100%-80px)] overflow-y-auto">
+                <p class="text-app-gray-400 text-sm mb-4">Gerencie as extensões do sistema</p>
+                
+                <button class="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gradient-to-br from-app-blue-900 to-app-blue-700 hover:from-app-blue-800 hover:to-app-blue-700 text-white border border-app-blue-800 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)] mb-4" id="upload-extension-btn">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                    </svg>
+                    Adicionar Extensão
+                </button>
+                
+                <div class="space-y-3" id="extensions-list">
+                    <!-- Extensões serão listadas aqui dinamicamente -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Proxy Configuration Popup -->
+    <div class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 opacity-0 invisible transition-all duration-300" id="proxy-popup-overlay">
+        <div class="fixed top-0 right-0 h-full w-96 bg-app-gray-900 border-l border-app-gray-700 transform translate-x-full transition-transform duration-300 animate-slide-in-right">
+            <div class="flex items-center justify-between p-4 border-b border-app-gray-700">
+                <h3 class="text-lg font-bold text-white">Configurar Proxies</h3>
+                <button class="w-8 h-8 bg-app-gray-700 hover:bg-app-red-600 rounded-lg text-white text-lg font-bold transition-colors duration-200" id="close-proxy-popup">×</button>
+            </div>
+            <div class="p-4 h-[calc(100%-80px)] overflow-y-auto">
+                <p class="text-app-gray-400 text-sm mb-4">Configure os proxies para o sistema</p>
+                
+                <!-- Seção de Lista de Proxies -->
+                <div class="bg-app-gray-800 rounded-lg p-4 border border-app-gray-700 mb-4">
+                    <h4 class="text-white font-medium text-sm mb-3">Lista de Proxies</h4>
+                    <div class="space-y-3">
+                        <div>
+                            <textarea id="proxy-list-popup" rows="6" class="w-full px-3 py-2 bg-app-gray-900 border border-app-gray-600 rounded-lg text-white placeholder-app-gray-400 focus:outline-none focus:ring-2 focus:ring-app-blue-600 focus:border-transparent resize-vertical" placeholder="Insira os proxies, um por linha"></textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Seção de Proxy Rotativo -->
+                <div class="bg-app-gray-800 rounded-lg p-4 border border-app-gray-700 mb-4">
+                    <h4 class="text-white font-medium text-sm mb-3">Proxy Rotativo</h4>
+                    <div class="space-y-3">
+                        <div>
+                            <input type="text" id="rotating-proxy-list-popup" class="w-full px-3 py-2 bg-app-gray-900 border border-app-gray-600 rounded-lg text-white placeholder-app-gray-400 focus:outline-none focus:ring-2 focus:ring-app-blue-600 focus:border-transparent" placeholder="Ex: proxy1.com:8080">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Botões de Ação -->
+                <div class="flex gap-3">
+                    <button class="flex-1 px-4 py-2.5 bg-gradient-to-br from-app-red-600 to-app-red-700 hover:from-app-red-700 hover:to-red-800 text-white border border-red-800 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]" id="clear-proxies-btn">
+                        Limpar Tudo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Input files ocultos -->
+    <input type="file" id="pix-file-input" accept=".txt" class="hidden">
+    <input type="file" id="extension-folder-input" webkitdirectory directory class="hidden">
+    
+    <!-- Bottom Tabs -->
+    <nav class="fixed bottom-6 z-40" style="left: calc(288px + (100vw - 288px) / 2); transform: translateX(-50%)">
+        <div class="flex bg-app-gray-800 rounded-2xl p-2 shadow-2xl border border-app-gray-700 backdrop-blur-md bg-opacity-90">
+            <button class="flex flex-col items-center justify-center px-5 py-2.5 text-xs font-medium rounded-xl transition-all duration-200 bg-app-blue-700 text-white shadow-lg" data-tab="configuracao">
+                <svg class="w-5 h-5 mb-1" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.82,11.69,4.82,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+                </svg>
+                Configuração
+            </button>
+            <button class="flex flex-col items-center justify-center px-5 py-2.5 text-xs font-medium rounded-xl transition-all duration-200 text-app-gray-400 hover:text-white hover:bg-app-gray-700" data-tab="contas">
+                <svg class="w-5 h-5 mb-1" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A1.5 1.5 0 0 0 18.54 7H16c-.8 0-1.54.37-2 1l-3.72 5.6-2.28-2.28L10.5 9H8c-.8 0-1.54.37-2 1L2.28 15.6A1.5 1.5 0 0 0 3.5 18H6v4h2v-4h2v4h2v-4h2v4h2v-4h2v4h2z"/>
+                </svg>
+                Contas
+            </button>
+            <button class="flex flex-col items-center justify-center px-5 py-2.5 text-xs font-medium rounded-xl transition-all duration-200 text-app-gray-400 hover:text-white hover:bg-app-gray-700" data-tab="automacao">
+                <svg class="w-5 h-5 mb-1" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12,2A2,2 0 0,1 14,4C14,4.74 13.6,5.39 13,5.73V7H14A7,7 0 0,1 21,14H22A1,1 0 0,1 23,15V18A1,1 0 0,1 22,19H21V20A2,2 0 0,1 19,22H5A2,2 0 0,1 3,20V19H2A1,1 0 0,1 1,18V15A1,1 0 0,1 2,14H3A7,7 0 0,1 10,7H11V5.73C10.4,5.39 10,4.74 10,4A2,2 0 0,1 12,2M7.5,13A2.5,2.5 0 0,0 5,15.5A2.5,2.5 0 0,0 7.5,18A2.5,2.5 0 0,0 10,15.5A2.5,2.5 0 0,0 7.5,13M16.5,13A2.5,2.5 0 0,0 14,15.5A2.5,2.5 0 0,0 16.5,18A2.5,2.5 0 0,0 19,15.5A2.5,2.5 0 0,0 16.5,13Z"/>
+                </svg>
+                Automação
+            </button>
+            <button class="flex flex-col items-center justify-center px-5 py-2.5 text-xs font-medium rounded-xl transition-all duration-200 text-app-gray-400 hover:text-white hover:bg-app-gray-700" data-tab="perfil">
+                <svg class="w-5 h-5 mb-1" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+                Perfil
+            </button>
+        </div>
+    </nav>
+
+
+
+
+    <!-- Popup de Download do Chrome -->
+    <div id="chrome-download-modal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 hidden">
+        <div class="bg-app-gray-800 rounded-lg p-4 w-80 max-w-sm mx-4 border border-app-gray-700 shadow-lg">
+            <div class="text-center">
+                <!-- Ícone pequeno e discreto -->
+                <div class="flex items-center justify-center mb-3">
+                    <div class="w-6 h-6 bg-app-blue-500 rounded-full flex items-center justify-center">
+                        <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                        </svg>
+                    </div>
+                    <h3 id="download-title" class="text-lg font-medium text-white ml-2">
+                        Baixando Chrome
+                    </h3>
+                </div>
+                
+                <p id="download-message" class="text-app-gray-300 text-sm mb-3">
+                    Preparando download...
+                </p>
+                
+                <!-- Barra de Progresso -->
+                <div class="w-full bg-app-gray-700 rounded-full h-2 mb-3">
+                    <div id="download-progress-bar" class="bg-gradient-to-r from-app-blue-500 to-app-blue-400 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                
+                <div class="flex justify-between text-xs text-app-gray-400 mb-3">
+                    <span id="download-percentage">0%</span>
+                    <span id="download-speed"></span>
+                </div>
+                
+                <!-- Informações da Versão -->
+                <div id="version-info" class="text-xs text-app-gray-500 mb-3 hidden">
+                    <div>Versão atual: <span id="current-version">-</span></div>
+                    <div>Nova versão: <span id="new-version">-</span></div>
+                </div>
+                
+                <!-- Botão de Cancelar (apenas durante download) -->
+                <button id="cancel-download-btn" class="px-4 py-2 bg-app-gray-700 hover:bg-app-gray-600 text-white rounded-lg text-sm transition-colors hidden">
+                    Cancelar
+                </button>
+                
+                <!-- Botão de Fechar (após conclusão) -->
+                <button id="close-download-modal-btn" class="px-4 py-2 bg-app-blue-600 hover:bg-app-blue-700 text-white rounded-lg text-sm transition-colors hidden">
+                    Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
