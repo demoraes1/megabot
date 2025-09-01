@@ -1,91 +1,110 @@
-// --- SCRIPT FINAL UNIFICADO ---
-// Combina a navegação com a automação de depósito de forma robusta.
+// --- SCRIPT FINAL (OPÇÃO 1 COM ATRASO ANTES DE DIGITAR) ---
+// Injetar este script APENAS UMA VEZ na página inicial.
 
 (function() {
     'use strict';
+    console.log('Iniciando script com Setter Nativo e Atraso (v7 - Valores Aleatórios)...');
+    
+    // Função para gerar números aleatórios (copiada de fabrica-de-dados.js)
+    function generateRandomNumbers(min, max, count = 1) {
+        if (min > max) {
+            throw new Error('O valor mínimo não pode ser maior que o máximo');
+        }
+        
+        const numbers = [];
+        for (let i = 0; i < count; i++) {
+            const randomNumber = Math.floor(Math.random() * (max - min + 1)) + min;
+            numbers.push(randomNumber);
+        }
+        
+        return count === 1 ? numbers[0] : numbers;
+    }
+    
+    // Obter configurações de depósito
+    const depositConfig = window.megabotConfig;
+    if (!depositConfig || !depositConfig.depositMin || !depositConfig.depositMax) {
+        console.error('Configurações de depósito não encontradas em window.megabotConfig');
+        return;
+    }
+    console.log('Configurações de depósito:', depositConfig);
 
-    console.log('Iniciando script de automação...');
-
-    // --- PARTE 1: LÓGICA DE NAVEGAÇÃO ---
-    // Verifica se não estamos na página de perfil para fazer o redirecionamento.
-    if (!window.location.pathname.includes('/home/mine')) {
-        console.log('Página incorreta. Navegando para /home/mine...');
-        // Armazena um "lembrete" para saber que a próxima ação é a automação.
-        sessionStorage.setItem('runDepositAutomation', 'true');
-        // Redireciona o navegador.
-        window.location.href = window.location.origin + '/home/mine';
-        return; // Para a execução do script aqui.
+    function waitForElement(selectorFn, actionFn, description) {
+        console.log(`[Aguardando]: ${description}`);
+        const interval = setInterval(() => {
+            const element = selectorFn();
+            if (element) {
+                clearInterval(interval);
+                console.log(`[Sucesso]: Elemento "${description}" encontrado.`);
+                actionFn(element);
+            }
+        }, 500);
     }
 
-    // --- PARTE 2: LÓGICA DE AUTOMAÇÃO ---
-    // Se o script chegou até aqui, estamos na página /home/mine.
-    // Verificamos se o "lembrete" existe para rodar a automação apenas uma vez.
-    if (sessionStorage.getItem('runDepositAutomation') === 'true') {
-        
-        // Limpa o lembrete para não executar novamente se a página for recarregada.
-        sessionStorage.removeItem('runDepositAutomation');
-        console.log('Na página de perfil. Iniciando automação de depósito...');
-
-        /**
-         * Função auxiliar que espera um elemento aparecer na página antes de agir.
-         * @param {function} selectorFn - Função que busca e retorna o elemento.
-         * @param {function} actionFn - Função a ser executada quando o elemento for encontrado.
-         * @param {string} description - Descrição da ação para logs no console.
-         */
-        function waitForElement(selectorFn, actionFn, description) {
-            console.log(`Aguardando por: ${description}`);
-            const interval = setInterval(() => {
-                const element = selectorFn();
-                if (element) {
-                    clearInterval(interval);
-                    console.log(`SUCESSO: Elemento "${description}" encontrado.`);
-                    actionFn(element);
-                }
-            }, 300); // Tenta encontrar a cada 300ms
-        }
-
-        // --- Início da Cadeia de Ações ---
-
-        // 1. Espera pelo texto "Depósito" e clica no seu elemento pai.
+    function runDepositAutomation() {
+        console.log('Iniciando a sequência de automação de depósito...');
         waitForElement(
             () => Array.from(document.querySelectorAll('*')).find(el => el.innerText === 'Depósito'),
             (textElement) => {
                 const clickableParent = textElement.parentElement;
                 if (clickableParent) {
                     clickableParent.click();
-                    console.log('Elemento pai de "Depósito" foi clicado.');
-
-                    // 2. Após o clique, espera pelo campo de input.
+                    console.log('Ação: Clicou em "Depósito".');
                     waitForElement(
                         () => Array.from(document.querySelectorAll('input')).find(input => input.placeholder.includes('Mínimo') && input.placeholder.includes('Máximo')),
                         (amountInput) => {
-                            amountInput.value = '10';
-                            amountInput.dispatchEvent(new Event('input', { bubbles: true }));
-                            amountInput.dispatchEvent(new Event('change', { bubbles: true }));
-                            console.log('Valor "10" inserido no campo.');
+                            
+                            // --- ATRASO ADICIONADO AQUI ---
+                            console.log('Aguardando 1000ms antes de preencher o valor...');
+                            setTimeout(() => {
+                                // --- TÉCNICA DO SETTER NATIVO COM VALOR ALEATÓRIO ---
+                                const randomValue = generateRandomNumbers(depositConfig.depositMin, depositConfig.depositMax);
+                                console.log(`Ação: Usando setter nativo para inserir o valor aleatório "${randomValue}" (entre ${depositConfig.depositMin} e ${depositConfig.depositMax}).`);
+                                const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+                                nativeInputValueSetter.call(amountInput, randomValue.toString());
 
-                            // 3. Após preencher, espera pelo botão "Deposite agora".
-                            waitForElement(
-                                () => {
-                                    const span = Array.from(document.querySelectorAll('span')).find(el => el.innerText && el.innerText.trim() === 'Deposite agora');
-                                    return span ? span.closest('button') : null; // Retorna o botão clicável
-                                },
-                                (depositButton) => {
-                                    depositButton.click();
-                                    console.log('--- AUTOMAÇÃO CONCLUÍDA COM SUCESSO! ---');
-                                },
-                                'Botão "Deposite agora"'
-                            );
+                                const event = new Event('input', { bubbles: true });
+                                amountInput.dispatchEvent(event);
+                                
+                                // Delay de 500ms antes de clicar no botão
+                                console.log('Aguardando 1000ms antes de clicar no botão...');
+                                setTimeout(() => {
+                                    waitForElement(
+                                        () => {
+                                            const span = Array.from(document.querySelectorAll('span')).find(el => el.innerText && el.innerText.trim() === 'Deposite agora');
+                                            return span ? span.closest('button') : null;
+                                        },
+                                        (depositButton) => {
+                                            depositButton.click();
+                                            console.log('--- AUTOMAÇÃO CONCLUÍDA COM SUCESSO! ---');
+                                        },
+                                        'Botão "Deposite agora"'
+                                    );
+                                }, 500);
+
+                            }, 500); // Fim do atraso de 500ms
+
                         },
                         'Campo de Input de Valor'
                     );
-                } else {
-                    console.error('ERRO: O elemento de texto "Depósito" foi encontrado, mas não tem um elemento pai clicável.');
-                }
+                } else { console.error('ERRO: O elemento de texto "Depósito" foi encontrado, mas não tem um elemento pai clicável.'); }
             },
-            'Texto "Depósito"'
+            'Botão/Texto "Depósito" na página de perfil'
         );
+    }
+
+    if (window.location.pathname.includes('/home/mine')) {
+        runDepositAutomation();
     } else {
-        console.log('Na página de perfil, mas a automação não foi iniciada (sem flag "runDepositAutomation").');
+        waitForElement(
+            () => Array.from(document.querySelectorAll('span.tabbar-text')).find(span => span.textContent.trim() === 'Perfil'),
+            (perfilSpan) => {
+                const clickableButton = perfilSpan.closest('.ui-tab');
+                if (clickableButton) {
+                    clickableButton.click();
+                    runDepositAutomation();
+                } else { console.error('ERRO: Texto "Perfil" encontrado, mas o botão clicável pai não.'); }
+            },
+            'Botão "Perfil" na barra inferior'
+        );
     }
 })();

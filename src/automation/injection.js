@@ -3,6 +3,25 @@ const path = require('path');
 const fs = require('fs');
 
 /**
+ * Carrega configurações do app-settings.json
+ */
+function loadAppSettings() {
+    try {
+        const settingsPath = path.join(__dirname, '../config/app-settings.json');
+        const settingsData = fs.readFileSync(settingsPath, 'utf8');
+        return JSON.parse(settingsData);
+    } catch (error) {
+        console.warn('Erro ao carregar configurações, usando valores padrão:', error.message);
+        return {
+            automation: {
+                depositMin: 10,
+                depositMax: 30
+            }
+        };
+    }
+}
+
+/**
  * Módulo estático para injeção de scripts em navegadores ativos
  */
 class ScriptInjector {
@@ -76,8 +95,23 @@ class ScriptInjector {
 
             console.log(`Injetando script '${scriptName}' em todos os navegadores ativos...`);
             
+            // Carregar configurações para scripts que precisam de parâmetros
+            let finalScriptContent = scriptContent;
+            if (scriptName === 'deposito') {
+                const settings = loadAppSettings();
+                const configScript = `
+                    // Injetar configurações do MegaBot
+                    window.megabotConfig = {
+                        depositMin: ${settings.automation?.depositMin || 10},
+                        depositMax: ${settings.automation?.depositMax || 30}
+                    };
+                    console.log('Configurações MegaBot injetadas:', window.megabotConfig);
+                `;
+                finalScriptContent = configScript + '\n' + scriptContent;
+            }
+            
             // Usar a função do browser-manager para injetar em todos os navegadores
-            const result = await injectScriptInAllBrowsers(scriptContent);
+            const result = await injectScriptInAllBrowsers(finalScriptContent);
             
             return result;
 
