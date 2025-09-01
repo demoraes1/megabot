@@ -546,6 +546,29 @@ async function startBrowser(options) {
             }, true);
         });
 
+        // =================================================================================
+        // [NOVO] INJEÇÃO DO POPUP.JS - ELEMENTO DELETER
+        // =================================================================================
+        try {
+            const popupScriptPath = path.join(__dirname, '..', 'automation', 'scripts', 'popup.js');
+            console.log(`[Navegador ${navigatorId}] Lendo script popup.js de: ${popupScriptPath}`);
+            
+            if (fs.existsSync(popupScriptPath)) {
+                const popupScriptContent = fs.readFileSync(popupScriptPath, 'utf8');
+                
+                // ETAPA 1: Injeção permanente para garantir que o script exista desde o início e em reloads
+                await page.evaluateOnNewDocument(popupScriptContent);
+                console.log(`[Navegador ${navigatorId}] Script popup.js injetado permanentemente via evaluateOnNewDocument`);
+            } else {
+                console.warn(`[Navegador ${navigatorId}] Arquivo popup.js não encontrado em: ${popupScriptPath}`);
+            }
+        } catch (error) {
+            console.error(`[Navegador ${navigatorId}] Erro ao injetar popup.js:`, error.message);
+        }
+        // =================================================================================
+        // [NOVO] FIM DA INJEÇÃO DO POPUP.JS
+        // =================================================================================
+
         // Configurar stealth - mascarar webdriver e automação
         await page.evaluateOnNewDocument((deviceInfo) => {
             // Mascarar webdriver completamente
@@ -753,7 +776,13 @@ async function startBrowser(options) {
                 return trimmedUrl;
             }
             
-            // Adiciona https:// por padrão
+            // Para URLs sem protocolo, detectar se parece com domínio válido
+            // Se contém ponto ou parece com IP, adicionar https://, senão tratar como busca
+            if (trimmedUrl.includes('.') || /^\d+\.\d+\.\d+\.\d+/.test(trimmedUrl)) {
+                return `https://${trimmedUrl}`;
+            }
+            
+            // Se não parece com URL válida, adicionar https:// mesmo assim
             return `https://${trimmedUrl}`;
         }
         
@@ -843,11 +872,24 @@ process.on('message', async (message) => {
             
             // Navegar para a URL
             await global.browserPage.goto(normalizedUrl, {
-                waitUntil: 'domcontentloaded',
+                waitUntil: 'load',
                 timeout: 30000
             });
             
             console.log(`[Navegador ${navigatorId}] Navegação concluída para: ${normalizedUrl}`);
+            
+            // Executar varredura manual do popup.js após navegação (similar ao teste.js)
+            try {
+                console.log(`[Navegador ${navigatorId}] Acionando varredura manual do script popup.js...`);
+                await global.browserPage.evaluate(() => {
+                    if (typeof window.runElementDeleterScan === 'function') {
+                        window.runElementDeleterScan();
+                    }
+                });
+                console.log(`[Navegador ${navigatorId}] Varredura do popup.js executada com sucesso.`);
+            } catch (scanError) {
+                console.warn(`[Navegador ${navigatorId}] Erro ao executar varredura do popup.js:`, scanError.message);
+            }
             
             // Enviar confirmação de sucesso
             process.send({ 
@@ -903,12 +945,26 @@ process.on('message', async (message) => {
 
 // Função para normalizar URLs
 function normalizeUrl(url) {
-    if (!url) return 'about:blank';
+    if (!url || url.trim() === '') return 'about:blank';
     
-    // Se a URL não tem protocolo, adicionar http://
-    if (!url.match(/^https?:\/\//)) {
-        url = 'http://' + url;
+    const trimmedUrl = url.trim();
+    
+    // Se já tem protocolo, retorna como está
+    if (trimmedUrl.match(/^https?:\/\//)) {
+        return trimmedUrl;
     }
     
-    return url;
+    // Se é um protocolo especial, retorna como está
+    if (trimmedUrl.startsWith('about:') || trimmedUrl.startsWith('file:') || trimmedUrl.startsWith('data:')) {
+        return trimmedUrl;
+    }
+    
+    // Para URLs sem protocolo, detectar se parece com domínio válido
+    // Se contém ponto ou parece com IP, adicionar https://, senão tratar como busca
+    if (trimmedUrl.includes('.') || /^\d+\.\d+\.\d+\.\d+/.test(trimmedUrl)) {
+        return `https://${trimmedUrl}`;
+    }
+    
+    // Se não parece com URL válida, adicionar https:// mesmo assim
+    return `https://${trimmedUrl}`;
 }

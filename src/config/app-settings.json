@@ -1,6 +1,6 @@
 {
   "links": [
-    "https://cccalfa.net"
+    "cccalfa.net"
   ],
   "proxies": [],
   "pixKeys": [],
@@ -17,7 +17,7 @@
       "mute-audio-toggle": false,
       "delay-toggle": false
     },
-    "lastSaved": "2025-09-01T05:56:55.988Z"
+    "lastSaved": "2025-09-01T13:05:27.089Z"
   },
   "automation": {
     "generateWithdraw": false,
