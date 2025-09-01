@@ -1099,6 +1099,44 @@ async function executeAccountCreation(link) {
             const successCount = navigationResult.results ? navigationResult.results.filter(r => r.success).length : activeBrowsers.length;
             showNotification(`Navegação iniciada com sucesso em ${successCount} navegador(es) para: ${link}`, 'success');
             
+            // Aguardar 3 segundos para garantir que a página carregou completamente
+            console.log('Aguardando 3 segundos para a página carregar...');
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            
+            // Injetar script de registro após navegação bem-sucedida
+            try {
+                console.log('Iniciando injeção do script de registro...');
+                const injectionResult = await window.electronAPI.injectScript('registro');
+                
+                if (injectionResult.success) {
+                    console.log('Script de registro injetado com sucesso em todos os navegadores');
+                    showNotification('Script de registro injetado com sucesso!', 'success');
+                    
+                    // Injetar script popup após o script de registro
+                    try {
+                        console.log('Iniciando injeção do script popup...');
+                        const popupInjectionResult = await window.electronAPI.injectScript('popup');
+                        
+                        if (popupInjectionResult.success) {
+                            console.log('Script popup injetado com sucesso em todos os navegadores');
+                            showNotification('Scripts de registro e popup injetados com sucesso!', 'success');
+                        } else {
+                            console.warn('Falha na injeção do script popup:', popupInjectionResult.message);
+                            showNotification(`Aviso: Script popup - ${popupInjectionResult.message}`, 'warning');
+                        }
+                    } catch (popupInjectionError) {
+                        console.error('Erro ao injetar script popup:', popupInjectionError);
+                        showNotification('Erro ao injetar script popup', 'error');
+                    }
+                } else {
+                    console.warn('Falha na injeção do script de registro:', injectionResult.message);
+                    showNotification(`Aviso: ${injectionResult.message}`, 'warning');
+                }
+            } catch (injectionError) {
+                console.error('Erro ao injetar script de registro:', injectionError);
+                showNotification('Erro ao injetar script de registro', 'error');
+            }
+            
             // Log dos resultados detalhados
             if (navigationResult.results) {
                 navigationResult.results.forEach(result => {

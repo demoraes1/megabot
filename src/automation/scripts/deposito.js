@@ -37,7 +37,7 @@
                 console.log(`[Sucesso]: Elemento "${description}" encontrado.`);
                 actionFn(element);
             }
-        }, 500);
+        }, 300);
     }
 
     function runDepositAutomation() {
@@ -79,7 +79,7 @@
                                         },
                                         'Botão "Deposite agora"'
                                     );
-                                }, 500);
+                                }, 1000);
 
                             }, 500); // Fim do atraso de 500ms
 

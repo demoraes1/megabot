@@ -3,102 +3,96 @@
 
     // --- Configurações ---
     const config = {
-        selectorsToHide: [
+        selectorsToDelete: [
             '.ui-popup',
             '.ui-overlay',
             '.modal-backdrop'
         ],
-        // Dica: É uma boa prática manter as palavras-chave em minúsculas aqui.
         exceptionKeywords: [
             'depósito',
             'inserir pin',
-			'lembrete'
+            'lembrete',
+            'tenho mais de 18 anos',
+            'registro',
+            'login'
         ],
-        hiddenAttribute: 'data-hidden-by-script',
+        forceDeleteKeywords: [
+            'registrado'
+        ],
         debug: true
     };
 
     // --- Funções de Logging ---
     const log = (message) => {
         if (config.debug) {
-            console.log(`[ElementHider Script] ${message}`);
+            console.log(`[ElementDeleter Script] ${message}`);
         }
     };
 
     // --- Lógica Principal ---
-
-    function hideElementIfNeeded(element) {
-        if (!element.matches || !element.matches(':not(body):not(html)') || element.getAttribute(config.hiddenAttribute)) {
+    function processElement(element) {
+        if (!element.matches || !element.isConnected) {
             return;
         }
 
-        const matchesHideRule = config.selectorsToHide.some(selector => element.matches(selector));
+        // 1. VERIFICAÇÃO PRIORITÁRIA PARA FORÇAR DELEÇÃO
+        const fullTextContent = (element.textContent || '').toLowerCase();
+        const forceDeleteMatch = config.forceDeleteKeywords.find(keyword =>
+            fullTextContent.includes(keyword.toLowerCase())
+        );
 
-        if (matchesHideRule) {
-            let isException = false;
-            let currentElement = element;
+        if (forceDeleteMatch) {
+            log(`Elemento DELETADO POR FORÇA (palavra: "${forceDeleteMatch}"): <${element.tagName.toLowerCase()} class="${element.className}">`);
+            element.remove();
+            return;
+        }
 
-            while (currentElement && currentElement !== document.body) {
-                const classList = (currentElement.className || '').toLowerCase();
-                const textContent = (currentElement.textContent || '').toLowerCase();
+        // 2. LÓGICA NORMAL DE DELEÇÃO COM EXCEÇÕES
+        const matchesDeleteRule = config.selectorsToDelete.some(selector => element.matches(selector));
 
-                // ====================================================================
-                // CORREÇÃO: Converte a palavra-chave para minúsculas antes de comparar
-                // ====================================================================
-                if (config.exceptionKeywords.some(keyword => {
-                    const lowerKeyword = keyword.toLowerCase(); // Garante que a comparação seja sempre minúscula vs minúscula
-                    return classList.includes(lowerKeyword) || textContent.includes(lowerKeyword);
-                })) {
-                    isException = true;
-                    break;
-                }
-                // ====================================================================
-
-                currentElement = currentElement.parentElement;
-            }
+        if (matchesDeleteRule) {
+            const isException = config.exceptionKeywords.some(keyword =>
+                fullTextContent.includes(keyword.toLowerCase())
+            );
 
             if (!isException) {
-                element.style.display = 'none';
-                element.setAttribute(config.hiddenAttribute, 'true');
-                log(`Elemento ocultado: <${element.tagName.toLowerCase()} class="${element.className}">`);
+                log(`Elemento DELETADO: <${element.tagName.toLowerCase()} class="${element.className}">`);
+                element.remove();
             } else {
                 log(`Elemento IGNORADO por exceção: <${element.tagName.toLowerCase()} class="${element.className}">`);
             }
         }
     }
 
-    // --- O resto do script permanece o mesmo ---
-
-    function initialScan() {
-        log('Realizando varredura inicial...');
-        config.selectorsToHide.forEach(selector => {
-            document.querySelectorAll(selector).forEach(hideElementIfNeeded);
-        });
-    }
-
+    // --- Observador de DOM ---
     const observer = new MutationObserver((mutationsList) => {
         for (const mutation of mutationsList) {
-            if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+            if (mutation.addedNodes.length > 0) {
                 mutation.addedNodes.forEach(node => {
                     if (node.nodeType === Node.ELEMENT_NODE) {
-                        hideElementIfNeeded(node);
-                        node.querySelectorAll('*').forEach(hideElementIfNeeded);
+                        processElement(node);
+                        if (node.querySelectorAll) {
+                           node.querySelectorAll('*').forEach(processElement);
+                        }
                     }
                 });
             }
         }
     });
+    
+    // Varredura inicial para elementos que já possam estar na página
+    log('Realizando varredura inicial...');
+    document.querySelectorAll(config.selectorsToDelete.join(', ')).forEach(processElement);
+    document.querySelectorAll('*').forEach(processElement); // Para a regra de forçar
 
-    initialScan();
-    observer.observe(document.body, {
+    log('Observador de DOM ativado para deletar elementos.');
+    observer.observe(document.documentElement, {
         childList: true,
         subtree: true
     });
-    log('Observador de DOM ativado com verificação de classes e texto (corrigido).');
 
     window.stopElementHider = () => {
         observer.disconnect();
         log('Observador de DOM desativado.');
     };
-
 })();

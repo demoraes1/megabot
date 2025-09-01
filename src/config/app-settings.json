@@ -17,13 +17,13 @@
       "mute-audio-toggle": false,
       "delay-toggle": false
     },
-    "lastSaved": "2025-09-01T02:57:54.398Z"
+    "lastSaved": "2025-09-01T05:56:55.988Z"
   },
   "automation": {
     "generateWithdraw": false,
     "muteAudio": false,
-    "depositMin": 100,
-    "depositMax": 300,
+    "depositMin": 10,
+    "depositMax": 15,
     "delayEnabled": false,
     "delaySeconds": 5
   }
