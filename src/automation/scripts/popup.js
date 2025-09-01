@@ -1,4 +1,4 @@
-// popup.js ATUALIZADO E CORRIGIDO
+// popup.js ATUALIZADO COM BLOQUEIO DE FULLSCREEN
 
 if (!window._elementDeleterAttached) {
     (function() {
@@ -15,14 +15,12 @@ if (!window._elementDeleterAttached) {
                 'inserir pin',
                 'lembrete',
                 'tenho mais de 18 anos',
-                'registro',
-                'login'
             ],
             forceDeleteKeywords: [
                 'registrado',
-				'depósito mínimo'
+                'depósito mínimo'
             ],
-            debug: true
+            debug: false
         };
 
         const log = (message) => {
@@ -32,7 +30,6 @@ if (!window._elementDeleterAttached) {
         };
         
         function processElement(element) {
-            // ... (nenhuma mudança nesta função)
             if (!element.matches || !element.isConnected) {
                 return;
             }
@@ -82,8 +79,6 @@ if (!window._elementDeleterAttached) {
             }
         });
         
-        // --- MUDANÇA PRINCIPAL AQUI ---
-        // Criamos uma função para atachar o observer
         function attachObserver() {
             log('Tentando ativar o Observador de DOM...');
             if (document.documentElement) {
@@ -93,24 +88,54 @@ if (!window._elementDeleterAttached) {
                 });
                 log('Observador de DOM ativado com sucesso.');
             } else {
-                // Isso é um fallback, caso o DOMContentLoaded dispare mas o documentElement ainda não esteja pronto.
                 log('documentElement não encontrado, tentando novamente em 10ms.');
                 setTimeout(attachObserver, 10);
             }
         }
+        
+        // --- LÓGICA DE BLOQUEIO DE FULLSCREEN ---
+        function blockFullscreen() {
+            log('Ativando bloqueio de fullscreen.');
+
+            // Função que nega o pedido de fullscreen
+            const blockRequest = function() {
+                log('Tentativa de entrar em fullscreen foi bloqueada.');
+                return Promise.reject(new Error('Fullscreen request blocked by script.'));
+            };
+
+            // Sobrescreve os métodos de requisitar fullscreen
+            Element.prototype.requestFullscreen = blockRequest;
+            Element.prototype.mozRequestFullScreen = blockRequest; // Firefox
+            Element.prototype.webkitRequestFullscreen = blockRequest; // Chrome/Safari
+            Element.prototype.msRequestFullscreen = blockRequest; // IE/Edge
+
+            // Adiciona um "vigia" para o caso de a página entrar em fullscreen
+            document.addEventListener('fullscreenchange', () => {
+                if (document.fullscreenElement) {
+                    log('Fullscreen detectado, saindo imediatamente.');
+                    document.exitFullscreen();
+                }
+            });
+
+            // Se o script carregar e a página já estiver em fullscreen, sai imediatamente
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+            }
+        }
+        // --- FIM DA LÓGICA DE BLOQUEIO ---
 
         // Executamos a varredura inicial
         runFullScan();
 
-        // Verificamos o estado do documento. Se ainda estiver carregando,
-        // esperamos pelo evento que sinaliza que o DOM está pronto.
+        // Ativamos o bloqueio de fullscreen desde o início
+        blockFullscreen();
+
+        // Verificamos o estado do documento para atachar o observer
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', attachObserver);
         } else {
-            // Se o documento já estiver pronto, atachamos imediatamente.
             attachObserver();
         }
-        // --- FIM DA MUDANÇA ---
 
         window.stopElementHider = () => {
             observer.disconnect();

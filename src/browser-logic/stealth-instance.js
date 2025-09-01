@@ -381,7 +381,7 @@ async function startBrowser(options) {
                 const element = e.target;
                 
                 // Debug log para verificar interceptação
-                console.log('TouchSimulator: Adicionando touch em', element.tagName, element.className);
+                // console.log('TouchSimulator: Adicionando touch em', element.tagName, element.className);
                 const touch = new Touch({
                     identifier: 1,
                     target: element,
@@ -478,7 +478,7 @@ async function startBrowser(options) {
                 const touchEndEvent = createTouchEvent('touchend', touch, element);
                 element.dispatchEvent(touchEndEvent);
                 
-                console.log('TouchSimulator: touchend disparado para', element.tagName, element.className);
+                // console.log('TouchSimulator: touchend disparado para', element.tagName, element.className);
                 
                 // Permitir que evento original continue (click normal)
             }, true);
@@ -742,7 +742,7 @@ async function startBrowser(options) {
                 document.addEventListener('DOMContentLoaded', () => {
                     try {
                         localStorage.setItem('navigatorId', navId);
-                        console.log(`[TouchSimulator] NavigatorId ${navId} configurado no localStorage`);
+                        // console.log(`[TouchSimulator] NavigatorId ${navId} configurado no localStorage`);
                     } catch (error) {
                         console.warn('[TouchSimulator] Erro ao configurar localStorage:', error);
                     }
