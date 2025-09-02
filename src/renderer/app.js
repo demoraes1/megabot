@@ -94,12 +94,14 @@ function saveSettings() {
             lastSaved: new Date().toISOString()
         },
         automation: {
-            generateWithdraw: document.getElementById('generate-withdraw-toggle')?.checked || false,
             muteAudio: document.getElementById('mute-audio-toggle')?.checked || false,
             depositMin: parseFloat(document.getElementById('deposit-min')?.value || '0'),
             depositMax: parseFloat(document.getElementById('deposit-max')?.value || '0'),
             delayEnabled: document.getElementById('delay-toggle')?.checked || false,
-            delaySeconds: parseInt(document.getElementById('delay-count')?.textContent || '5')
+            delaySeconds: parseInt(document.getElementById('delay-count')?.textContent || '5'),
+            password: document.getElementById('password-field')?.value || '',
+            withdrawPassword: document.getElementById('withdraw-password-field')?.value || '',
+            randomPasswords: document.getElementById('random-passwords-toggle')?.checked || false
         }
     };
     
@@ -232,6 +234,23 @@ function applyLoadedSettings(settings) {
                 }
             }
         }
+        
+        // Carregar campos de senha
+        const passwordField = document.getElementById('password-field');
+        const withdrawPasswordField = document.getElementById('withdraw-password-field');
+        const randomPasswordsToggle = document.getElementById('random-passwords-toggle');
+        
+        if (passwordField && settings.automation.password !== undefined) {
+            passwordField.value = settings.automation.password;
+        }
+        
+        if (withdrawPasswordField && settings.automation.withdrawPassword !== undefined) {
+            withdrawPasswordField.value = settings.automation.withdrawPassword;
+        }
+        
+        if (randomPasswordsToggle) {
+            randomPasswordsToggle.checked = settings.automation.randomPasswords || false;
+        }
     }
 }
 
@@ -326,6 +345,38 @@ function initializeAutoSave() {
             toggle.addEventListener('click', debouncedSave);
         }
     });
+    
+    // Lógica específica para a checkbox de senhas aleatórias
+    const randomPasswordsToggle = document.getElementById('random-passwords-toggle');
+    const passwordField = document.getElementById('password-field');
+    const withdrawPasswordField = document.getElementById('withdraw-password-field');
+    
+    if (randomPasswordsToggle && passwordField && withdrawPasswordField) {
+        // Função para atualizar estado dos campos
+        function updatePasswordFields() {
+            const isRandomEnabled = randomPasswordsToggle.checked;
+            passwordField.disabled = isRandomEnabled;
+            withdrawPasswordField.disabled = isRandomEnabled;
+            
+            if (isRandomEnabled) {
+                passwordField.placeholder = 'Senha será gerada automaticamente';
+                withdrawPasswordField.placeholder = 'Senha será gerada automaticamente';
+            } else {
+                passwordField.placeholder = 'Digite a senha';
+                withdrawPasswordField.placeholder = 'Digite a senha de saque';
+            }
+        }
+        
+        // Aplicar estado inicial
+        updatePasswordFields();
+        
+        // Escutar mudanças na checkbox
+        randomPasswordsToggle.addEventListener('change', updatePasswordFields);
+        
+        // Adicionar listeners para salvar automaticamente quando os campos mudarem
+        passwordField.addEventListener('input', debouncedSave);
+        withdrawPasswordField.addEventListener('input', debouncedSave);
+    }
     
     // Observar cliques em botões que podem alterar estado
     const buttons = document.querySelectorAll('button');
