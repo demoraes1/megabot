@@ -952,6 +952,26 @@ process.on('message', async (message) => {
             const navigatorId = global.browserNavigatorId;
             console.log(`[Navegador ${navigatorId}] Injetando script...`);
             
+            // Aguardar a página carregar completamente antes de injetar o script
+            try {
+                // Tentar aguardar o carregamento se ainda estiver navegando
+                await Promise.race([
+                    global.browserPage.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 5000 }),
+                    new Promise(resolve => setTimeout(resolve, 5000))
+                ]);
+            } catch (e) {
+                // Se não conseguir aguardar navegação, continuar (página já pode ter carregado)
+                console.log(`[Navegador ${navigatorId}] Navegação já concluída ou timeout atingido`);
+            }
+            
+            // Aguardar um pouco mais para garantir que a página está estável
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            
+            // Verificar se a página ainda está disponível
+            if (global.browserPage.isClosed()) {
+                throw new Error('Página foi fechada durante a navegação');
+            }
+            
             // Injetar e executar o script na página
             const result = await global.browserPage.evaluate(message.script);
             
@@ -967,6 +987,33 @@ process.on('message', async (message) => {
             
         } catch (error) {
             console.error(`[Navegador ${global.browserNavigatorId}] Erro na injeção de script:`, error);
+            
+            // Se o erro for de contexto destruído, tentar novamente após um delay
+            if (error.message.includes('Execution context was destroyed')) {
+                console.log(`[Navegador ${global.browserNavigatorId}] Tentando injetar script novamente após navegação...`);
+                
+                try {
+                    // Aguardar mais tempo para a página estabilizar
+                    await new Promise(resolve => setTimeout(resolve, 3000));
+                    
+                    // Verificar se a página ainda está disponível
+                    if (!global.browserPage.isClosed()) {
+                        const result = await global.browserPage.evaluate(message.script);
+                        
+                        console.log(`[Navegador ${global.browserNavigatorId}] Script injetado com sucesso na segunda tentativa`);
+                        
+                        process.send({ 
+                            status: 'script_injection_success', 
+                            navigatorId: global.browserNavigatorId, 
+                            result,
+                            message: 'Script injetado com sucesso na segunda tentativa' 
+                        });
+                        return;
+                    }
+                } catch (retryError) {
+                    console.error(`[Navegador ${global.browserNavigatorId}] Erro na segunda tentativa:`, retryError);
+                }
+            }
             
             // Enviar erro
             process.send({ 

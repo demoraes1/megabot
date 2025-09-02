@@ -37,7 +37,7 @@
                 console.log(`[Sucesso]: Elemento "${description}" encontrado.`);
                 actionFn(element);
             }
-        }, 300);
+        }, 1000);
     }
 
     function runDepositAutomation() {
@@ -81,7 +81,7 @@
                                     );
                                 }, 1000);
 
-                            }, 500); // Fim do atraso de 500ms
+                            }, 1000); // Fim do atraso de 500ms
 
                         },
                         'Campo de Input de Valor'
