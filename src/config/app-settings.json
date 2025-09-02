@@ -1,23 +1,26 @@
 {
   "links": [
-    "fffalfa.net"
+    "fffalfa.com"
   ],
   "proxies": [],
+  "rotatingProxies": [
+    "proxy.tourosnet.com.br:5900"
+  ],
   "pixKeys": [],
   "extensions": [],
   "settings": {
     "delay": 5,
-    "openings": 2,
+    "openings": 1,
     "toggles": {
       "proxy-mode-list": false,
-      "proxy-mode-rotating": false,
-      "proxy-mode-none": true,
+      "proxy-mode-rotating": true,
+      "proxy-mode-none": false,
       "default-resolution-checkbox": true,
-      "random-passwords-toggle": false,
+      "random-passwords-toggle": true,
       "mute-audio-toggle": false,
       "delay-toggle": false
     },
-    "lastSaved": "2025-09-02T04:56:37.036Z"
+    "lastSaved": "2025-09-02T05:22:04.210Z"
   },
   "automation": {
     "muteAudio": false,
@@ -27,6 +30,6 @@
     "delaySeconds": 5,
     "password": "",
     "withdrawPassword": "",
-    "randomPasswords": false
+    "randomPasswords": true
   }
 }

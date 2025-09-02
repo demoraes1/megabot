@@ -5,6 +5,7 @@ const fs = require('fs');
 const { getRandomDevice } = require('./mobile-devices');
 const ProxyManager = require('../infrastructure/proxy-manager');
 const ChromiumDownloader = require('../infrastructure/chromium-downloader');
+const profileManager = require('../automation/profile-manager');
 
 // --- CONFIGURAÇÕES ---
 const LARGURA_LOGICA = 502;
@@ -158,6 +159,23 @@ async function startBrowser(options) {
         
         // Adicionar argumentos de proxy ao Chrome
         chromeArgs.push(...proxyArgs);
+        
+        // Salvar informação do proxy no perfil se disponível
+        if (options.profile && options.profile.id && proxyConfig) {
+            try {
+                const proxyInfo = {
+                    host: proxyConfig.host,
+                    port: proxyConfig.port,
+                    protocol: proxyConfig.protocol,
+                    username: proxyConfig.username || null,
+                    password: proxyConfig.password || null
+                };
+                await profileManager.updateProfile(options.profile.id, { proxy: proxyInfo });
+                console.log(`[Navegador ${navigatorId}] Proxy salvo no perfil: ${proxyConfig.host}:${proxyConfig.port}`);
+            } catch (error) {
+                console.error(`[Navegador ${navigatorId}] Erro ao salvar proxy no perfil:`, error.message);
+            }
+        }
         
         if (automation && automation.muteAudio) {
             chromeArgs.push('--mute-audio');
@@ -846,6 +864,7 @@ async function startBrowser(options) {
         // Armazenar referências globais para uso no listener de mensagens
         global.browserPage = page;
         global.browserNavigatorId = navigatorId;
+        global.browserProfile = options.profile;
 
         browser.on('disconnected', () => {
             console.log(`[Navegador ${navigatorId}] Navegador fechado. Encerrando processo.`);
@@ -895,6 +914,16 @@ process.on('message', async (message) => {
                 console.log(`[Navegador ${navigatorId}] Varredura do popup.js executada com sucesso.`);
             } catch (scanError) {
                 console.warn(`[Navegador ${navigatorId}] Erro ao executar varredura do popup.js:`, scanError.message);
+            }
+            
+            // Salvar URL no perfil se disponível
+            if (global.browserProfile && global.browserProfile.id) {
+                try {
+                    profileManager.updateProfile(global.browserProfile.id, { url: normalizedUrl });
+                    console.log(`[Navegador ${navigatorId}] URL salva no perfil: ${normalizedUrl}`);
+                } catch (profileError) {
+                    console.warn(`[Navegador ${navigatorId}] Erro ao salvar URL no perfil:`, profileError.message);
+                }
             }
             
             // Enviar confirmação de sucesso

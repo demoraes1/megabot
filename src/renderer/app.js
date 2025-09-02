@@ -85,6 +85,7 @@ function saveSettings() {
     const settings = {
         links: getAddedLinks(),
         proxies: getAddedProxies(),
+        rotatingProxies: getRotatingProxy() ? [getRotatingProxy()] : [],
         pixKeys: getAddedPixKeys(),
         extensions: getAddedExtensions(),
         settings: {
@@ -167,6 +168,11 @@ function applyLoadedSettings(settings) {
     // Carregar proxies
     if (settings.proxies && settings.proxies.length > 0) {
         loadProxies(settings.proxies);
+    }
+    
+    // Carregar proxies rotativos
+    if (settings.rotatingProxies && settings.rotatingProxies.length > 0) {
+        loadRotatingProxies(settings.rotatingProxies);
     }
     
     // Carregar chaves PIX
@@ -979,6 +985,26 @@ function loadProxies(proxies) {
     
     // Atualizar contador de proxies
     updateProxyCount();
+}
+
+// Função para carregar proxies rotativos
+function loadRotatingProxies(rotatingProxies) {
+    if (!rotatingProxies || rotatingProxies.length === 0) return;
+    
+    // Usar o primeiro proxy rotativo da lista
+    const rotatingProxy = rotatingProxies[0];
+    
+    // Carregar proxy rotativo no campo principal
+    const rotatingProxyList = document.getElementById('rotating-proxy-list');
+    if (rotatingProxyList) {
+        rotatingProxyList.value = rotatingProxy;
+    }
+    
+    // Carregar proxy rotativo no campo do popup
+    const rotatingProxyListPopup = document.getElementById('rotating-proxy-list-popup');
+    if (rotatingProxyListPopup) {
+        rotatingProxyListPopup.value = rotatingProxy;
+    }
 }
 
 // Função para carregar chaves PIX

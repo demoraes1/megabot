@@ -141,12 +141,15 @@ async function generateProfile() {
         const profileId = generateProfileId();
         const profile = {
             id: `profile_${profileId}`,
+            url: null,
             usuario: userData.username,
             nome_completo: userData.fullName,
             senha: password,
             senha_saque: withdrawPassword,
             telefone: phone,
             cpf: userData.cpf,
+            proxy: null,
+            pix: null,
             created_at: new Date().toISOString()
         };
         
@@ -240,6 +243,29 @@ function removeProfile(profileId) {
 }
 
 /**
+ * Atualiza campos específicos de um perfil
+ * @param {string} profileId - ID do perfil a ser atualizado
+ * @param {Object} updates - Objeto com os campos a serem atualizados
+ * @returns {boolean} True se atualizado com sucesso
+ */
+function updateProfile(profileId, updates) {
+    const config = loadConfig();
+    const profileIndex = config.profiles.findIndex(p => p.id === profileId);
+    
+    if (profileIndex === -1) {
+        console.warn(`Perfil ${profileId} não encontrado para atualização`);
+        return false;
+    }
+    
+    // Atualizar os campos fornecidos
+    Object.assign(config.profiles[profileIndex], updates);
+    
+    saveConfig(config);
+    console.log(`Perfil ${profileId} atualizado com sucesso`);
+    return true;
+}
+
+/**
  * Sincroniza IDs dos perfis no config.json com as pastas físicas existentes
  */
 function syncProfilesWithFolders() {
@@ -321,6 +347,7 @@ module.exports = {
     getAllProfiles,
     getProfileById,
     removeProfile,
+    updateProfile,
     initializeProfileSystem,
     PROFILES_DIR,
     CONFIG_FILE,
