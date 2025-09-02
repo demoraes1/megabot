@@ -363,7 +363,7 @@ function initializeAutoSave() {
                 withdrawPasswordField.placeholder = 'Senha será gerada automaticamente';
             } else {
                 passwordField.placeholder = 'Digite a senha';
-                withdrawPasswordField.placeholder = 'Digite a senha de saque';
+                withdrawPasswordField.placeholder = 'Digite 6 números';
             }
         }
         
@@ -375,7 +375,27 @@ function initializeAutoSave() {
         
         // Adicionar listeners para salvar automaticamente quando os campos mudarem
         passwordField.addEventListener('input', debouncedSave);
-        withdrawPasswordField.addEventListener('input', debouncedSave);
+        
+        // Validação para senha de saque (apenas números, máximo 6 dígitos)
+        withdrawPasswordField.addEventListener('input', function(e) {
+            // Remove caracteres não numéricos
+            let value = e.target.value.replace(/[^0-9]/g, '');
+            // Limita a 6 dígitos
+            if (value.length > 6) {
+                value = value.slice(0, 6);
+            }
+            e.target.value = value;
+            debouncedSave();
+        });
+        
+        // Previne colagem de texto não numérico
+         withdrawPasswordField.addEventListener('paste', function(e) {
+             e.preventDefault();
+             const paste = (e.clipboardData || window.clipboardData).getData('text');
+             const numericOnly = paste.replace(/[^0-9]/g, '').slice(0, 6);
+             e.target.value = numericOnly;
+             debouncedSave();
+         });
     }
     
     // Observar cliques em botões que podem alterar estado

@@ -44,8 +44,10 @@
     }
   },
   "dependencies": {
+    "@faker-js/faker": "^10.0.0",
     "@nut-tree-fork/nut-js": "^4.2.6",
     "rebrowser-puppeteer": "^24.8.1",
-    "systeminformation": "^5.27.8"
+    "systeminformation": "^5.27.8",
+    "unidecode": "^1.1.0"
   }
 }

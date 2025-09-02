@@ -13,11 +13,11 @@
       "proxy-mode-rotating": false,
       "proxy-mode-none": true,
       "default-resolution-checkbox": true,
-      "random-passwords-toggle": false,
+      "random-passwords-toggle": true,
       "mute-audio-toggle": false,
       "delay-toggle": false
     },
-    "lastSaved": "2025-09-02T02:52:46.742Z"
+    "lastSaved": "2025-09-02T04:09:48.579Z"
   },
   "automation": {
     "muteAudio": false,
@@ -25,8 +25,8 @@
     "depositMax": 15,
     "delayEnabled": false,
     "delaySeconds": 5,
-    "password": "",
-    "withdrawPassword": "",
-    "randomPasswords": false
+    "password": "sadsasf",
+    "withdrawPassword": "345345",
+    "randomPasswords": true
   }
 }

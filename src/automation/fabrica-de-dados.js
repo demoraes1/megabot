@@ -102,7 +102,7 @@ function generateComposedNameFromNick(nick) {
  * Gera um nickname (username) com até 10 caracteres alfanuméricos.
  */
 function generateUsername() {
-    const username = faker.internet.userName().replace(/[^a-zA-Z0-9]/g, '');
+    const username = faker.internet.username().replace(/[^a-zA-Z0-9]/g, '');
     return username.slice(0, 10);
 }
 
