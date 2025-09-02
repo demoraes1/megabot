@@ -317,9 +317,10 @@ async function navigateAllBrowsers(urls) {
  * Injeta script em um navegador específico
  * @param {string} navigatorId - ID do navegador
  * @param {string} scriptContent - Conteúdo do script a ser injetado
+ * @param {boolean} waitForLoad - Se deve aguardar o carregamento da página
  * @returns {Promise<boolean>} - Sucesso da operação
  */
-function injectScriptInBrowser(navigatorId, scriptContent) {
+function injectScriptInBrowser(navigatorId, scriptContent, waitForLoad = false) {
     return new Promise((resolve) => {
         const browserProcess = activeBrowsers.get(navigatorId);
         
@@ -332,7 +333,8 @@ function injectScriptInBrowser(navigatorId, scriptContent) {
         try {
             browserProcess.send({
                 action: 'inject-script',
-                script: scriptContent
+                script: scriptContent,
+                waitForLoad: waitForLoad
             });
             
             console.log(`Script injetado no navegador ${navigatorId}`);
@@ -345,11 +347,22 @@ function injectScriptInBrowser(navigatorId, scriptContent) {
 }
 
 /**
+ * Injeta script em um navegador específico após navegação (aguarda carregamento)
+ * @param {string} navigatorId - ID do navegador
+ * @param {string} scriptContent - Conteúdo do script a ser injetado
+ * @returns {Promise<boolean>} - Sucesso da operação
+ */
+function injectScriptInBrowserPostNavigation(navigatorId, scriptContent) {
+    return injectScriptInBrowser(navigatorId, scriptContent, true);
+}
+
+/**
  * Injeta script em todos os navegadores ativos
  * @param {string} scriptContent - Conteúdo do script a ser injetado
+ * @param {boolean} waitForLoad - Se deve aguardar o carregamento da página
  * @returns {Promise<Object>} - Resultado da operação
  */
-async function injectScriptInAllBrowsers(scriptContent) {
+async function injectScriptInAllBrowsers(scriptContent, waitForLoad = false) {
     const activeBrowserIds = getActiveBrowsers();
     
     if (activeBrowserIds.length === 0) {
@@ -363,7 +376,7 @@ async function injectScriptInAllBrowsers(scriptContent) {
     const results = [];
     
     for (const browserId of activeBrowserIds) {
-        const success = await injectScriptInBrowser(browserId, scriptContent);
+        const success = await injectScriptInBrowser(browserId, scriptContent, waitForLoad);
         results.push({ browserId, success });
     }
     
@@ -374,6 +387,15 @@ async function injectScriptInAllBrowsers(scriptContent) {
         message: `Script injetado em ${successCount}/${activeBrowserIds.length} navegador(es)`,
         results: results
     };
+}
+
+/**
+ * Injeta script em todos os navegadores ativos após navegação (aguarda carregamento)
+ * @param {string} scriptContent - Conteúdo do script a ser injetado
+ * @returns {Promise<Object>} - Resultado da operação
+ */
+async function injectScriptInAllBrowsersPostNavigation(scriptContent) {
+    return injectScriptInAllBrowsers(scriptContent, true);
 }
 
 /**
@@ -411,6 +433,7 @@ module.exports = {
     navigateAllBrowsers,
     injectScriptInBrowser,
     injectScriptInAllBrowsers,
+    injectScriptInAllBrowsersPostNavigation,
     initializeProfileSystem,
     getAllProfiles
 };

@@ -952,24 +952,22 @@ process.on('message', async (message) => {
             const navigatorId = global.browserNavigatorId;
             console.log(`[Navegador ${navigatorId}] Injetando script...`);
             
-            // Aguardar a página carregar completamente antes de injetar o script
-            try {
-                // Tentar aguardar o carregamento se ainda estiver navegando
-                await Promise.race([
-                    global.browserPage.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 5000 }),
-                    new Promise(resolve => setTimeout(resolve, 5000))
-                ]);
-            } catch (e) {
-                // Se não conseguir aguardar navegação, continuar (página já pode ter carregado)
-                console.log(`[Navegador ${navigatorId}] Navegação já concluída ou timeout atingido`);
-            }
+            // Verificar se é uma injeção após navegação (criar contas)
+            const isPostNavigation = message.waitForLoad === true;
             
-            // Aguardar um pouco mais para garantir que a página está estável
-            await new Promise(resolve => setTimeout(resolve, 3000));
-            
-            // Verificar se a página ainda está disponível
-            if (global.browserPage.isClosed()) {
-                throw new Error('Página foi fechada durante a navegação');
+            if (isPostNavigation) {
+                console.log(`[Navegador ${navigatorId}] Aguardando carregamento completo da página...`);
+                
+                try {
+                    // Aguardar até que não haja requisições de rede por 500ms
+                    await global.browserPage.waitForLoadState('networkidle', { timeout: 8000 });
+                } catch (error) {
+                    // Se waitForLoadState não existir ou falhar, usar abordagem alternativa
+                    console.log(`[Navegador ${navigatorId}] Usando método alternativo de espera...`);
+                    await new Promise(resolve => setTimeout(resolve, 3000));
+                }
+                
+                console.log(`[Navegador ${navigatorId}] Página carregada, injetando script...`);
             }
             
             // Injetar e executar o script na página
@@ -988,16 +986,16 @@ process.on('message', async (message) => {
         } catch (error) {
             console.error(`[Navegador ${global.browserNavigatorId}] Erro na injeção de script:`, error);
             
-            // Se o erro for de contexto destruído, tentar novamente após um delay
-            if (error.message.includes('Execution context was destroyed')) {
-                console.log(`[Navegador ${global.browserNavigatorId}] Tentando injetar script novamente após navegação...`);
+            // Se o erro for de contexto destruído e for pós-navegação, tentar novamente
+            if (error.message.includes('Execution context was destroyed') && message.waitForLoad === true) {
+                console.log(`[Navegador ${global.browserNavigatorId}] Tentando novamente após erro de contexto...`);
                 
                 try {
-                    // Aguardar mais tempo para a página estabilizar
-                    await new Promise(resolve => setTimeout(resolve, 3000));
+                    // Aguardar mais um pouco e tentar novamente
+                    await new Promise(resolve => setTimeout(resolve, 2000));
                     
                     // Verificar se a página ainda está disponível
-                    if (!global.browserPage.isClosed()) {
+                    if (global.browserPage && !global.browserPage.isClosed()) {
                         const result = await global.browserPage.evaluate(message.script);
                         
                         console.log(`[Navegador ${global.browserNavigatorId}] Script injetado com sucesso na segunda tentativa`);
@@ -1006,7 +1004,7 @@ process.on('message', async (message) => {
                             status: 'script_injection_success', 
                             navigatorId: global.browserNavigatorId, 
                             result,
-                            message: 'Script injetado com sucesso na segunda tentativa' 
+                            message: 'Script injetado com sucesso (segunda tentativa)' 
                         });
                         return;
                     }

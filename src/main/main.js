@@ -302,6 +302,22 @@ ipcMain.handle('inject-script', async (event, scriptName) => {
   }
 });
 
+// Handler para injetar script por nome em todos os navegadores após navegação
+ipcMain.handle('inject-script-post-navigation', async (event, scriptName) => {
+  try {
+    console.log(`Injetando script '${scriptName}' em todos os navegadores (pós-navegação)`);
+    const result = await scriptInjector.injectScriptPostNavigation(scriptName);
+    return result;
+  } catch (error) {
+    console.error('Erro ao injetar script pós-navegação:', error);
+    return {
+      success: false,
+      message: error.message,
+      results: []
+    };
+  }
+});
+
 // Handler para injetar script customizado em todos os navegadores
 ipcMain.handle('inject-custom-script', async (event, scriptCode) => {
   try {

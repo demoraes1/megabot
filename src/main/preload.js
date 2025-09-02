@@ -140,6 +140,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
     }
   },
 
+  // Função para injetar script por nome em todos os navegadores após navegação
+  injectScriptPostNavigation: async (scriptName) => {
+    try {
+      const result = await ipcRenderer.invoke('inject-script-post-navigation', scriptName);
+      return result;
+    } catch (error) {
+      console.error('Erro ao injetar script pós-navegação via IPC:', error);
+      throw error;
+    }
+  },
+
   // Função para injetar script customizado em todos os navegadores
   injectCustomScript: async (scriptCode) => {
     try {

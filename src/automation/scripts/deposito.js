@@ -3,7 +3,7 @@
 
 (function() {
     'use strict';
-    console.log('Iniciando script com Setter Nativo e Atraso (v7 - Valores Aleatórios)...');
+    console.log('Iniciando script com Setter Nativo e Atraso (v7.1 - Pausa Pós-Perfil)...');
     
     // Função para gerar números aleatórios (copiada de fabrica-de-dados.js)
     function generateRandomNumbers(min, max, count = 1) {
@@ -37,7 +37,7 @@
                 console.log(`[Sucesso]: Elemento "${description}" encontrado.`);
                 actionFn(element);
             }
-        }, 1000);
+        }, 500);
     }
 
     function runDepositAutomation() {
@@ -79,9 +79,9 @@
                                         },
                                         'Botão "Deposite agora"'
                                     );
-                                }, 1000);
+                                }, 500);
 
-                            }, 1000); // Fim do atraso de 500ms
+                            }, 500); // Fim do atraso de 500ms
 
                         },
                         'Campo de Input de Valor'
@@ -101,7 +101,13 @@
                 const clickableButton = perfilSpan.closest('.ui-tab');
                 if (clickableButton) {
                     clickableButton.click();
-                    runDepositAutomation();
+                    console.log('Ação: Clicou em "Perfil". Aguardando 1000ms para a página carregar...');
+                    
+                    // Pausa de 1 segundo para garantir que a transição de página foi concluída
+                    setTimeout(() => {
+                        runDepositAutomation();
+                    }, 1000);
+
                 } else { console.error('ERRO: Texto "Perfil" encontrado, mas o botão clicável pai não.'); }
             },
             'Botão "Perfil" na barra inferior'

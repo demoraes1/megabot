@@ -1196,14 +1196,11 @@ async function executeAccountCreation(link) {
             const successCount = navigationResult.results ? navigationResult.results.filter(r => r.success).length : activeBrowsers.length;
             showNotification(`Navegação iniciada com sucesso em ${successCount} navegador(es) para: ${link}`, 'success');
             
-            // Aguardar 3 segundos para garantir que a página carregou completamente
-            console.log('Aguardando 3 segundos para a página carregar...');
-            await new Promise(resolve => setTimeout(resolve, 3000));
-            
             // Injetar script de registro após navegação bem-sucedida
+            // Usar injeção pós-navegação para aguardar carregamento completo da página automaticamente
             try {
-                console.log('Iniciando injeção do script de registro...');
-                const injectionResult = await window.electronAPI.injectScript('registro');
+                console.log('Iniciando injeção do script de registro (pós-navegação)...');
+                const injectionResult = await window.electronAPI.injectScriptPostNavigation('registro');
                 
                 if (injectionResult.success) {
                     console.log('Script de registro injetado com sucesso em todos os navegadores');

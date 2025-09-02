@@ -1,4 +1,4 @@
-const { getActiveBrowsers, injectScriptInAllBrowsers } = require('../main/browser-manager');
+const { getActiveBrowsers, injectScriptInAllBrowsers, injectScriptInAllBrowsersPostNavigation } = require('../main/browser-manager');
 const path = require('path');
 const fs = require('fs');
 
@@ -126,6 +126,54 @@ class ScriptInjector {
     }
 
     /**
+     * Injeta um script em todos os navegadores ativos após navegação (aguarda carregamento)
+     * @param {string} scriptName - Nome do script a ser injetado
+     * @returns {Promise<Object>} - Resultado da operação
+     */
+    async injectScriptPostNavigation(scriptName) {
+        try {
+            const scriptContent = this.loadScriptContent(scriptName);
+            if (!scriptContent) {
+                return {
+                    success: false,
+                    message: `Script '${scriptName}' não encontrado`,
+                    results: []
+                };
+            }
+
+            console.log(`Injetando script '${scriptName}' em todos os navegadores ativos (pós-navegação)...`);
+            
+            // Carregar configurações para scripts que precisam de parâmetros
+            let finalScriptContent = scriptContent;
+            if (scriptName === 'deposito') {
+                const settings = loadAppSettings();
+                const configScript = `
+                    // Injetar configurações do MegaBot
+                    window.megabotConfig = {
+                        depositMin: ${settings.automation?.depositMin || 10},
+                        depositMax: ${settings.automation?.depositMax || 30}
+                    };
+                    console.log('Configurações MegaBot injetadas:', window.megabotConfig);
+                `;
+                finalScriptContent = configScript + '\n' + scriptContent;
+            }
+            
+            // Usar a função do browser-manager para injetar em todos os navegadores com aguardo de carregamento
+            const result = await injectScriptInAllBrowsersPostNavigation(finalScriptContent);
+            
+            return result;
+
+        } catch (error) {
+            console.error('Erro na injeção de script pós-navegação:', error);
+            return {
+                success: false,
+                message: error.message,
+                results: []
+            };
+        }
+    }
+
+    /**
      * Injeta script em um navegador específico
      * Esta função deve ser implementada baseada no método de controle dos navegadores
      */
@@ -225,6 +273,9 @@ const scriptInjector = new ScriptInjector();
 module.exports = {
     // Injetar script por nome
     injectScript: (scriptName) => scriptInjector.injectScriptInAllBrowsers(scriptName),
+    
+    // Injetar script por nome após navegação (aguarda carregamento)
+    injectScriptPostNavigation: (scriptName) => scriptInjector.injectScriptPostNavigation(scriptName),
     
     // Injetar script customizado
     injectCustomScript: (scriptCode) => scriptInjector.injectCustomScript(scriptCode),
