@@ -54,11 +54,17 @@ async function startBrowser(options) {
     const { url, navigatorId, proxy, automation = {}, blockedDomains, windowConfig } = options;
 
     try {
-        // Gerar identificador único para o perfil (independente do navigatorId)
-        const randomId = Math.random().toString(36).substring(2, 7); // 5 caracteres aleatórios
-        const profileId = `profile_${randomId}`;
+        // Usar o ID do perfil gerado pelo profile-manager ou gerar um aleatório como fallback
+        let profileId;
+        if (options.profile && options.profile.id) {
+            profileId = options.profile.id;
+            console.log(`[Navegador ${navigatorId}] Usando perfil existente: ${profileId}`);
+        } else {
+            const randomId = Math.random().toString(36).substring(2, 7);
+            profileId = `profile_${randomId}`;
+            console.log(`[Navegador ${navigatorId}] Perfil único criado: ${profileId}`);
+        }
         const profilePath = path.join(__dirname, '..', '..', 'profiles', profileId);
-        console.log(`[Navegador ${navigatorId}] Perfil único criado: ${profileId}`);
         
         const randomMobile = getRandomDevice();
         console.log(`[Navegador ${navigatorId}] Dispositivo selecionado: ${randomMobile.name}`);

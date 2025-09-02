@@ -1,6 +1,6 @@
 {
   "links": [
-    "cccalfa.net"
+    "fffalfa.net"
   ],
   "proxies": [],
   "pixKeys": [],
@@ -13,20 +13,20 @@
       "proxy-mode-rotating": false,
       "proxy-mode-none": true,
       "default-resolution-checkbox": true,
-      "random-passwords-toggle": true,
+      "random-passwords-toggle": false,
       "mute-audio-toggle": false,
       "delay-toggle": false
     },
-    "lastSaved": "2025-09-02T04:09:48.579Z"
+    "lastSaved": "2025-09-02T04:56:37.036Z"
   },
   "automation": {
     "muteAudio": false,
-    "depositMin": 10,
-    "depositMax": 15,
+    "depositMin": 0,
+    "depositMax": 0,
     "delayEnabled": false,
     "delaySeconds": 5,
-    "password": "sadsasf",
-    "withdrawPassword": "345345",
-    "randomPasswords": true
+    "password": "",
+    "withdrawPassword": "",
+    "randomPasswords": false
   }
 }

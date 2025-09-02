@@ -4,6 +4,10 @@ const fs = require('fs');
 const { moverJanelas } = require('../browser-logic/moverjanelas.js');
 const { carregarDadosMonitores } = require('./monitor-detector.js');
 
+// Importar o profile-manager
+const profileManager = require('../automation/profile-manager.js');
+console.log('Profile Manager carregado com sucesso');
+
 // Sistema de rastreamento de processos de navegadores
 const activeBrowsers = new Map(); // Map<navigatorId, childProcess>
 
@@ -160,11 +164,29 @@ async function launchInstances(options) {
         const launchPromises = lote.map(async (posicao, index) => {
             const child = fork(scriptPath);
             
+            // Gerar perfil para este navegador
+            let profile = null;
+            if (profileManager) {
+                try {
+                    profile = await profileManager.createNewProfile();
+                    console.log(`Perfil gerado para navegador ${posicao.id}:`, {
+                        profileId: profile.id,
+                        usuario: profile.usuario,
+                        nome: profile.nome_completo
+                    });
+                } catch (error) {
+                    console.error(`Erro ao gerar perfil para navegador ${posicao.id}:`, error.message);
+                }
+            } else {
+                console.warn(`Profile Manager não disponível para navegador ${posicao.id}`);
+            }
+            
             const instanceOptions = {
                 ...options,
                 navigatorId: posicao.id,
                 url: options.urls ? options.urls[index % options.urls.length] : 'about:blank',
                 position: posicao,
+                profile: profile, // Adicionar o perfil às opções
                 windowConfig: {
                     LARGURA_LOGICA,
                     ALTURA_LOGICA,
@@ -354,11 +376,41 @@ async function injectScriptInAllBrowsers(scriptContent) {
     };
 }
 
+/**
+ * Inicializa o sistema de perfis
+ * @returns {Object} Resultado da inicialização
+ */
+function initializeProfileSystem() {
+    try {
+        const result = profileManager.initializeProfileSystem();
+        console.log('Sistema de perfis inicializado pelo browser-manager');
+        return { success: true, data: result };
+    } catch (error) {
+        console.error('Erro ao inicializar sistema de perfis:', error.message);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Obtém todos os perfis salvos
+ * @returns {Array} Lista de perfis
+ */
+function getAllProfiles() {
+    try {
+        return profileManager.getAllProfiles();
+    } catch (error) {
+        console.error('Erro ao obter perfis:', error.message);
+        return [];
+    }
+}
+
 module.exports = { 
     launchInstances, 
     navigateToUrl, 
     getActiveBrowsers, 
     navigateAllBrowsers,
     injectScriptInBrowser,
-    injectScriptInAllBrowsers
+    injectScriptInAllBrowsers,
+    initializeProfileSystem,
+    getAllProfiles
 };

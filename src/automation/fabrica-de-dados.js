@@ -1,22 +1,41 @@
 // userDataGenerator.js
 
-import { Faker, pt_BR } from '@faker-js/faker';
-import unidecode from 'unidecode';
+const unidecode = require('unidecode');
 
-// 1. Inicializa o Faker para Português do Brasil
-const faker = new Faker({ locale: [pt_BR] });
+// Variáveis globais
+let faker = null;
+let isInitialized = false;
 
-// 2. Pre-popula listas de nomes comuns para busca
-const PREPOPULATE_COUNT = 5000;
-const commonFirstNames = new Set();
-const commonLastNames = new Set();
-
-console.log('Pré-populando listas de nomes. Isso pode levar um momento...');
-for (let i = 0; i < PREPOPULATE_COUNT; i++) {
-    commonFirstNames.add(unidecode(faker.person.firstName()));
-    commonLastNames.add(unidecode(faker.person.lastName()));
+// Função para inicializar o Faker de forma assíncrona
+async function initializeFaker() {
+    if (isInitialized) return;
+    
+    try {
+        const { Faker, pt_BR } = await import('@faker-js/faker');
+        faker = new Faker({ locale: [pt_BR] });
+        
+        // Pre-popula listas de nomes comuns para busca
+        const PREPOPULATE_COUNT = 5000;
+        const commonFirstNames = new Set();
+        const commonLastNames = new Set();
+        
+        console.log('Pré-populando listas de nomes. Isso pode levar um momento...');
+        for (let i = 0; i < PREPOPULATE_COUNT; i++) {
+            commonFirstNames.add(unidecode(faker.person.firstName()));
+            commonLastNames.add(unidecode(faker.person.lastName()));
+        }
+        console.log('Listas de nomes pré-populadas com sucesso.');
+        
+        // Armazena as listas globalmente
+        global.commonFirstNames = commonFirstNames;
+        global.commonLastNames = commonLastNames;
+        
+        isInitialized = true;
+    } catch (error) {
+        console.error('Erro ao inicializar Faker:', error);
+        throw error;
+    }
 }
-console.log('Listas de nomes pré-populadas com sucesso.');
 
 
 // --- Funções Auxiliares ---
@@ -54,6 +73,9 @@ const findLongestMatchInList = (text, nameList) => {
  * Gera um nome completo composto a partir de um nickname.
  */
 function generateComposedNameFromNick(nick) {
+    const commonFirstNames = global.commonFirstNames || new Set();
+    const commonLastNames = global.commonLastNames || new Set();
+    
     const nickClean = cleanNick(nick);
     const nickLower = nick.toLowerCase();
 
@@ -131,7 +153,9 @@ function generateCpf() {
 /**
  * Gera um único usuário com nickname, nome completo e CPF.
  */
-export function generateUser() {
+async function generateUser() {
+    await initializeFaker();
+    
     const username = generateUsername();
     const fullName = generateComposedNameFromNick(username);
     const cpf = generateCpf();
@@ -142,7 +166,9 @@ export function generateUser() {
 /**
  * Gera uma lista de usuários.
  */
-export function generateMultipleUsers(count = 1) {
+async function generateMultipleUsers(count = 1) {
+    await initializeFaker();
+    
     return Array.from({ length: count }, generateUser);
 }
 
@@ -151,7 +177,9 @@ export function generateMultipleUsers(count = 1) {
  * @param {number} length - Comprimento da senha (padrão: 12)
  * @returns {string} Senha gerada
  */
-export function generatePassword(length = 12) {
+async function generatePassword(length = 12) {
+    await initializeFaker();
+    
     const lowercase = 'abcdefghijklmnopqrstuvwxyz';
     const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     const numbers = '0123456789';
@@ -182,10 +210,20 @@ export function generatePassword(length = 12) {
  * @param {number} count - Quantidade de números a gerar (padrão: 1)
  * @returns {number|number[]} Número único ou array de números
  */
-export function generateRandomNumbers(min = 1, max = 100, count = 1) {
+async function generateRandomNumbers(min = 1, max = 100, count = 1) {
+    await initializeFaker();
+    
     if (count === 1) {
         return faker.number.int({ min, max });
     }
     
     return Array.from({ length: count }, () => faker.number.int({ min, max }));
 }
+
+// Exportações CommonJS
+module.exports = {
+    generateUser,
+    generateMultipleUsers,
+    generatePassword,
+    generateRandomNumbers
+};
