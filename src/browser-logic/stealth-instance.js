@@ -967,7 +967,27 @@ process.on('message', async (message) => {
                     await new Promise(resolve => setTimeout(resolve, 3000));
                 }
                 
-                console.log(`[Navegador ${navigatorId}] Página carregada, injetando script...`);
+                console.log(`[Navegador ${navigatorId}] Página carregada, injetando dados do perfil...`);
+                
+                // Injetar dados do perfil se disponíveis
+                if (global.browserProfile) {
+                    console.log(`[Navegador ${navigatorId}] Injetando dados do perfil: ${global.browserProfile.usuario}`);
+                    const profileDataScript = `
+                        window.profileData = {
+                            usuario: '${global.browserProfile.usuario}',
+                            nome_completo: '${global.browserProfile.nome_completo}',
+                            senha: '${global.browserProfile.senha}',
+                            telefone: '${global.browserProfile.telefone}',
+                            cpf: '${global.browserProfile.cpf}'
+                        };
+                        console.log('📋 Dados do perfil injetados:', window.profileData);
+                    `;
+                    await global.browserPage.evaluate(profileDataScript);
+                } else {
+                    console.log(`[Navegador ${navigatorId}] AVISO: Nenhum perfil disponível para injeção`);
+                }
+                
+                console.log(`[Navegador ${navigatorId}] Executando script principal...`);
             }
             
             // Injetar e executar o script na página
