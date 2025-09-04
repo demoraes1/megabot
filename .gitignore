@@ -80,3 +80,6 @@ profiles/
 
 #config
 src/config/
+
+#modelo
+modelo/

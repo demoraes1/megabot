@@ -799,30 +799,24 @@ async function startBrowser(options) {
         }, uniqueTitle);
         
         // Normalizar URL - adicionar http/https se necessário
-        function normalizeUrl(inputUrl) {
-            if (!inputUrl || inputUrl.trim() === '') {
+        function normalizeUrl(url) {
+            if (!url || url.trim() === '') {
                 return 'about:blank';
             }
             
-            const trimmedUrl = inputUrl.trim();
+            const trimmedUrl = url.trim();
             
-            // Se já tem protocolo, retorna como está
-            if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
+            // Se já tem protocolo, retorna como está (usando regex que é mais conciso)
+            if (trimmedUrl.match(/^https?:\/\//)) {
                 return trimmedUrl;
             }
             
-            // Se é um protocolo especial, retorna como está
+            // Protocolos especiais
             if (trimmedUrl.startsWith('about:') || trimmedUrl.startsWith('file:') || trimmedUrl.startsWith('data:')) {
                 return trimmedUrl;
             }
             
-            // Para URLs sem protocolo, detectar se parece com domínio válido
-            // Se contém ponto ou parece com IP, adicionar https://, senão tratar como busca
-            if (trimmedUrl.includes('.') || /^\d+\.\d+\.\d+\.\d+/.test(trimmedUrl)) {
-                return `https://${trimmedUrl}`;
-            }
-            
-            // Se não parece com URL válida, adicionar https:// mesmo assim
+            // Para todos os outros casos, adiciona https://
             return `https://${trimmedUrl}`;
         }
         
@@ -895,28 +889,24 @@ function normalizeUrl(url) {
         return 'about:blank';
     }
     
-    url = url.trim();
+    const trimmedUrl = url.trim();
     
-    // Se já tem protocolo, retorna como está
-    if (url.match(/^https?:\/\//)) {
-        return url;
+    // Se já tem protocolo, retorna como está (usando regex que é mais conciso)
+    if (trimmedUrl.match(/^https?:\/\//)) {
+        return trimmedUrl;
     }
     
     // Protocolos especiais
-    if (url.startsWith('about:') || url.startsWith('file:') || url.startsWith('data:')) {
-        return url;
+    if (trimmedUrl.startsWith('about:') || trimmedUrl.startsWith('file:') || trimmedUrl.startsWith('data:')) {
+        return trimmedUrl;
     }
     
-    // Se parece com domínio ou IP, adiciona https://
-    if (url.includes('.') || url.match(/^\d+\.\d+\.\d+\.\d+/)) {
-        return `https://${url}`;
-    }
-    
-    // Default: adiciona https://
-    return `https://${url}`;
+    // Para todos os outros casos, adiciona https://
+    return `https://${trimmedUrl}`;
 }
 
 // Exportar o módulo
 module.exports = {
-    startBrowser
+    startBrowser,
+    normalizeUrl
 };
