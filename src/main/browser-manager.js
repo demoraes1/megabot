@@ -275,15 +275,16 @@ async function navigateAllBrowsers(urls) {
     }
     
     const urlArray = Array.isArray(urls) ? urls : [urls];
-    const results = [];
     
-    // Aguardar todas as navegações
-    for (let i = 0; i < activeBrowserIds.length; i++) {
-        const browserId = activeBrowserIds[i];
+    // Criar todas as promessas de navegação em paralelo
+    const navigationPromises = activeBrowserIds.map(async (browserId, i) => {
         const url = urlArray[i % urlArray.length]; // Rotacionar URLs se houver mais navegadores que URLs
         const success = await navigateToUrl(browserId, url);
-        results.push({ browserId, url, success });
-    }
+        return { browserId, url, success };
+    });
+    
+    // Aguardar todas as navegações em paralelo
+    const results = await Promise.all(navigationPromises);
     
     return {
         success: true,
