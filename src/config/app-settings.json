@@ -20,12 +20,12 @@
       "mute-audio-toggle": false,
       "delay-toggle": false
     },
-    "lastSaved": "2025-09-04T16:46:18.274Z"
+    "lastSaved": "2025-09-04T19:57:06.941Z"
   },
   "automation": {
     "muteAudio": false,
-    "depositMin": 0,
-    "depositMax": 0,
+    "depositMin": 100,
+    "depositMax": 200,
     "delayEnabled": false,
     "delaySeconds": 5,
     "password": "",
