@@ -7,6 +7,31 @@ const ProxyManager = require('../infrastructure/proxy-manager');
 const ChromiumDownloader = require('../infrastructure/chromium-downloader');
 const profileManager = require('../automation/profile-manager');
 
+// Sistema de logging com níveis
+const LOG_LEVELS = {
+    DEBUG: 0,
+    INFO: 1,
+    WARN: 2,
+    ERROR: 3
+};
+
+const CURRENT_LOG_LEVEL = LOG_LEVELS.INFO; // Configurável
+
+function log(level, navigatorId, message, ...args) {
+    if (LOG_LEVELS[level] >= CURRENT_LOG_LEVEL) {
+        const timestamp = new Date().toISOString().substr(11, 12);
+        const prefix = navigatorId ? `[${timestamp}] [${level}] [Navegador ${navigatorId}]` : `[${timestamp}] [${level}]`;
+        console.log(prefix, message, ...args);
+    }
+}
+
+const logger = {
+    debug: (navigatorId, message, ...args) => log('DEBUG', navigatorId, message, ...args),
+    info: (navigatorId, message, ...args) => log('INFO', navigatorId, message, ...args),
+    warn: (navigatorId, message, ...args) => log('WARN', navigatorId, message, ...args),
+    error: (navigatorId, message, ...args) => log('ERROR', navigatorId, message, ...args)
+};
+
 // --- CONFIGURAÇÕES ---
 const LARGURA_LOGICA = 502;
 const ALTURA_LOGICA = 800;
@@ -59,25 +84,25 @@ async function startBrowser(options) {
         let profileId;
         if (options.profile && options.profile.id) {
             profileId = options.profile.id;
-            console.log(`[Navegador ${navigatorId}] Usando perfil existente: ${profileId}`);
+            logger.info(navigatorId, `Usando perfil existente: ${profileId}`);
         } else {
             const randomId = Math.random().toString(36).substring(2, 7);
             profileId = `profile_${randomId}`;
-            console.log(`[Navegador ${navigatorId}] Perfil único criado: ${profileId}`);
+            logger.info(navigatorId, `Perfil único criado: ${profileId}`);
         }
         const profilePath = path.join(__dirname, '..', '..', 'profiles', profileId);
         
         const randomMobile = getRandomDevice();
-        console.log(`[Navegador ${navigatorId}] Dispositivo selecionado: ${randomMobile.name}`);
+        logger.info(navigatorId, `Dispositivo selecionado: ${randomMobile.name}`);
 
         // Verificar se o dispositivo e viewport são válidos
         if (!randomMobile || !randomMobile.device || !randomMobile.device.viewport) {
             throw new Error('Dispositivo móvel inválido ou viewport não definido');
         }
 
-        console.log(`[Navegador ${navigatorId}] Dispositivo selecionado: ${randomMobile.name}`);
-        console.log(`[Navegador ${navigatorId}] Viewport: ${randomMobile.device.viewport.width}x${randomMobile.device.viewport.height}`);
-        console.log(`[Navegador ${navigatorId}] UserAgent: ${randomMobile.device.userAgent}`);
+        logger.info(navigatorId, `Dispositivo selecionado: ${randomMobile.name}`);
+            logger.debug(navigatorId, `Viewport: ${randomMobile.device.viewport.width}x${randomMobile.device.viewport.height}`);
+            logger.debug(navigatorId, `UserAgent: ${randomMobile.device.userAgent}`);
 
         // Preparar argumentos do Chrome para viewport adaptativa (como no index.js)
         let windowWidth = randomMobile.device.viewport.width;
@@ -91,7 +116,7 @@ async function startBrowser(options) {
         
         const deviceScaleFactor = windowConfig?.FATOR_ESCALA || 0.65; // Usar 0.65 como padrão igual ao index.js
         
-        console.log(`[Navegador ${navigatorId}] Configurações finais de janela: ${windowWidth}x${windowHeight}, escala: ${deviceScaleFactor}`);
+        logger.info(navigatorId, `Configurações finais de janela: ${windowWidth}x${windowHeight}, escala: ${deviceScaleFactor}`);
 
         const chromeArgs = [
             `--user-data-dir=${profilePath}`,
@@ -101,14 +126,13 @@ async function startBrowser(options) {
             '--no-first-run',
             '--disable-default-apps',
             '--disable-infobars',
-            '--disable-features=VizDisplayCompositor',
+            '--disable-features=VizDisplayCompositor,TranslateUI',
             // Argumentos para estabilidade e prevenção de crashes
             '--disable-dev-shm-usage',
             '--disable-accelerated-2d-canvas',
             '--disable-gpu',
             '--disable-backgrounding-occluded-windows',
             '--disable-renderer-backgrounding',
-            '--disable-features=TranslateUI',
             '--disable-ipc-flooding-protection',
             '--disable-hang-monitor',
             '--disable-prompt-on-repost',
@@ -384,6 +408,24 @@ async function startBrowser(options) {
                 return true;
             }
 
+            // Helper para criar objetos Touch reutilizáveis
+            function createTouchObject(element, event) {
+                return new Touch({
+                    identifier: 1,
+                    target: element,
+                    clientX: event.clientX,
+                    clientY: event.clientY,
+                    pageX: event.pageX,
+                    pageY: event.pageY,
+                    screenX: event.screenX,
+                    screenY: event.screenY,
+                    radiusX: 15,
+                    radiusY: 15,
+                    rotationAngle: 0,
+                    force: 1
+                });
+            }
+
             // Criar touch events reais
             function createTouchEvent(type, touch, element) {
                 const touchEvent = new TouchEvent(type, {
@@ -406,20 +448,7 @@ async function startBrowser(options) {
                 
                 // Debug log para verificar interceptação
                 // console.log('TouchSimulator: Adicionando touch em', element.tagName, element.className);
-                const touch = new Touch({
-                    identifier: 1,
-                    target: element,
-                    clientX: e.clientX,
-                    clientY: e.clientY,
-                    pageX: e.pageX,
-                    pageY: e.pageY,
-                    screenX: e.screenX,
-                    screenY: e.screenY,
-                    radiusX: 15,
-                    radiusY: 15,
-                    rotationAngle: 0,
-                    force: 1
-                });
+                const touch = createTouchObject(element, e);
 
                 const touchStartEvent = createTouchEvent('touchstart', touch, element);
                 element.dispatchEvent(touchStartEvent);
@@ -438,20 +467,7 @@ async function startBrowser(options) {
                 e.preventDefault();
                 
                 const element = document.elementFromPoint(e.clientX, e.clientY) || e.target;
-                const touch = new Touch({
-                    identifier: 1,
-                    target: element,
-                    clientX: e.clientX,
-                    clientY: e.clientY,
-                    pageX: e.pageX,
-                    pageY: e.pageY,
-                    screenX: e.screenX,
-                    screenY: e.screenY,
-                    radiusX: 15,
-                    radiusY: 15,
-                    rotationAngle: 0,
-                    force: 1
-                });
+                const touch = createTouchObject(element, e);
 
                 const touchMoveEvent = createTouchEvent('touchmove', touch, element);
                 element.dispatchEvent(touchMoveEvent);
@@ -967,7 +983,27 @@ process.on('message', async (message) => {
                     await new Promise(resolve => setTimeout(resolve, 3000));
                 }
                 
-                console.log(`[Navegador ${navigatorId}] Página carregada, injetando script...`);
+                console.log(`[Navegador ${navigatorId}] Página carregada, injetando dados do perfil...`);
+                
+                // Injetar dados do perfil se disponíveis
+                if (global.browserProfile) {
+                    console.log(`[Navegador ${navigatorId}] Injetando dados do perfil: ${global.browserProfile.usuario}`);
+                    const profileDataScript = `
+                        window.profileData = {
+                            usuario: '${global.browserProfile.usuario}',
+                            nome_completo: '${global.browserProfile.nome_completo}',
+                            senha: '${global.browserProfile.senha}',
+                            telefone: '${global.browserProfile.telefone}',
+                            cpf: '${global.browserProfile.cpf}'
+                        };
+                        console.log('📋 Dados do perfil injetados:', window.profileData);
+                    `;
+                    await global.browserPage.evaluate(profileDataScript);
+                } else {
+                    console.log(`[Navegador ${navigatorId}] AVISO: Nenhum perfil disponível para injeção`);
+                }
+                
+                console.log(`[Navegador ${navigatorId}] Executando script principal...`);
             }
             
             // Injetar e executar o script na página
@@ -1025,26 +1061,27 @@ process.on('message', async (message) => {
 
 // Função para normalizar URLs
 function normalizeUrl(url) {
-    if (!url || url.trim() === '') return 'about:blank';
+    if (!url || url.trim() === '') {
+        return 'about:blank';
+    }
     
-    const trimmedUrl = url.trim();
+    url = url.trim();
     
     // Se já tem protocolo, retorna como está
-    if (trimmedUrl.match(/^https?:\/\//)) {
-        return trimmedUrl;
+    if (url.match(/^https?:\/\//)) {
+        return url;
     }
     
-    // Se é um protocolo especial, retorna como está
-    if (trimmedUrl.startsWith('about:') || trimmedUrl.startsWith('file:') || trimmedUrl.startsWith('data:')) {
-        return trimmedUrl;
+    // Protocolos especiais
+    if (url.startsWith('about:') || url.startsWith('file:') || url.startsWith('data:')) {
+        return url;
     }
     
-    // Para URLs sem protocolo, detectar se parece com domínio válido
-    // Se contém ponto ou parece com IP, adicionar https://, senão tratar como busca
-    if (trimmedUrl.includes('.') || /^\d+\.\d+\.\d+\.\d+/.test(trimmedUrl)) {
-        return `https://${trimmedUrl}`;
+    // Se parece com domínio ou IP, adiciona https://
+    if (url.includes('.') || url.match(/^\d+\.\d+\.\d+\.\d+/)) {
+        return `https://${url}`;
     }
     
-    // Se não parece com URL válida, adicionar https:// mesmo assim
-    return `https://${trimmedUrl}`;
+    // Default: adiciona https://
+    return `https://${url}`;
 }

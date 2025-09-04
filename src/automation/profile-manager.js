@@ -1,7 +1,7 @@
 // profile-manager.js
 // Módulo responsável por gerenciar perfis de usuário com dados aleatórios
 
-const { generateUser, generatePassword, generateRandomNumbers } = require('./fabrica-de-dados.js');
+const { generateUser, generatePassword, generateRandomNumbers, generatePhoneNumber } = require('./fabrica-de-dados.js');
 const fs = require('fs');
 const path = require('path');
 
@@ -24,21 +24,7 @@ function generateProfileId() {
     return result;
 }
 
-/**
- * Gera um número de telefone brasileiro
- * @returns {Promise<string>} Telefone com 11 dígitos sem formatação
- */
-async function generatePhoneNumber() {
-    const ddd = await generateRandomNumbers(11, 99); // DDD válido
-    const firstDigit = 9; // Celular sempre começa com 9
-    const remainingDigits = [];
-    for (let i = 0; i < 8; i++) {
-        remainingDigits.push(await generateRandomNumbers(0, 9));
-    }
-    const remainingDigitsStr = remainingDigits.join('');
-    
-    return `${ddd.toString().padStart(2, '0')}${firstDigit}${remainingDigitsStr}`;
-}
+
 
 /**
  * Cria o diretório profiles se não existir

@@ -6,7 +6,33 @@ const { carregarDadosMonitores } = require('./monitor-detector.js');
 
 // Importar o profile-manager
 const profileManager = require('../automation/profile-manager.js');
-console.log('Profile Manager carregado com sucesso');
+
+// Sistema de logging com níveis
+const LOG_LEVELS = {
+    DEBUG: 0,
+    INFO: 1,
+    WARN: 2,
+    ERROR: 3
+};
+
+const CURRENT_LOG_LEVEL = LOG_LEVELS.INFO;
+
+function log(level, message, ...args) {
+    if (level >= CURRENT_LOG_LEVEL) {
+        const timestamp = new Date().toISOString();
+        const levelName = Object.keys(LOG_LEVELS)[level];
+        console.log(`[${timestamp}] [${levelName}] ${message}`, ...args);
+    }
+}
+
+const logger = {
+    debug: (message, ...args) => log(LOG_LEVELS.DEBUG, message, ...args),
+    info: (message, ...args) => log(LOG_LEVELS.INFO, message, ...args),
+    warn: (message, ...args) => log(LOG_LEVELS.WARN, message, ...args),
+    error: (message, ...args) => log(LOG_LEVELS.ERROR, message, ...args)
+};
+
+logger.info('Profile Manager carregado com sucesso');
 
 // Sistema de rastreamento de processos de navegadores
 const activeBrowsers = new Map(); // Map<navigatorId, childProcess>
@@ -20,7 +46,7 @@ const DELAY_PARA_REGISTRO_JANELAS = 10; // ms - reduzido pois o processamento em
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function launchInstances(options) {
-    console.log('Iniciando lançamento de navegadores com opções:', options);
+    logger.info('Iniciando lançamento de navegadores com opções:', options);
     
     const scriptPath = path.join(__dirname, '../browser-logic/stealth-instance.js');
     const pids = [];
@@ -33,108 +59,94 @@ async function launchInstances(options) {
             const configData = JSON.parse(fs.readFileSync(configPath, 'utf8'));
             if (configData.settings && configData.settings.batchSize) {
                 TAMANHO_LOTE = configData.settings.batchSize;
-                console.log(`Tamanho do lote configurado: ${TAMANHO_LOTE}`);
+                logger.info(`Tamanho do lote configurado: ${TAMANHO_LOTE}`);
             }
         }
     } catch (error) {
-        console.warn('Erro ao carregar configuração de tamanho de lote, usando valor padrão:', error.message);
+        logger.warn('Erro ao carregar configuração de tamanho de lote, usando valor padrão:', error.message);
     }
     
-    console.log(`\nIniciando ${options.simultaneousOpenings} navegadores...`);
+    logger.info(`\nIniciando ${options.simultaneousOpenings} navegadores...`);
     
     // 2. Carregar dados dos monitores salvos
     let resultadoCarregamento;
     try {
         resultadoCarregamento = await carregarDadosMonitores();
         if (!resultadoCarregamento.success) {
-            console.error('Erro ao carregar dados dos monitores:', resultadoCarregamento.error);
+            logger.error('Erro ao carregar dados dos monitores:', resultadoCarregamento.error);
             return [];
         }
-        console.log('Dados dos monitores carregados com sucesso.');
+        logger.info('Dados dos monitores carregados com sucesso.');
     } catch (error) {
-        console.error('Erro ao carregar dados dos monitores:', error.message);
+        logger.error('Erro ao carregar dados dos monitores:', error.message);
         return [];
     }
     
     const dadosMonitores = resultadoCarregamento.dados;
     
-    // 3. Obter posições disponíveis dos dados salvos baseado no monitor selecionado
-    const posicoesDisponiveis = [];
+    // Função auxiliar para processar posições de monitores
+    const processarPosicoesMonitor = (monitorData, monitorId = null) => {
+        const posicoes = [];
+        if (monitorData.posicoes && Array.isArray(monitorData.posicoes)) {
+            monitorData.posicoes.forEach(pos => {
+                posicoes.push({
+                    id: pos.id,
+                    x: pos.x,
+                    y: pos.y,
+                    monitorId: monitorId || monitorData.id
+                });
+            });
+        }
+        return posicoes;
+    };
+
+    // 3. Determinar posições disponíveis baseado na seleção de monitores
+    let posicoesDisponiveis = [];
     if (dadosMonitores && dadosMonitores.posicionamento && Array.isArray(dadosMonitores.posicionamento)) {
         if (options.useAllMonitors) {
             // Usar todos os monitores - procurar pela entrada específica "todos_monitores"
-            console.log('Usando todos os monitores disponíveis');
+            logger.info('Usando todos os monitores disponíveis');
             const todosMonitoresData = dadosMonitores.posicionamento.find(m => m.id === 'todos_monitores');
             
             if (todosMonitoresData && todosMonitoresData.posicoes && Array.isArray(todosMonitoresData.posicoes)) {
-                console.log(`Encontradas ${todosMonitoresData.posicoes.length} posições para todos os monitores`);
-                todosMonitoresData.posicoes.forEach(pos => {
-                    posicoesDisponiveis.push({
-                        id: pos.id,
-                        x: pos.x,
-                        y: pos.y,
-                        monitorId: 'todos_monitores'
-                    });
-                });
+                logger.info(`Encontradas ${todosMonitoresData.posicoes.length} posições para todos os monitores`);
+                posicoesDisponiveis = processarPosicoesMonitor(todosMonitoresData, 'todos_monitores');
             } else {
-                console.warn('Dados de posicionamento para "todos_monitores" não encontrados, usando fallback');
+                logger.warn('Dados de posicionamento para "todos_monitores" não encontrados, usando fallback');
                 // Fallback: usar posições de todos os monitores individuais
                 dadosMonitores.posicionamento.forEach(monitorData => {
-                    if (monitorData.id !== 'todos_monitores' && monitorData.posicoes && Array.isArray(monitorData.posicoes)) {
-                        monitorData.posicoes.forEach(pos => {
-                            posicoesDisponiveis.push({
-                                id: pos.id,
-                                x: pos.x,
-                                y: pos.y,
-                                monitorId: monitorData.id
-                            });
-                        });
+                    if (monitorData.id !== 'todos_monitores') {
+                        posicoesDisponiveis.push(...processarPosicoesMonitor(monitorData));
                     }
                 });
             }
         } else if (options.selectedMonitor) {
             // Usar apenas o monitor selecionado
             const monitorId = `monitor_${options.selectedMonitor.id}`;
-            console.log(`Usando apenas o monitor selecionado: ${options.selectedMonitor.nome} (ID: ${monitorId})`);
+            logger.info(`Usando apenas o monitor selecionado: ${options.selectedMonitor.nome} (ID: ${monitorId})`);
             
             const monitorData = dadosMonitores.posicionamento.find(m => m.id === monitorId);
-            if (monitorData && monitorData.posicoes && Array.isArray(monitorData.posicoes)) {
-                monitorData.posicoes.forEach(pos => {
-                    posicoesDisponiveis.push({
-                        id: pos.id,
-                        x: pos.x,
-                        y: pos.y,
-                        monitorId: monitorData.id
-                    });
-                });
+            if (monitorData) {
+                posicoesDisponiveis = processarPosicoesMonitor(monitorData);
             } else {
-                console.warn(`Dados de posicionamento não encontrados para o monitor ${monitorId}`);
+                logger.warn(`Dados de posicionamento não encontrados para o monitor ${monitorId}`);
             }
         } else {
             // Fallback: usar todos os monitores se não houver seleção específica
-            console.log('Nenhum monitor específico selecionado, usando todos disponíveis');
+            logger.info('Nenhum monitor específico selecionado, usando todos disponíveis');
             dadosMonitores.posicionamento.forEach(monitorData => {
-                if (monitorData.posicoes && Array.isArray(monitorData.posicoes)) {
-                    monitorData.posicoes.forEach(pos => {
-                        posicoesDisponiveis.push({
-                            id: pos.id,
-                            x: pos.x,
-                            y: pos.y,
-                            monitorId: monitorData.id
-                        });
-                    });
-                }
+                posicoesDisponiveis.push(...processarPosicoesMonitor(monitorData));
             });
         }
     }
     
-    console.log(`Posições disponíveis encontradas: ${posicoesDisponiveis.length}`);
+    logger.info(`Posições disponíveis encontradas: ${posicoesDisponiveis.length}`);
     if (posicoesDisponiveis.length > 0) {
-        console.log('Primeiras 3 posições:', posicoesDisponiveis.slice(0, 3));
+        logger.debug('Primeiras 3 posições:', posicoesDisponiveis.slice(0, 3));
     }
     
     if (posicoesDisponiveis.length === 0) {
-        console.error('Nenhuma posição disponível encontrada nos dados dos monitores.');
+        logger.error('Nenhuma posição disponível encontrada nos dados dos monitores.');
         return [];
     }
     
@@ -151,14 +163,14 @@ async function launchInstances(options) {
     };
     
     let totalJanelasMovidas = 0;
-    console.log(`\nIniciando o processo para ${numNavegadores} navegadores em lotes de ${TAMANHO_LOTE}.\n`);
+    logger.info(`\nIniciando o processo para ${numNavegadores} navegadores em lotes de ${TAMANHO_LOTE}.\n`);
 
     // 6. Processar navegadores em lotes
     for (let i = 0; i < posicoesParaLancar.length; i += TAMANHO_LOTE) {
         const lote = posicoesParaLancar.slice(i, i + TAMANHO_LOTE);
         const numeroLote = (i / TAMANHO_LOTE) + 1;
         
-        console.log(`--- Processando Lote ${numeroLote}: ${lote.length} navegadores ---`);
+        logger.info(`--- Processando Lote ${numeroLote}: ${lote.length} navegadores ---`);
 
         // FASE 1 (para o lote): Lançamento dos Navegadores em paralelo
         const launchPromises = lote.map(async (posicao, index) => {
@@ -169,16 +181,16 @@ async function launchInstances(options) {
             if (profileManager) {
                 try {
                     profile = await profileManager.createNewProfile();
-                    console.log(`Perfil gerado para navegador ${posicao.id}:`, {
+                    logger.info(`Perfil gerado para navegador ${posicao.id}:`, {
                         profileId: profile.id,
                         usuario: profile.usuario,
                         nome: profile.nome_completo
                     });
                 } catch (error) {
-                    console.error(`Erro ao gerar perfil para navegador ${posicao.id}:`, error.message);
+                    logger.error(`Erro ao gerar perfil para navegador ${posicao.id}:`, error.message);
                 }
             } else {
-                console.warn(`Profile Manager não disponível para navegador ${posicao.id}`);
+                logger.warn(`Profile Manager não disponível para navegador ${posicao.id}`);
             }
             
             const instanceOptions = {
@@ -201,38 +213,38 @@ async function launchInstances(options) {
             
             // Adicionar listeners para o processo filho
             child.on('message', (message) => {
-                console.log(`Navegador ${posicao.id}:`, message);
+                logger.debug(`Navegador ${posicao.id}:`, message);
             });
             
             child.on('error', (error) => {
-                console.error(`Erro no navegador ${posicao.id}:`, error);
+                logger.error(`Erro no navegador ${posicao.id}:`, error);
             });
             
             child.on('exit', (code) => {
-                console.log(`Navegador ${posicao.id} encerrado com código:`, code);
+                logger.info(`Navegador ${posicao.id} encerrado com código:`, code);
                 // Remover do sistema de rastreamento quando o processo encerrar
                 activeBrowsers.delete(posicao.id);
             });
             
             pids.push(child.pid);
-            console.log(`Navegador ID_${posicao.id} lançado.`);
+            logger.info(`Navegador ID_${posicao.id} lançado.`);
             return child;
         });
         
         await Promise.all(launchPromises);
-        console.log(`Lote ${numeroLote} lançado.`);
+        logger.info(`Lote ${numeroLote} lançado.`);
 
         // FASE 2 (para o lote): Mover Janelas do lote atual
         try {
             const janelasMovidasNoLote = await moverJanelas(lote, configMovimentacao);
             totalJanelasMovidas += janelasMovidasNoLote;
-            console.log(`--- Lote ${numeroLote} concluído: ${janelasMovidasNoLote} janelas reposicionadas ---\n`);
+            logger.info(`--- Lote ${numeroLote} concluído: ${janelasMovidasNoLote} janelas reposicionadas ---\n`);
         } catch (error) {
-            console.error(`Erro ao mover janelas do lote ${numeroLote}:`, error.message);
+            logger.error(`Erro ao mover janelas do lote ${numeroLote}:`, error.message);
         }
     }
 
-    console.log(`\nOperação concluída. ${totalJanelasMovidas} de ${numNavegadores} janelas foram reposicionadas com sucesso!`);
+    logger.info(`\nOperação concluída. ${totalJanelasMovidas} de ${numNavegadores} janelas foram reposicionadas com sucesso!`);
 
     return {
         pids,
@@ -252,7 +264,7 @@ function navigateToUrl(navigatorId, url) {
         const browserProcess = activeBrowsers.get(navigatorId);
         
         if (!browserProcess) {
-            console.error(`Navegador ${navigatorId} não encontrado nos processos ativos`);
+            logger.error(`Navegador ${navigatorId} não encontrado nos processos ativos`);
             resolve(false);
             return;
         }
@@ -263,10 +275,10 @@ function navigateToUrl(navigatorId, url) {
                 url: url
             });
             
-            console.log(`Comando de navegação enviado para navegador ${navigatorId}: ${url}`);
+            logger.info(`Comando de navegação enviado para navegador ${navigatorId}: ${url}`);
             resolve(true);
         } catch (error) {
-            console.error(`Erro ao enviar comando de navegação para navegador ${navigatorId}:`, error);
+            logger.error(`Erro ao enviar comando de navegação para navegador ${navigatorId}:`, error);
             resolve(false);
         }
     });
@@ -325,7 +337,7 @@ function injectScriptInBrowser(navigatorId, scriptContent, waitForLoad = false) 
         const browserProcess = activeBrowsers.get(navigatorId);
         
         if (!browserProcess) {
-            console.error(`Navegador ${navigatorId} não encontrado nos processos ativos`);
+            logger.error(`Navegador ${navigatorId} não encontrado nos processos ativos`);
             resolve(false);
             return;
         }
@@ -337,10 +349,10 @@ function injectScriptInBrowser(navigatorId, scriptContent, waitForLoad = false) 
                 waitForLoad: waitForLoad
             });
             
-            console.log(`Script injetado no navegador ${navigatorId}`);
+            logger.info(`Script injetado no navegador ${navigatorId}`);
             resolve(true);
         } catch (error) {
-            console.error(`Erro ao injetar script no navegador ${navigatorId}:`, error);
+            logger.error(`Erro ao injetar script no navegador ${navigatorId}:`, error);
             resolve(false);
         }
     });
@@ -352,10 +364,6 @@ function injectScriptInBrowser(navigatorId, scriptContent, waitForLoad = false) 
  * @param {string} scriptContent - Conteúdo do script a ser injetado
  * @returns {Promise<boolean>} - Sucesso da operação
  */
-function injectScriptInBrowserPostNavigation(navigatorId, scriptContent) {
-    return injectScriptInBrowser(navigatorId, scriptContent, true);
-}
-
 /**
  * Injeta script em todos os navegadores ativos
  * @param {string} scriptContent - Conteúdo do script a ser injetado
@@ -405,10 +413,10 @@ async function injectScriptInAllBrowsersPostNavigation(scriptContent) {
 function initializeProfileSystem() {
     try {
         const result = profileManager.initializeProfileSystem();
-        console.log('Sistema de perfis inicializado pelo browser-manager');
+        logger.info('Sistema de perfis inicializado pelo browser-manager');
         return { success: true, data: result };
     } catch (error) {
-        console.error('Erro ao inicializar sistema de perfis:', error.message);
+        logger.error('Erro ao inicializar sistema de perfis:', error.message);
         return { success: false, error: error.message };
     }
 }
@@ -421,7 +429,7 @@ function getAllProfiles() {
     try {
         return profileManager.getAllProfiles();
     } catch (error) {
-        console.error('Erro ao obter perfis:', error.message);
+        logger.error('Erro ao obter perfis:', error.message);
         return [];
     }
 }

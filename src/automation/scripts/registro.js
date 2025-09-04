@@ -53,6 +53,20 @@
     // 2. GERADOR DE DADOS E LÓGICA DE PREENCHIMENTO
     // ====================================================================
     function generateUserData() {
+        // Verificar se há dados do perfil injetados
+        if (window.profileData && window.profileData.usuario) {
+            log('✅ Usando dados do perfil injetado');
+            return {
+                account: window.profileData.usuario,
+                password: window.profileData.senha,
+                phone: window.profileData.telefone,
+                realName: window.profileData.nome_completo
+            };
+        }
+        
+        // Fallback: gerar dados aleatórios se não houver dados do perfil
+        log('⚠️ AVISO: Dados do perfil não encontrados, usando fallback');
+        
         const randomId = Math.floor(Math.random() * 90000 + 10000);
         const firstName = "Usuario";
         const lastName = `Teste${randomId}`;

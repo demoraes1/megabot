@@ -10,7 +10,7 @@
   "extensions": [],
   "settings": {
     "delay": 5,
-    "openings": 1,
+    "openings": 5,
     "toggles": {
       "proxy-mode-list": false,
       "proxy-mode-rotating": true,
@@ -20,12 +20,12 @@
       "mute-audio-toggle": false,
       "delay-toggle": false
     },
-    "lastSaved": "2025-09-02T19:33:27.527Z"
+    "lastSaved": "2025-09-04T19:57:06.941Z"
   },
   "automation": {
     "muteAudio": false,
-    "depositMin": 0,
-    "depositMax": 0,
+    "depositMin": 100,
+    "depositMax": 200,
     "delayEnabled": false,
     "delaySeconds": 5,
     "password": "",
