@@ -41,7 +41,7 @@ const activeBrowsers = new Map(); // Map<navigatorId, { browser, page }>
 const LARGURA_LOGICA = 502;
 const ALTURA_LOGICA = 800;
 const FATOR_ESCALA = 0.65;
-const DELAY_PARA_REGISTRO_JANELAS = 0; // ms - reduzido pois o processamento em lote ajuda
+const DELAY_PARA_REGISTRO_JANELAS = 0; // ms - delay para registro de janelas (processamento em lotes removido)
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -50,20 +50,8 @@ async function launchInstances(options) {
     
     const launchedBrowsers = [];
     
-    // 1. Carregar configurações do app para obter tamanho do lote
-    let TAMANHO_LOTE = 1; // valor padrão
-    try {
-        const configPath = path.join(__dirname, '../config/app-settings.json');
-        if (fs.existsSync(configPath)) {
-            const configData = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-            if (configData.settings && configData.settings.batchSize) {
-                TAMANHO_LOTE = configData.settings.batchSize;
-                logger.info(`Tamanho do lote configurado: ${TAMANHO_LOTE}`);
-            }
-        }
-    } catch (error) {
-        logger.warn('Erro ao carregar configuração de tamanho de lote, usando valor padrão:', error.message);
-    }
+    // 1. Configuração removida - processamento em lotes desabilitado para melhor performance
+    // Todos os navegadores serão lançados em paralelo, similar ao sistema antigo
     
     logger.info(`\nIniciando ${options.simultaneousOpenings} navegadores...`);
     
@@ -162,75 +150,68 @@ async function launchInstances(options) {
     };
     
     let totalJanelasMovidas = 0;
-    logger.info(`\nIniciando o processo para ${numNavegadores} navegadores em lotes de ${TAMANHO_LOTE}.\n`);
+    logger.info(`\nIniciando o processo para ${numNavegadores} navegadores em paralelo.\n`);
 
-    // 6. Processar navegadores em lotes
-    for (let i = 0; i < posicoesParaLancar.length; i += TAMANHO_LOTE) {
-        const lote = posicoesParaLancar.slice(i, i + TAMANHO_LOTE);
-        const numeroLote = (i / TAMANHO_LOTE) + 1;
-        
-        logger.info(`--- Processando Lote ${numeroLote}: ${lote.length} navegadores ---`);
-
-        // FASE 1 (para o lote): Lançamento dos Navegadores em paralelo
-        const launchPromises = lote.map(async (posicao, index) => {
-            // Gerar perfil para este navegador
-            let profile = null;
-            if (profileManager) {
-                try {
-                    profile = await profileManager.createNewProfile();
-                    logger.info(`Perfil gerado para navegador ${posicao.id}:`, {
-                        profileId: profile.id,
-                        usuario: profile.usuario,
-                        nome: profile.nome_completo
-                    });
-                } catch (error) {
-                    logger.error(`Erro ao gerar perfil para navegador ${posicao.id}:`, error.message);
-                }
-            } else {
-                logger.warn(`Profile Manager não disponível para navegador ${posicao.id}`);
-            }
-            
-            const instanceOptions = {
-                ...options,
-                navigatorId: posicao.id,
-                url: options.urls ? options.urls[index % options.urls.length] : 'about:blank',
-                position: posicao,
-                profile: profile, // Adicionar o perfil às opções
-                windowConfig: {
-                    LARGURA_LOGICA,
-                    ALTURA_LOGICA,
-                    FATOR_ESCALA
-                }
-            };
-            
+    // 6. Lançar todos os navegadores em paralelo
+    const launchPromises = posicoesParaLancar.map(async (posicao, index) => {
+        // Gerar perfil para este navegador
+        let profile = null;
+        if (profileManager) {
             try {
-                const { browser, page } = await stealth.startBrowser(instanceOptions);
-                activeBrowsers.set(posicao.id, { browser, page });
-                
-                browser.on('disconnected', () => {
-                    console.log(`Navegador ${posicao.id} foi fechado.`);
-                    activeBrowsers.delete(posicao.id);
+                profile = await profileManager.createNewProfile();
+                logger.info(`Perfil gerado para navegador ${posicao.id}:`, {
+                    profileId: profile.id,
+                    usuario: profile.usuario,
+                    nome: profile.nome_completo
                 });
-                
-                logger.info(`Navegador ID_${posicao.id} lançado com sucesso em single-process.`);
-                return { browser, page };
             } catch (error) {
-                logger.error(`Falha ao lançar o navegador ID_${posicao.id}:`, error.message);
-                return null;
+                logger.error(`Erro ao gerar perfil para navegador ${posicao.id}:`, error.message);
             }
-        });
-        
-        await Promise.all(launchPromises);
-        logger.info(`Lote ${numeroLote} lançado.`);
-
-        // FASE 2 (para o lote): Mover Janelas do lote atual
-        try {
-            const janelasMovidasNoLote = await moverJanelas(lote, configMovimentacao);
-            totalJanelasMovidas += janelasMovidasNoLote;
-            logger.info(`--- Lote ${numeroLote} concluído: ${janelasMovidasNoLote} janelas reposicionadas ---\n`);
-        } catch (error) {
-            logger.error(`Erro ao mover janelas do lote ${numeroLote}:`, error.message);
+        } else {
+            logger.warn(`Profile Manager não disponível para navegador ${posicao.id}`);
         }
+        
+        const instanceOptions = {
+            ...options,
+            navigatorId: posicao.id,
+            url: options.urls ? options.urls[index % options.urls.length] : 'about:blank',
+            position: posicao,
+            profile: profile, // Adicionar o perfil às opções
+            windowConfig: {
+                LARGURA_LOGICA,
+                ALTURA_LOGICA,
+                FATOR_ESCALA
+            }
+        };
+        
+        try {
+            const { browser, page } = await stealth.startBrowser(instanceOptions);
+            activeBrowsers.set(posicao.id, { browser, page });
+            
+            browser.on('disconnected', () => {
+                console.log(`Navegador ${posicao.id} foi fechado.`);
+                activeBrowsers.delete(posicao.id);
+            });
+            
+            logger.info(`Navegador ID_${posicao.id} lançado com sucesso em single-process.`);
+            launchedBrowsers.push({ browser, page });
+            return { browser, page };
+        } catch (error) {
+            logger.error(`Falha ao lançar o navegador ID_${posicao.id}:`, error.message);
+            return null;
+        }
+    });
+        
+    // Aguardar o lançamento de todos os navegadores
+    await Promise.all(launchPromises);
+    logger.info('Todos os navegadores foram lançados.');
+
+    // Mover todas as janelas
+    try {
+        totalJanelasMovidas = await moverJanelas(posicoesParaLancar, configMovimentacao);
+        logger.info(`Todas as janelas foram reposicionadas: ${totalJanelasMovidas} janelas movidas.`);
+    } catch (error) {
+        logger.error('Erro ao mover janelas:', error.message);
     }
 
     logger.info(`\nOperação concluída. ${totalJanelasMovidas} de ${numNavegadores} janelas foram reposicionadas com sucesso!`);
@@ -257,8 +238,12 @@ async function navigateToUrl(navigatorId, url) {
     }
     
     try {
-        await browserInstance.page.goto(url);
-        logger.info(`Navegação bem-sucedida para navegador ${navigatorId}: ${url}`);
+        // Normalizar URL antes da navegação
+        const normalizedUrl = stealth.normalizeUrl(url);
+        logger.debug(`URL original: ${url}, URL normalizada: ${normalizedUrl}`);
+        
+        await browserInstance.page.goto(normalizedUrl);
+        logger.info(`Navegação bem-sucedida para navegador ${navigatorId}: ${normalizedUrl}`);
         return true;
     } catch (error) {
         logger.error(`Erro ao navegar para ${url} no navegador ${navigatorId}:`, error.message);
