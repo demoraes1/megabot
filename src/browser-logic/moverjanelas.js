@@ -17,7 +17,7 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
  * @returns {Promise<number>} - O número de janelas movidas com sucesso.
  */
 // Função para aguardar até que todas as janelas estejam prontas
-async function aguardarTodasJanelas(posicoesParaLancar, maxTentativas = 15, intervalo = 1000) {
+async function aguardarTodasJanelas(posicoesParaLancar, maxTentativas = 20, intervalo = 100) {
   for (let tentativa = 1; tentativa <= maxTentativas; tentativa++) {
     console.log(`Tentativa ${tentativa}/${maxTentativas}: Verificando se todas as janelas estão prontas...`);
     

@@ -13,14 +13,14 @@
     "openings": 5,
     "toggles": {
       "proxy-mode-list": false,
-      "proxy-mode-rotating": true,
-      "proxy-mode-none": false,
+      "proxy-mode-rotating": false,
+      "proxy-mode-none": true,
       "default-resolution-checkbox": true,
       "random-passwords-toggle": true,
       "mute-audio-toggle": false,
       "delay-toggle": false
     },
-    "lastSaved": "2025-09-04T22:18:07.395Z"
+    "lastSaved": "2025-09-04T23:11:38.186Z"
   },
   "automation": {
     "muteAudio": false,

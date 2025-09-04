@@ -186,7 +186,7 @@ async function launchInstances(options) {
         
         try {
             const { browser, page } = await stealth.startBrowser(instanceOptions);
-            activeBrowsers.set(posicao.id, { browser, page });
+            activeBrowsers.set(posicao.id, { browser, page, profile: profile });
             
             browser.on('disconnected', () => {
                 console.log(`Navegador ${posicao.id} foi fechado.`);
@@ -310,7 +310,28 @@ async function injectScriptInBrowser(navigatorId, scriptContent, waitForLoad = f
     
     try {
         if (waitForLoad) {
-            await browserInstance.page.waitForLoadState('load');
+            // Aguardar que a página esteja completamente carregada
+            await browserInstance.page.waitForFunction(() => document.readyState === 'complete', { timeout: 10000 });
+            // Aguardar um pouco mais para garantir que todos os recursos foram carregados
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        
+        // Injetar dados do perfil se disponível
+        if (browserInstance.profile) {
+            const profileData = {
+                usuario: browserInstance.profile.usuario,
+                senha: browserInstance.profile.senha,
+                telefone: browserInstance.profile.telefone,
+                nome_completo: browserInstance.profile.nome_completo,
+                cpf: browserInstance.profile.cpf
+            };
+            
+            await browserInstance.page.evaluate((data) => {
+                window.profileData = data;
+                console.log('[ProfileData] Dados do perfil injetados:', data);
+            }, profileData);
+            
+            logger.info(`Dados do perfil ${browserInstance.profile.id} injetados no navegador ${navigatorId}`);
         }
         
         await browserInstance.page.evaluate(scriptContent);
