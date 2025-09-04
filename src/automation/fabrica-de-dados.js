@@ -220,10 +220,29 @@ async function generateRandomNumbers(min = 1, max = 100, count = 1) {
     return Array.from({ length: count }, () => faker.number.int({ min, max }));
 }
 
+/**
+ * Gera um número de telefone brasileiro válido
+ * @returns {Promise<string>} Telefone com 11 dígitos sem formatação
+ */
+async function generatePhoneNumber() {
+    await initializeFaker();
+    
+    const ddd = await generateRandomNumbers(11, 99); // DDD válido
+    const firstDigit = 9; // Celular sempre começa com 9
+    const remainingDigits = [];
+    for (let i = 0; i < 8; i++) {
+        remainingDigits.push(await generateRandomNumbers(0, 9));
+    }
+    const remainingDigitsStr = remainingDigits.join('');
+    
+    return `${ddd.toString().padStart(2, '0')}${firstDigit}${remainingDigitsStr}`;
+}
+
 // Exportações CommonJS
 module.exports = {
     generateUser,
     generateMultipleUsers,
     generatePassword,
-    generateRandomNumbers
+    generateRandomNumbers,
+    generatePhoneNumber
 };
