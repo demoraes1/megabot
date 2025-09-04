@@ -875,189 +875,19 @@ async function startBrowser(options) {
         // Definir o conteúdo HTML personalizado
         await page.setContent(htmlContent);
 
-        process.send({ status: 'success', navigatorId, message: `Navegador ${navigatorId} iniciado com sucesso.` });
+        logger.info(navigatorId, `Navegador ${navigatorId} iniciado com sucesso.`);
 
-        // Armazenar referências globais para uso no listener de mensagens
-        global.browserPage = page;
-        global.browserNavigatorId = navigatorId;
-        global.browserProfile = options.profile;
-
-        browser.on('disconnected', () => {
-            console.log(`[Navegador ${navigatorId}] Navegador fechado. Encerrando processo.`);
-            process.exit(0);
-        });
+        // Retornar os objetos browser e page para o browser-manager
+        return { browser, page };
 
     } catch (error) {
-        console.error(`[Navegador ${navigatorId}] Erro fatal:`, error);
+        logger.error(navigatorId, `Erro fatal:`, error);
         if (browser) await browser.close();
-        process.send({ status: 'error', navigatorId, message: error.message });
-        process.exit(1);
+        throw error;
     }
 }
 
-// Listener único para todas as mensagens do processo
-process.on('message', async (message) => {
-    // Se a mensagem tem navigatorId, é uma inicialização de navegador
-    if (message.navigatorId !== undefined && !message.action) {
-        console.log(`[Processo ${process.pid}] Recebeu tarefa para iniciar navegador com ID ${message.navigatorId}`);
-        startBrowser(message);
-    }
-    // Se a mensagem tem action 'navigate', é um comando de navegação
-    else if (message.action === 'navigate' && message.url && global.browserPage) {
-        try {
-            const navigatorId = global.browserNavigatorId;
-            console.log(`[Navegador ${navigatorId}] Navegando para: ${message.url}`);
-            
-            // Normalizar URL
-            const normalizedUrl = normalizeUrl(message.url);
-            
-            // Navegar para a URL
-            await global.browserPage.goto(normalizedUrl, {
-                waitUntil: 'load',
-                timeout: 30000
-            });
-            
-            console.log(`[Navegador ${navigatorId}] Navegação concluída para: ${normalizedUrl}`);
-            
-            // Executar varredura manual do popup.js após navegação (similar ao teste.js)
-            try {
-                console.log(`[Navegador ${navigatorId}] Acionando varredura manual do script popup.js...`);
-                await global.browserPage.evaluate(() => {
-                    if (typeof window.runElementDeleterScan === 'function') {
-                        window.runElementDeleterScan();
-                    }
-                });
-                console.log(`[Navegador ${navigatorId}] Varredura do popup.js executada com sucesso.`);
-            } catch (scanError) {
-                console.warn(`[Navegador ${navigatorId}] Erro ao executar varredura do popup.js:`, scanError.message);
-            }
-            
-            // Salvar URL no perfil se disponível
-            if (global.browserProfile && global.browserProfile.id) {
-                try {
-                    profileManager.updateProfile(global.browserProfile.id, { url: normalizedUrl });
-                    console.log(`[Navegador ${navigatorId}] URL salva no perfil: ${normalizedUrl}`);
-                } catch (profileError) {
-                    console.warn(`[Navegador ${navigatorId}] Erro ao salvar URL no perfil:`, profileError.message);
-                }
-            }
-            
-            // Enviar confirmação de sucesso
-            process.send({ 
-                status: 'navigation_success', 
-                navigatorId, 
-                url: normalizedUrl,
-                message: `Navegação concluída para ${normalizedUrl}` 
-            });
-            
-        } catch (error) {
-            console.error(`[Navegador ${global.browserNavigatorId}] Erro na navegação:`, error);
-            
-            // Enviar erro
-            process.send({ 
-                status: 'navigation_error', 
-                navigatorId: global.browserNavigatorId, 
-                url: message.url,
-                error: error.message 
-            });
-        }
-    }
-    // Se a mensagem tem action 'inject-script', é um comando de injeção de script
-    else if (message.action === 'inject-script' && message.script && global.browserPage) {
-        try {
-            const navigatorId = global.browserNavigatorId;
-            console.log(`[Navegador ${navigatorId}] Injetando script...`);
-            
-            // Verificar se é uma injeção após navegação (criar contas)
-            const isPostNavigation = message.waitForLoad === true;
-            
-            if (isPostNavigation) {
-                console.log(`[Navegador ${navigatorId}] Aguardando carregamento completo da página...`);
-                
-                try {
-                    // Aguardar até que não haja requisições de rede por 500ms
-                    await global.browserPage.waitForLoadState('networkidle', { timeout: 8000 });
-                } catch (error) {
-                    // Se waitForLoadState não existir ou falhar, usar abordagem alternativa
-                    console.log(`[Navegador ${navigatorId}] Usando método alternativo de espera...`);
-                    await new Promise(resolve => setTimeout(resolve, 3000));
-                }
-                
-                console.log(`[Navegador ${navigatorId}] Página carregada, injetando dados do perfil...`);
-                
-                // Injetar dados do perfil se disponíveis
-                if (global.browserProfile) {
-                    console.log(`[Navegador ${navigatorId}] Injetando dados do perfil: ${global.browserProfile.usuario}`);
-                    const profileDataScript = `
-                        window.profileData = {
-                            usuario: '${global.browserProfile.usuario}',
-                            nome_completo: '${global.browserProfile.nome_completo}',
-                            senha: '${global.browserProfile.senha}',
-                            telefone: '${global.browserProfile.telefone}',
-                            cpf: '${global.browserProfile.cpf}'
-                        };
-                        console.log('📋 Dados do perfil injetados:', window.profileData);
-                    `;
-                    await global.browserPage.evaluate(profileDataScript);
-                } else {
-                    console.log(`[Navegador ${navigatorId}] AVISO: Nenhum perfil disponível para injeção`);
-                }
-                
-                console.log(`[Navegador ${navigatorId}] Executando script principal...`);
-            }
-            
-            // Injetar e executar o script na página
-            const result = await global.browserPage.evaluate(message.script);
-            
-            console.log(`[Navegador ${navigatorId}] Script injetado com sucesso`);
-            
-            // Enviar confirmação de sucesso
-            process.send({ 
-                status: 'script_injection_success', 
-                navigatorId, 
-                result,
-                message: 'Script injetado com sucesso' 
-            });
-            
-        } catch (error) {
-            console.error(`[Navegador ${global.browserNavigatorId}] Erro na injeção de script:`, error);
-            
-            // Se o erro for de contexto destruído e for pós-navegação, tentar novamente
-            if (error.message.includes('Execution context was destroyed') && message.waitForLoad === true) {
-                console.log(`[Navegador ${global.browserNavigatorId}] Tentando novamente após erro de contexto...`);
-                
-                try {
-                    // Aguardar mais um pouco e tentar novamente
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                    
-                    // Verificar se a página ainda está disponível
-                    if (global.browserPage && !global.browserPage.isClosed()) {
-                        const result = await global.browserPage.evaluate(message.script);
-                        
-                        console.log(`[Navegador ${global.browserNavigatorId}] Script injetado com sucesso na segunda tentativa`);
-                        
-                        process.send({ 
-                            status: 'script_injection_success', 
-                            navigatorId: global.browserNavigatorId, 
-                            result,
-                            message: 'Script injetado com sucesso (segunda tentativa)' 
-                        });
-                        return;
-                    }
-                } catch (retryError) {
-                    console.error(`[Navegador ${global.browserNavigatorId}] Erro na segunda tentativa:`, retryError);
-                }
-            }
-            
-            // Enviar erro
-            process.send({ 
-                status: 'script_injection_error', 
-                navigatorId: global.browserNavigatorId, 
-                error: error.message 
-            });
-        }
-    }
-});
+
 
 // Função para normalizar URLs
 function normalizeUrl(url) {
@@ -1085,3 +915,8 @@ function normalizeUrl(url) {
     // Default: adiciona https://
     return `https://${url}`;
 }
+
+// Exportar o módulo
+module.exports = {
+    startBrowser
+};
