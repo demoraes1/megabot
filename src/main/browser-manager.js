@@ -89,40 +89,38 @@ async function launchInstances(options) {
 
     // 3. Determinar posições disponíveis baseado na seleção de monitores
     let posicoesDisponiveis = [];
-    if (dadosMonitores && dadosMonitores.posicionamento && Array.isArray(dadosMonitores.posicionamento)) {
+    if (dadosMonitores && dadosMonitores.posicionamento && typeof dadosMonitores.posicionamento === 'object') {
         if (options.useAllMonitors) {
-            // Usar todos os monitores - procurar pela entrada específica "todos_monitores"
+            // Usar todos os monitores disponíveis
             logger.info('Usando todos os monitores disponíveis');
-            const todosMonitoresData = dadosMonitores.posicionamento.find(m => m.id === 'todos_monitores');
             
-            if (todosMonitoresData && todosMonitoresData.posicoes && Array.isArray(todosMonitoresData.posicoes)) {
-                logger.info(`Encontradas ${todosMonitoresData.posicoes.length} posições para todos os monitores`);
-                posicoesDisponiveis = processarPosicoesMonitor(todosMonitoresData, 'todos_monitores');
-            } else {
-                logger.warn('Dados de posicionamento para "todos_monitores" não encontrados, usando fallback');
-                // Fallback: usar posições de todos os monitores individuais
-                dadosMonitores.posicionamento.forEach(monitorData => {
-                    if (monitorData.id !== 'todos_monitores') {
-                        posicoesDisponiveis.push(...processarPosicoesMonitor(monitorData));
-                    }
-                });
-            }
+            // Iterar sobre todos os monitores no objeto posicionamento
+            Object.keys(dadosMonitores.posicionamento).forEach(monitorId => {
+                const monitorData = dadosMonitores.posicionamento[monitorId];
+                if (monitorData && monitorData.posicoes && Array.isArray(monitorData.posicoes)) {
+                    logger.info(`Encontradas ${monitorData.posicoes.length} posições para monitor ${monitorId}`);
+                    posicoesDisponiveis.push(...processarPosicoesMonitor(monitorData, monitorId));
+                }
+            });
         } else if (options.selectedMonitor) {
             // Usar apenas o monitor selecionado
-            const monitorId = `monitor_${options.selectedMonitor.id}`;
+            const monitorId = options.selectedMonitor.id.toString();
             logger.info(`Usando apenas o monitor selecionado: ${options.selectedMonitor.nome} (ID: ${monitorId})`);
             
-            const monitorData = dadosMonitores.posicionamento.find(m => m.id === monitorId);
-            if (monitorData) {
-                posicoesDisponiveis = processarPosicoesMonitor(monitorData);
+            const monitorData = dadosMonitores.posicionamento[monitorId];
+            if (monitorData && monitorData.posicoes && Array.isArray(monitorData.posicoes)) {
+                posicoesDisponiveis = processarPosicoesMonitor(monitorData, monitorId);
             } else {
                 logger.warn(`Dados de posicionamento não encontrados para o monitor ${monitorId}`);
             }
         } else {
             // Fallback: usar todos os monitores se não houver seleção específica
             logger.info('Nenhum monitor específico selecionado, usando todos disponíveis');
-            dadosMonitores.posicionamento.forEach(monitorData => {
-                posicoesDisponiveis.push(...processarPosicoesMonitor(monitorData));
+            Object.keys(dadosMonitores.posicionamento).forEach(monitorId => {
+                const monitorData = dadosMonitores.posicionamento[monitorId];
+                if (monitorData && monitorData.posicoes && Array.isArray(monitorData.posicoes)) {
+                    posicoesDisponiveis.push(...processarPosicoesMonitor(monitorData, monitorId));
+                }
             });
         }
     }

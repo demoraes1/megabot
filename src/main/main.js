@@ -1,7 +1,7 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs').promises;
-const { detectarMonitores, calcularCapacidadeMonitor, salvarDadosMonitores, carregarDadosMonitores } = require('./monitor-detector');
+const { detectarMonitores, calcularCapacidadeMonitor, salvarDadosMonitores, carregarDadosMonitores, criarConfiguracaoInicial, configurarListenerMonitores } = require('./monitor-detector');
 const { launchInstances, navigateToUrl, navigateAllBrowsers, getActiveBrowsers, injectScriptInBrowser, injectScriptInAllBrowsers } = require('./browser-manager');
 const ChromiumDownloader = require('../infrastructure/chromium-downloader');
 const scriptInjector = require('../automation/injection');
@@ -78,7 +78,16 @@ async function checkChromeOnStartup(mainWindow) {
 
 // Este método será chamado quando o Electron terminar de inicializar
 // e estiver pronto para criar janelas do navegador.
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  // Inicializar configuração de monitores
+  try {
+    await criarConfiguracaoInicial();
+    configurarListenerMonitores();
+    console.log('Configuração de monitores inicializada com sucesso');
+  } catch (error) {
+    console.error('Erro ao inicializar configuração de monitores:', error);
+  }
+
   createWindow();
 
   app.on('activate', () => {
@@ -170,7 +179,7 @@ ipcMain.handle('calculate-monitor-capacity', async (event, monitor, config = {})
       fatorEscala = 0.65
     } = config;
     
-    const result = calcularCapacidadeMonitor(monitor, larguraLogica, alturaLogica, fatorEscala);
+    const result = calcularCapacidadeMonitor(monitor.bounds, larguraLogica, alturaLogica, fatorEscala);
     return {
       success: true,
       ...result
