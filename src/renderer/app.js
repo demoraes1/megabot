@@ -102,7 +102,8 @@ function saveSettings() {
             delaySeconds: parseInt(document.getElementById('delay-count')?.textContent || '5'),
             password: document.getElementById('password-field')?.value || '',
             withdrawPassword: document.getElementById('withdraw-password-field')?.value || '',
-            randomPasswords: document.getElementById('random-passwords-toggle')?.checked || false
+            randomPasswords: document.getElementById('random-passwords-toggle')?.checked || false,
+            jogo: document.getElementById('jogo-field')?.value || ''
         }
     };
     
@@ -212,6 +213,7 @@ function applyLoadedSettings(settings) {
         const depositMaxInput = document.getElementById('deposit-max');
         const delayToggle = document.getElementById('delay-toggle');
         const delayControls = document.getElementById('delay-controls');
+        const jogoField = document.getElementById('jogo-field');
         
         if (generateWithdrawToggle) {
             generateWithdrawToggle.checked = settings.automation.generateWithdraw || false;
@@ -256,6 +258,11 @@ function applyLoadedSettings(settings) {
         
         if (randomPasswordsToggle) {
             randomPasswordsToggle.checked = settings.automation.randomPasswords || false;
+        }
+        
+        // Carregar campo jogo
+        if (jogoField && settings.automation.jogo !== undefined) {
+            jogoField.value = settings.automation.jogo;
         }
     }
 }
@@ -319,6 +326,7 @@ function initializeAutoSave() {
     const depositMinInput = document.getElementById('deposit-min');
     const depositMaxInput = document.getElementById('deposit-max');
     const delayToggleAutomation = document.getElementById('delay-toggle');
+    const jogoField = document.getElementById('jogo-field');
     
     if (generateWithdrawToggle) {
         generateWithdrawToggle.addEventListener('change', debouncedSave);
@@ -339,7 +347,22 @@ function initializeAutoSave() {
     }
     
     if (delayToggleAutomation) {
-        delayToggleAutomation.addEventListener('change', debouncedSave);
+        delayToggleAutomation.addEventListener('change', function() {
+            const delayControls = document.getElementById('delay-controls');
+            
+            if (this.checked) {
+                if (delayControls) delayControls.classList.remove('hidden');
+            } else {
+                if (delayControls) delayControls.classList.add('hidden');
+            }
+            
+            debouncedSave();
+        });
+    }
+    
+    if (jogoField) {
+        jogoField.addEventListener('input', debouncedSave);
+        jogoField.addEventListener('change', debouncedSave);
     }
     
     // Observar mudanças nos toggles, checkboxes e radio buttons

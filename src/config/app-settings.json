@@ -10,8 +10,8 @@
   "pixKeys": [],
   "extensions": [],
   "settings": {
-    "delay": 5,
-    "openings": 5,
+    "delay": 4,
+    "openings": 2,
     "toggles": {
       "proxy-mode-list": false,
       "proxy-mode-rotating": false,
@@ -21,16 +21,17 @@
       "mute-audio-toggle": false,
       "delay-toggle": false
     },
-    "lastSaved": "2025-09-05T01:41:02.500Z"
+    "lastSaved": "2025-09-05T04:04:15.307Z"
   },
   "automation": {
     "muteAudio": false,
     "depositMin": 100,
     "depositMax": 200,
     "delayEnabled": false,
-    "delaySeconds": 5,
+    "delaySeconds": 4,
     "password": "",
     "withdrawPassword": "",
-    "randomPasswords": true
+    "randomPasswords": true,
+    "jogo": "golden land"
   }
 }

@@ -366,13 +366,13 @@ async function injectScriptInAllBrowsers(scriptContent, waitForLoad = false) {
         };
     }
     
-    const results = [];
-    
-    for (const browserId of activeBrowserIds) {
+    // Injetar script em todos os navegadores de forma assíncrona (paralela)
+    const injectionPromises = activeBrowserIds.map(async (browserId) => {
         const success = await injectScriptInBrowser(browserId, scriptContent, waitForLoad);
-        results.push({ browserId, success });
-    }
+        return { browserId, success };
+    });
     
+    const results = await Promise.all(injectionPromises);
     const successCount = results.filter(r => r.success).length;
     
     return {

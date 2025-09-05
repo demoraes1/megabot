@@ -50,7 +50,10 @@
                     </button>
                 </div>
                 
-                <button class="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gradient-to-br from-app-blue-900 to-app-blue-700 hover:from-app-blue-800 hover:to-app-blue-700 text-white border border-app-blue-800 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
+                <button id="jogar-btn" 
+                        data-inject-script="play" 
+                        data-notification="Executando automação de jogo em todos os navegadores"
+                        class="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gradient-to-br from-app-blue-900 to-app-blue-700 hover:from-app-blue-800 hover:to-app-blue-700 text-white border border-app-blue-800 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M8 5v14l11-7z"/>
                     </svg>
@@ -237,8 +240,14 @@
             <div id="tab-automacao" class="tab-content space-y-6 hidden">
                 <h3 class="text-xl font-bold text-white mb-4">Configurações de Automação</h3>
                 
+                <!-- Jogo -->
+                <div class="bg-app-gray-800 rounded-lg p-4 border border-app-gray-700">
+                    <div class="space-y-2">
+                        <label class="block text-white font-medium text-sm">Jogo</label>
+                        <input type="text" id="jogo-field" class="w-full px-3 py-2 bg-app-gray-700 border border-app-gray-600 rounded-lg text-white placeholder-app-gray-400 focus:outline-none focus:ring-2 focus:ring-app-blue-600 focus:border-transparent" placeholder="Digite o nome do jogo">
+                    </div>
+                </div>
 
-                
                 <!-- Senhas -->
                 <div class="bg-app-gray-800 rounded-lg p-4 border border-app-gray-700">
                     
@@ -280,10 +289,10 @@
                     </div>
                 </div>
                 
-                <!-- Delay entre criações -->
+                <!-- Delay entre contas -->
                 <div class="bg-app-gray-800 rounded-lg p-4 border border-app-gray-700">
                     <div class="flex items-center justify-between mb-3">
-                        <span class="text-white font-medium text-sm">Delay entre criações</span>
+                        <span class="text-white font-medium text-sm">Delay entre contas</span>
                         <label class="relative inline-block w-12 h-6">
                             <input type="checkbox" id="delay-toggle" class="opacity-0 w-0 h-0 peer">
                             <span class="absolute cursor-pointer top-0 left-0 right-0 bottom-0 bg-app-gray-700 transition-all duration-300 rounded-full before:absolute before:content-[''] before:h-4 before:w-4 before:left-1 before:bottom-1 before:bg-white before:transition-all before:duration-300 before:rounded-full peer-checked:bg-app-blue-900 peer-checked:before:translate-x-6"></span>
@@ -299,6 +308,7 @@
                             </div>
                             <button class="w-10 h-10 bg-app-gray-700 hover:bg-app-gray-600 border border-app-gray-600 rounded-lg text-white font-medium transition-all duration-200 hover:scale-105" id="increase-delay">+</button>
                         </div>
+                        
                         <p class="text-xs text-app-gray-400 mt-2 text-center">Aguarda entre cada criação quando múltiplos navegadores ativos</p>
                     </div>
                 </div>
