@@ -1,6 +1,6 @@
 {
   "links": [
-    "fffalfa.com"
+    "https://fffalfa.com"
   ],
   "proxies": [],
   "rotatingProxies": [
@@ -20,7 +20,7 @@
       "mute-audio-toggle": false,
       "delay-toggle": false
     },
-    "lastSaved": "2025-09-05T01:10:43.387Z"
+    "lastSaved": "2025-09-05T01:36:12.003Z"
   },
   "automation": {
     "muteAudio": false,

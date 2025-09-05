@@ -183,7 +183,9 @@ async function launchInstances(options) {
         };
         
         try {
+            console.log(`[DEBUG] Iniciando stealth.startBrowser para navegador ${posicao.id}`);
             const { browser, page } = await stealth.startBrowser(instanceOptions);
+            console.log(`[DEBUG] stealth.startBrowser concluído para navegador ${posicao.id}`);
             activeBrowsers.set(posicao.id, { browser, page, profile: profile });
             
             browser.on('disconnected', () => {

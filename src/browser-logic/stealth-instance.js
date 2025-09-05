@@ -61,9 +61,20 @@ function carregarExtensoes() {
 
 async function detectChromePath() {
     try {
+        console.log('[DEBUG] Criando ChromiumDownloader...');
         const chromiumDownloader = new ChromiumDownloader();
         
-        // Verificar se o Chrome já existe, se não, fazer download e instalação
+        console.log('[DEBUG] Verificando se Chrome existe localmente...');
+        // Primeiro verificar se o Chrome já existe localmente
+        if (await chromiumDownloader.checkBrowserExists()) {
+            console.log('[DEBUG] Chrome encontrado localmente, usando sem verificar atualizações...');
+            const chromePath = chromiumDownloader.getChromePath();
+            console.log(`[Chrome] Usando Chrome local: ${chromePath}`);
+            return chromePath;
+        }
+        
+        console.log('[DEBUG] Chrome não encontrado, chamando ensureChromiumAvailable...');
+        // Se não existir, fazer download e instalação
         const chromePath = await chromiumDownloader.ensureChromiumAvailable();
         
         console.log(`[Chrome] Usando Chrome: ${chromePath}`);
@@ -75,6 +86,7 @@ async function detectChromePath() {
 }
 
 async function startBrowser(options) {
+    console.log(`[DEBUG] Iniciando função startBrowser para navegador ${options.navigatorId}`);
     let browser = null;
     let page = null; // Manter referência da página para navegação posterior
     const { url, navigatorId, proxy, automation = {}, blockedDomains, windowConfig } = options;
@@ -183,6 +195,7 @@ async function startBrowser(options) {
         
         // Adicionar argumentos de proxy ao Chrome
         chromeArgs.push(...proxyArgs);
+        console.log(`[DEBUG] Configuração de proxy concluída para navegador ${navigatorId}`);
         
         // Salvar informação do proxy no perfil se disponível
         if (options.profile && options.profile.id && proxyConfig) {
@@ -216,7 +229,9 @@ async function startBrowser(options) {
             console.log(`[Navegador ${navigatorId}] Carregando ${extensoes.length} extensões.`);
         }
 
+        console.log(`[DEBUG] Iniciando detectChromePath para navegador ${navigatorId}`);
         const executablePath = await detectChromePath();
+        console.log(`[DEBUG] detectChromePath concluído para navegador ${navigatorId}: ${executablePath}`);
         if (!executablePath) {
             throw new Error('Nenhuma instalação do Google Chrome foi encontrada. Verifique se o Chrome está instalado.');
         }
@@ -234,20 +249,28 @@ async function startBrowser(options) {
             ]
         };
 
+        console.log(`[Navegador ${navigatorId}] Iniciando puppeteer.launch...`);
         browser = await puppeteer.launch(launchOptions);
+        console.log(`[Navegador ${navigatorId}] Puppeteer.launch concluído com sucesso!`);
+        console.log(`[Navegador ${navigatorId}] Obtendo páginas do navegador...`);
         page = (await browser.pages())[0] || await browser.newPage();
+        console.log(`[Navegador ${navigatorId}] Página obtida com sucesso!`);
         
         // Configurar autenticação de proxy se necessário
         if (proxyConfig && proxyConfig.username && proxyConfig.password) {
+            console.log(`[Navegador ${navigatorId}] Configurando autenticação de proxy...`);
             await ProxyManager.setupAuthentication(page, proxyConfig);
+            console.log(`[Navegador ${navigatorId}] Autenticação de proxy configurada!`);
         }
 
         // =================================================================================
         // [NOVO] INÍCIO DA LÓGICA DE BLOQUEIO DE DOMÍNIO
         // =================================================================================
+        console.log(`[Navegador ${navigatorId}] Configurando bloqueio de domínios...`);
         const dominiosParaBloquear = blockedDomains || ['gcaptcha4-hrc.gsensebot.com', 'gcaptcha4-hrc.geetest.com'];
 
         if (dominiosParaBloquear.length > 0) {
+            console.log(`[Navegador ${navigatorId}] Ativando interceptação de requisições...`);
             await page.setRequestInterception(true);
             console.log(`[Navegador ${navigatorId}] Interceptação de requisições ativada.`);
             console.log(`[Navegador ${navigatorId}] Domínios para bloqueio:`, dominiosParaBloquear);
@@ -269,12 +292,16 @@ async function startBrowser(options) {
         // =================================================================================
 
         // Aplicar User Agent para emulação móvel (viewport adaptativa via Chrome args)
+        console.log(`[Navegador ${navigatorId}] Configurando User Agent...`);
         await page.setUserAgent(randomMobile.device.userAgent);
+        console.log(`[Navegador ${navigatorId}] User Agent configurado!`);
         
         // Configurar idioma português brasileiro
+        console.log(`[Navegador ${navigatorId}] Configurando headers HTTP...`);
         await page.setExtraHTTPHeaders({
             'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8'
         });
+        console.log(`[Navegador ${navigatorId}] Headers HTTP configurados!`);
         console.log(`[Navegador ${navigatorId}] Dispositivo configurado: ${randomMobile.name}`);
         console.log(`[Navegador ${navigatorId}] UserAgent aplicado: ${randomMobile.device.userAgent}`);
         console.log(`[Navegador ${navigatorId}] Viewport adaptativo: ${randomMobile.device.viewport.width}x${randomMobile.device.viewport.height}`);
@@ -283,6 +310,7 @@ async function startBrowser(options) {
         console.log(`[Navegador ${navigatorId}] Device scale factor: ${randomMobile.device.viewport.deviceScaleFactor}`);
         
         // Listeners úteis adicionados do seu script
+        console.log(`[Navegador ${navigatorId}] Configurando listeners de página...`);
         page.on('dialog', async dialog => {
             console.warn(`[Navegador ${navigatorId}] Diálogo detectado e dispensado: ${dialog.message()}`);
             await dialog.dismiss();
@@ -290,8 +318,10 @@ async function startBrowser(options) {
         page.on('error', err => {
             console.error(`[Navegador ${navigatorId}] ERRO NA PÁGINA: `, err.message);
         });
+        console.log(`[Navegador ${navigatorId}] Listeners de página configurados!`);
 
         // Configurar TouchSimulator integrado
+        console.log(`[Navegador ${navigatorId}] Configurando TouchSimulator...`);
         await page.evaluateOnNewDocument(() => {
             // CSS para ambiente mobile completo
             const mobileStyle = document.createElement('style');
@@ -789,8 +819,10 @@ async function startBrowser(options) {
                 });
             }, navigatorId);
         }
+        console.log(`[Navegador ${navigatorId}] TouchSimulator configurado com sucesso!`);
 
         // Configurar título único para identificação da janela
+        console.log(`[Navegador ${navigatorId}] Configurando título único...`);
         const uniqueTitle = `Navegador_ID_${navigatorId}`;
         await page.evaluateOnNewDocument((title) => {
             document.addEventListener('DOMContentLoaded', () => {
@@ -867,9 +899,12 @@ async function startBrowser(options) {
         `;
         
         // Definir o conteúdo HTML personalizado
+        console.log(`[Navegador ${navigatorId}] Definindo conteúdo HTML personalizado...`);
         await page.setContent(htmlContent);
+        console.log(`[Navegador ${navigatorId}] Conteúdo HTML definido com sucesso!`);
 
         logger.info(navigatorId, `Navegador ${navigatorId} iniciado com sucesso.`);
+        console.log(`[Navegador ${navigatorId}] Retornando objetos browser e page...`);
 
         // Retornar os objetos browser e page para o browser-manager
         return { browser, page };
