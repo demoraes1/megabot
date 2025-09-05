@@ -418,7 +418,7 @@ const mobileDevices = {
   },
   "Nexus 5": {
     "name": "Nexus 5",
-    "userAgent": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.6248.19 Mobile Safari/537.36",
+    "userAgent": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.6248.19 Mobile Safari/537.36",
     "viewport": {
       "width": 360,
       "height": 640,
@@ -478,7 +478,7 @@ const mobileDevices = {
   },
   "Pixel 2 XL": {
     "name": "Pixel 2 XL",
-    "userAgent": "Mozilla/5.0 (Linux; Android 8.0.0; Pixel 2 XL Build/OPD1.170816.004) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.6055.7 Mobile Safari/537.36",
+    "userAgent": "Mozilla/5.0 (Linux; Android 8.0.0; Pixel 2 XL Build/OPD1.170816.004) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.6055.7 Mobile Safari/537.36",
     "viewport": {
       "width": 411,
       "height": 823,
@@ -538,7 +538,7 @@ const mobileDevices = {
   },
   "Moto G4": {
     "name": "Moto G4",
-    "userAgent": "Mozilla/5.0 (Linux; Android 7.0; Moto G (4)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.6356.65 Mobile Safari/537.36",
+    "userAgent": "Mozilla/5.0 (Linux; Android 7.0; Moto G (4)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.6356.65 Mobile Safari/537.36",
     "viewport": {
       "width": 360,
       "height": 640,

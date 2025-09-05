@@ -30,7 +30,7 @@ async function findAndClickGame() {
     }
     tudoButton.click();
     console.log('SUCESSO: Botão "Tudo" clicado.');
-    await sleep(1000); // Espera 1 segundo para a página de pesquisa aparecer
+    await sleep(1500); // Espera 1 segundo para a página de pesquisa aparecer
 
     // --- ETAPA 3: Digitar "wild ape" no campo de pesquisa ---
     console.log('Etapa 3: Procurando pelo campo de pesquisa...');
@@ -47,7 +47,7 @@ async function findAndClickGame() {
     searchInput.dispatchEvent(new Event('input', { bubbles: true }));
     searchInput.dispatchEvent(new Event('change', { bubbles: true }));
     console.log(`SUCESSO: Digitado "${gameToSearch}" no campo de pesquisa.`);
-    await sleep(2000); // Espera 2 segundos para os resultados da pesquisa aparecerem
+    await sleep(1500); // Espera 2 segundos para os resultados da pesquisa aparecerem
 
     // --- ETAPA 4: Clicar na imagem do jogo ---
     const gameToFind = window.megabotConfig?.jogo || 'Wild Ape';

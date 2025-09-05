@@ -1,7 +1,8 @@
 {
   "links": [
     "https://fffalfa.com",
-    "browserscan.net"
+    "browserscan.net",
+    "okokmel.bet"
   ],
   "proxies": [],
   "rotatingProxies": [
@@ -21,7 +22,7 @@
       "mute-audio-toggle": false,
       "delay-toggle": false
     },
-    "lastSaved": "2025-09-05T04:04:15.307Z"
+    "lastSaved": "2025-09-05T14:54:58.121Z"
   },
   "automation": {
     "muteAudio": false,
@@ -32,6 +33,6 @@
     "password": "",
     "withdrawPassword": "",
     "randomPasswords": true,
-    "jogo": "golden land"
+    "jogo": "cosmic cash"
   }
 }

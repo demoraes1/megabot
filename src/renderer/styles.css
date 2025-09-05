@@ -288,6 +288,20 @@ input[type="checkbox"]:checked + span::before {
     z-index: 50;
 }
 
+/* Estilos para campos desabilitados */
+input:disabled {
+    opacity: 0.6 !important;
+    cursor: not-allowed !important;
+    background-color: #1F2937 !important;
+    border-color: #374151 !important;
+    color: #6B7280 !important;
+}
+
+input:disabled::placeholder {
+    color: #6B7280 !important;
+    opacity: 0.8 !important;
+}
+
 /* Media queries para responsividade */
 @media (max-width: 1024px) {
     .sidebar {
