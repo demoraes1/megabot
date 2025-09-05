@@ -61,24 +61,18 @@ function carregarExtensoes() {
 
 async function detectChromePath() {
     try {
-        console.log('[DEBUG] Criando ChromiumDownloader...');
         const chromiumDownloader = new ChromiumDownloader();
         
-        console.log('[DEBUG] Verificando se Chrome existe localmente...');
-        // Primeiro verificar se o Chrome já existe localmente
+        // Usar apenas o Chrome local - verificações de atualização são feitas na inicialização do app
         if (await chromiumDownloader.checkBrowserExists()) {
-            console.log('[DEBUG] Chrome encontrado localmente, usando sem verificar atualizações...');
             const chromePath = chromiumDownloader.getChromePath();
             console.log(`[Chrome] Usando Chrome local: ${chromePath}`);
             return chromePath;
         }
         
-        console.log('[DEBUG] Chrome não encontrado, chamando ensureChromiumAvailable...');
-        // Se não existir, fazer download e instalação
-        const chromePath = await chromiumDownloader.ensureChromiumAvailable();
-        
-        console.log(`[Chrome] Usando Chrome: ${chromePath}`);
-        return chromePath;
+        // Se não existir, retornar erro - o download deve ser feito na inicialização
+        console.error('[Chrome] Chrome não encontrado! Execute a verificação de atualizações na inicialização do app.');
+        throw new Error('Chrome não encontrado. Reinicie a aplicação para fazer o download.');
     } catch (error) {
         console.error('[Chrome] Erro ao obter Chrome:', error.message);
         return null;
