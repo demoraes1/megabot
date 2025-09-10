@@ -104,6 +104,18 @@ class ScriptInjector {
             finalScriptContent = configScript + '\n' + scriptContent;
         }
         
+        if (scriptName === 'play') {
+            const settings = loadAppSettings();
+            const configScript = `
+                // Injetar configurações do MegaBot para o jogo
+                window.megabotConfig = {
+                    jogo: '${settings.automation?.jogo || 'wild ape'}'
+                };
+                console.log('Configurações MegaBot injetadas:', window.megabotConfig);
+            `;
+            finalScriptContent = configScript + '\n' + scriptContent;
+        }
+        
         return finalScriptContent;
     }
 

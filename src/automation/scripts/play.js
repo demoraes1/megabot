@@ -30,7 +30,7 @@ async function findAndClickGame() {
     }
     tudoButton.click();
     console.log('SUCESSO: Botão "Tudo" clicado.');
-    await sleep(1000); // Espera 1 segundo para a página de pesquisa aparecer
+    await sleep(1500); // Espera 1 segundo para a página de pesquisa aparecer
 
     // --- ETAPA 3: Digitar "wild ape" no campo de pesquisa ---
     console.log('Etapa 3: Procurando pelo campo de pesquisa...');
@@ -41,20 +41,22 @@ async function findAndClickGame() {
       return;
     }
     
-    searchInput.value = 'wild ape';
+    const gameToSearch = window.megabotConfig?.jogo || 'wild ape';
+    searchInput.value = gameToSearch;
     // Dispara eventos para que o site reconheça a digitação
     searchInput.dispatchEvent(new Event('input', { bubbles: true }));
     searchInput.dispatchEvent(new Event('change', { bubbles: true }));
-    console.log('SUCESSO: Digitado "wild ape" no campo de pesquisa.');
-    await sleep(2000); // Espera 2 segundos para os resultados da pesquisa aparecerem
+    console.log(`SUCESSO: Digitado "${gameToSearch}" no campo de pesquisa.`);
+    await sleep(1500); // Espera 2 segundos para os resultados da pesquisa aparecerem
 
-    // --- ETAPA 4: Clicar na imagem do jogo "Wild Ape" ---
-    console.log('Etapa 4: Procurando pelo jogo "Wild Ape" nos resultados...');
+    // --- ETAPA 4: Clicar na imagem do jogo ---
+    const gameToFind = window.megabotConfig?.jogo || 'Wild Ape';
+    console.log(`Etapa 4: Procurando pelo jogo "${gameToFind}" nos resultados...`);
     const allGameNames = Array.from(document.querySelectorAll('h4'));
-    const gameNameElement = allGameNames.find(h4 => h4.innerText && h4.innerText.trim() === 'Wild Ape');
+    const gameNameElement = allGameNames.find(h4 => h4.innerText && h4.innerText.trim().toLowerCase() === gameToFind.toLowerCase());
     
     if (!gameNameElement) {
-      console.error('ERRO: Jogo "Wild Ape" não encontrado nos resultados da pesquisa.');
+      console.error(`ERRO: Jogo "${gameToFind}" não encontrado nos resultados da pesquisa.`);
       return;
     }
 
@@ -62,12 +64,12 @@ async function findAndClickGame() {
     const gameContainer = gameNameElement.closest('div[class*="_poster-box_"]');
     
     if (!gameContainer) {
-        console.error('ERRO: Container clicável do jogo "Wild Ape" não foi encontrado.');
+        console.error(`ERRO: Container clicável do jogo "${gameToFind}" não foi encontrado.`);
         return;
     }
 
     gameContainer.click();
-    console.log('SUCESSO FINAL: Jogo "Wild Ape" foi clicado!');
+    console.log(`SUCESSO FINAL: Jogo "${gameToFind}" foi clicado!`);
 
   } catch (error) {
     console.error('Ocorreu um erro inesperado durante a automação:', error);

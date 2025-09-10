@@ -1,17 +1,22 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs').promises;
-const { detectarMonitores, calcularCapacidadeMonitor, salvarDadosMonitores, carregarDadosMonitores } = require('./monitor-detector');
-const { launchInstances, navigateToUrl, navigateAllBrowsers, getActiveBrowsers, injectScriptInBrowser, injectScriptInAllBrowsers } = require('./browser-manager');
+const { detectarMonitores, calcularCapacidadeMonitor, salvarDadosMonitores, carregarDadosMonitores, configurarListenerMonitores } = require('./monitor-detector');
+const { launchInstances, navigateToUrl, navigateAllBrowsers, getActiveBrowsers, getActiveBrowsersWithProfiles, injectScriptInBrowser, injectScriptInAllBrowsers } = require('./browser-manager');
 const ChromiumDownloader = require('../infrastructure/chromium-downloader');
 const scriptInjector = require('../automation/injection');
+const { getAllProfiles, getProfileById, removeProfile, generateProfile, addProfile, updateProfile, loadConfig, saveConfig, PROFILES_DIR } = require('../automation/profile-manager');
+
+// Configuração de zoom da interface
+// Valores sugeridos: 0.8 (menor), 0.9 (pequeno), 1.0 (padrão), 1.1 (grande), 1.2 (maior)
+const INTERFACE_ZOOM_FACTOR = 0.1;
 
 // Função para criar a janela principal
 function createWindow() {
   // Criar a janela do navegador
   const mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: 1000,
+    height: 680,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -19,8 +24,12 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js')
     },
     icon: path.join(__dirname, '../renderer/assets/icon.png'), // Opcional: adicione um ícone
-    show: false // Não mostrar até estar pronto
+    show: false, // Não mostrar até estar pronto
+    autoHideMenuBar: true // Remove a barra de ferramentas
   });
+
+  // Configurar zoom da interface
+  mainWindow.webContents.setZoomFactor(INTERFACE_ZOOM_FACTOR);
 
   // Carregar o arquivo HTML
   mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
@@ -78,7 +87,17 @@ async function checkChromeOnStartup(mainWindow) {
 
 // Este método será chamado quando o Electron terminar de inicializar
 // e estiver pronto para criar janelas do navegador.
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  // Inicializar configuração de monitores
+  try {
+    // Removido criarConfiguracaoInicial() para evitar sobrescrever configurações
+    // A configuração será criada quando o usuário detectar monitores pela primeira vez
+    configurarListenerMonitores();
+    console.log('Sistema de monitores inicializado com sucesso');
+  } catch (error) {
+    console.error('Erro ao inicializar sistema de monitores:', error);
+  }
+
   createWindow();
 
   app.on('activate', () => {
@@ -170,7 +189,7 @@ ipcMain.handle('calculate-monitor-capacity', async (event, monitor, config = {})
       fatorEscala = 0.65
     } = config;
     
-    const result = calcularCapacidadeMonitor(monitor, larguraLogica, alturaLogica, fatorEscala);
+    const result = calcularCapacidadeMonitor(monitor.bounds, larguraLogica, alturaLogica, fatorEscala);
     return {
       success: true,
       ...result
@@ -187,9 +206,9 @@ ipcMain.handle('calculate-monitor-capacity', async (event, monitor, config = {})
 });
 
 // Handler para salvar dados dos monitores
-ipcMain.handle('save-monitor-data', async (event, monitoresData, posicionamentoData) => {
+ipcMain.handle('save-monitor-data', async (event, monitoresData, posicionamentoData, config = {}) => {
   try {
-    const result = salvarDadosMonitores(monitoresData, posicionamentoData);
+    const result = salvarDadosMonitores(monitoresData, posicionamentoData, config);
     return result;
   } catch (error) {
     console.error('Erro ao salvar dados dos monitores:', error);
@@ -286,6 +305,23 @@ ipcMain.handle('get-active-browsers', async () => {
   }
 });
 
+// Handler para obter navegadores ativos com dados de perfil
+ipcMain.handle('get-active-browsers-with-profiles', async () => {
+  try {
+    const activeBrowsersWithProfiles = getActiveBrowsersWithProfiles();
+    return {
+      success: true,
+      browsers: activeBrowsersWithProfiles
+    };
+  } catch (error) {
+    console.error('Erro ao obter navegadores ativos com perfis:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+});
+
 // Handler para injetar script por nome em todos os navegadores
 ipcMain.handle('inject-script', async (event, scriptName) => {
   try {
@@ -367,6 +403,249 @@ ipcMain.handle('reload-scripts', async () => {
       error: error.message,
       scripts: []
     };
+  }
+});
+
+// Handlers para gerenciamento de perfis
+ipcMain.handle('get-all-profiles', async () => {
+  try {
+    console.log('Obtendo todos os perfis...');
+    const profiles = await getAllProfiles();
+    return { success: true, profiles };
+  } catch (error) {
+    console.error('Erro ao obter perfis:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('get-profile-by-id', async (event, profileId) => {
+  try {
+    console.log(`Obtendo perfil com ID: ${profileId}`);
+    const profile = await getProfileById(profileId);
+    return { success: true, profile };
+  } catch (error) {
+    console.error('Erro ao obter perfil por ID:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('remove-profile', async (event, profileId) => {
+  try {
+    console.log(`Removendo perfil com ID: ${profileId}`);
+    const result = await removeProfile(profileId);
+    return { success: true, result };
+  } catch (error) {
+    console.error('Erro ao remover perfil:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('create-new-profile', async () => {
+  try {
+    console.log('Criando novo perfil...');
+    const newProfile = await generateProfile();
+    const result = await addProfile(newProfile);
+    return { success: true, profile: newProfile, result };
+  } catch (error) {
+    console.error('Erro ao criar novo perfil:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('update-profile', async (event, profileId, updates) => {
+  try {
+    console.log(`Atualizando perfil com ID: ${profileId}`);
+    const result = await updateProfile(profileId, updates);
+    return { success: true, result };
+  } catch (error) {
+    console.error('Erro ao atualizar perfil:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Handler para excluir todos os perfis
+ipcMain.handle('delete-all-profiles', async (event) => {
+  try {
+    console.log('Excluindo todos os perfis...');
+    // Usando imports globais já disponíveis
+    
+    // Obter todos os perfis
+    const profiles = getAllProfiles();
+    const totalProfiles = profiles.length;
+    
+    if (totalProfiles === 0) {
+      return { success: true, message: 'Nenhum perfil para excluir' };
+    }
+    
+    // Enviar progresso inicial
+    event.sender.send('delete-progress', {
+      current: 0,
+      total: totalProfiles,
+      currentItem: 'Iniciando exclusão...'
+    });
+    
+    // Remover todas as pastas de perfis
+    for (let i = 0; i < profiles.length; i++) {
+      const profile = profiles[i];
+      const profilePath = path.join(PROFILES_DIR, profile.id);
+      
+      // Enviar progresso atual
+      event.sender.send('delete-progress', {
+        current: i,
+        total: totalProfiles,
+        currentItem: `Excluindo perfil: ${profile.name || profile.id}`
+      });
+      
+      try {
+        await fs.rmdir(profilePath, { recursive: true });
+        console.log(`Pasta do perfil ${profile.id} removida`);
+      } catch (error) {
+        console.warn(`Erro ao remover pasta do perfil ${profile.id}:`, error.message);
+      }
+      
+      // Pequeno delay para permitir atualização da UI
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    // Limpar config.json
+    const config = { profiles: [] };
+    saveConfig(config);
+    
+    // Enviar progresso final
+    event.sender.send('delete-progress', {
+      current: totalProfiles,
+      total: totalProfiles,
+      currentItem: 'Exclusão concluída!'
+    });
+    
+    return { success: true, message: 'Todos os perfis foram excluídos' };
+  } catch (error) {
+    console.error('Erro ao excluir todos os perfis:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Handler para iniciar navegador com perfil específico
+ipcMain.handle('start-browser-with-profile', async (event, profileId) => {
+  try {
+    console.log(`Iniciando navegador para perfil: ${profileId}`);
+    // Usando imports globais já disponíveis
+    
+    const profile = getProfileById(profileId);
+    if (!profile) {
+      return { success: false, error: 'Perfil não encontrado' };
+    }
+    
+    // Configurar opções para lançar o navegador
+    const options = {
+      simultaneousOpenings: 1,
+      useAllMonitors: false,
+      selectedMonitors: [],
+      profileId: profileId,
+      proxy: profile.proxy || null
+    };
+    
+    const browsers = await launchInstances(options);
+    return { success: true, browsers, message: `Navegador iniciado para perfil ${profileId}` };
+  } catch (error) {
+    console.error('Erro ao iniciar navegador:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Handler para injetar script específico em perfil
+ipcMain.handle('inject-script-in-profile', async (event, profileId, scriptName) => {
+  try {
+    console.log(`Injetando script ${scriptName} no perfil: ${profileId}`);
+    // Usando imports globais já disponíveis
+    
+    // Encontrar o navegador ativo para este perfil
+    const activeBrowsers = getActiveBrowsers();
+    const browserEntry = Array.from(activeBrowsers.entries()).find(([id, browser]) => {
+      return id.includes(profileId);
+    });
+    
+    if (!browserEntry) {
+      return { success: false, error: 'Navegador não encontrado para este perfil' };
+    }
+    
+    const [navigatorId] = browserEntry;
+    
+    // Carregar e injetar o script
+    const scriptContent = await scriptInjector.loadScript(scriptName);
+    if (!scriptContent) {
+      return { success: false, error: `Script ${scriptName} não encontrado` };
+    }
+    
+    await injectScriptInBrowser(navigatorId, scriptContent, true);
+    return { success: true, message: `Script ${scriptName} injetado no perfil ${profileId}` };
+  } catch (error) {
+    console.error('Erro ao injetar script:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Handler para excluir perfil específico
+ipcMain.handle('delete-profile', async (event, profileId) => {
+  try {
+    console.log(`Excluindo perfil: ${profileId}`);
+    // Usando imports globais já disponíveis
+    
+    // Remover pasta do perfil
+    const profilePath = path.join(PROFILES_DIR, profileId);
+    try {
+      await fs.rmdir(profilePath, { recursive: true });
+      console.log(`Pasta do perfil ${profileId} removida`);
+    } catch (error) {
+      console.warn(`Erro ao remover pasta do perfil ${profileId}:`, error.message);
+    }
+    
+    // Remover do config.json
+    const result = removeProfile(profileId);
+    
+    return { success: true, result, message: `Perfil ${profileId} excluído` };
+  } catch (error) {
+    console.error('Erro ao excluir perfil:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Handler para salvar URL em perfis específicos ou todos
+ipcMain.handle('save-url-to-profiles', async (event, url, profileIds = null) => {
+  try {
+    console.log(`Salvando URL: ${url}`);
+    
+    const config = loadConfig();
+    if (!config.profiles || config.profiles.length === 0) {
+      return { success: false, error: 'Nenhum perfil encontrado' };
+    }
+    
+    let updatedCount = 0;
+    
+    if (profileIds && Array.isArray(profileIds) && profileIds.length > 0) {
+      // Atualizar apenas perfis específicos
+      console.log(`Atualizando URL apenas nos perfis: ${profileIds.join(', ')}`);
+      config.profiles.forEach(profile => {
+        if (profileIds.includes(profile.id)) {
+          profile.url = url;
+          updatedCount++;
+        }
+      });
+    } else {
+      // Atualizar todos os perfis (comportamento antigo)
+      console.log('Atualizando URL em todos os perfis');
+      config.profiles.forEach(profile => {
+        profile.url = url;
+        updatedCount++;
+      });
+    }
+    
+    saveConfig(config);
+    
+    return { success: true, message: `URL salva em ${updatedCount} perfil(s)`, updatedProfiles: updatedCount };
+  } catch (error) {
+    console.error('Erro ao salvar URL nos perfis:', error);
+    return { success: false, error: error.message };
   }
 });
 

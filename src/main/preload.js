@@ -112,6 +112,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
     }
   },
 
+  // Função para obter lista de navegadores ativos com perfis
+  getActiveBrowsersWithProfiles: async () => {
+    try {
+      const result = await ipcRenderer.invoke('get-active-browsers-with-profiles');
+      return result;
+    } catch (error) {
+      console.error('Erro ao obter navegadores ativos com perfis via IPC:', error);
+      throw error;
+    }
+  },
+
   // Listeners para eventos do Chrome download
   onShowChromeDownloadModal: (callback) => {
     ipcRenderer.on('show-chrome-download-modal', (event, data) => callback(data));
@@ -187,6 +198,121 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Função para remover listeners
   removeAllListeners: (channel) => {
     ipcRenderer.removeAllListeners(channel);
+  },
+
+  // Funções para gerenciamento de perfis
+  getAllProfiles: async () => {
+    try {
+      const result = await ipcRenderer.invoke('get-all-profiles');
+      return result;
+    } catch (error) {
+      console.error('Erro ao obter perfis via IPC:', error);
+      throw error;
+    }
+  },
+
+  getProfileById: async (profileId) => {
+    try {
+      const result = await ipcRenderer.invoke('get-profile-by-id', profileId);
+      return result;
+    } catch (error) {
+      console.error('Erro ao obter perfil por ID via IPC:', error);
+      throw error;
+    }
+  },
+
+  removeProfile: async (profileId) => {
+    try {
+      const result = await ipcRenderer.invoke('remove-profile', profileId);
+      return result;
+    } catch (error) {
+      console.error('Erro ao remover perfil via IPC:', error);
+      throw error;
+    }
+  },
+
+  createNewProfile: async () => {
+    try {
+      const result = await ipcRenderer.invoke('create-new-profile');
+      return result;
+    } catch (error) {
+      console.error('Erro ao criar novo perfil via IPC:', error);
+      throw error;
+    }
+  },
+
+  updateProfile: async (profileId, updates) => {
+    try {
+      const result = await ipcRenderer.invoke('update-profile', profileId, updates);
+      return result;
+    } catch (error) {
+      console.error('Erro ao atualizar perfil via IPC:', error);
+      throw error;
+    }
+  },
+
+  // Função para excluir todos os perfis
+  deleteAllProfiles: async () => {
+    try {
+      const result = await ipcRenderer.invoke('delete-all-profiles');
+      return result;
+    } catch (error) {
+      console.error('Erro ao excluir todos os perfis via IPC:', error);
+      throw error;
+    }
+  },
+
+  // Listener para progresso de exclusão
+  onDeleteProgress: (callback) => {
+    ipcRenderer.on('delete-progress', (event, data) => callback(data));
+  },
+
+  removeDeleteProgressListener: () => {
+    ipcRenderer.removeAllListeners('delete-progress');
+  },
+
+  // Função para iniciar navegador com perfil específico
+  startBrowserWithProfile: async (profileId) => {
+    try {
+      const result = await ipcRenderer.invoke('start-browser-with-profile', profileId);
+      return result;
+    } catch (error) {
+      console.error('Erro ao iniciar navegador com perfil via IPC:', error);
+      throw error;
+    }
+  },
+
+  // Função para injetar script em perfil específico
+  injectScriptInProfile: async (profileId, scriptName) => {
+    try {
+      const result = await ipcRenderer.invoke('inject-script-in-profile', profileId, scriptName);
+      return result;
+    } catch (error) {
+      console.error('Erro ao injetar script em perfil via IPC:', error);
+      throw error;
+    }
+  },
+
+  // Função para excluir perfil específico
+   deleteProfile: async (profileId) => {
+     try {
+       const result = await ipcRenderer.invoke('delete-profile', profileId);
+       return result;
+     } catch (error) {
+       console.error('Erro ao excluir perfil via IPC:', error);
+       throw error;
+     }
+   },
+
+  // Função para salvar URL em perfis específicos ou todos
+  saveUrlToProfiles: async (url, profileIds = null) => {
+    try {
+      const result = await ipcRenderer.invoke('save-url-to-profiles', url, profileIds);
+      return result;
+    } catch (error) {
+      console.error('Erro ao salvar URL nos perfis via IPC:', error);
+      throw error;
+    }
   }
 });
 

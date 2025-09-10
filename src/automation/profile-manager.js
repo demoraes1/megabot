@@ -102,24 +102,31 @@ async function generateProfile() {
         const phone = await generatePhoneNumber();
         
         // Determinar senhas baseado nas configurações
-        // Por padrão, tratar como se checkbox aleatórios estivesse marcada
         let password, withdrawPassword;
         
-        // Se randomPasswords não está definido ou é true, ou se os campos estão vazios, usar aleatórios
-        if (automationSettings.randomPasswords !== false || 
-            !automationSettings.password || 
-            !automationSettings.withdrawPassword) {
-            // Usar senhas aleatórias (comportamento padrão)
+        // Se o toggle de senhas aleatórias estiver marcado, gerar ambas aleatoriamente
+        if (automationSettings.randomPasswords === true) {
             password = await generatePassword(12);
             withdrawPassword = (await generateRandomNumbers(100000, 999999)).toString();
         } else {
-            // Usar valores preenchidos nos campos apenas se randomPasswords for explicitamente false
-            password = automationSettings.password;
-            withdrawPassword = automationSettings.withdrawPassword;
+            // Verificar cada campo individualmente
+            // Senha principal: usar definida ou gerar aleatória
+            if (automationSettings.password && automationSettings.password.trim() !== '') {
+                password = automationSettings.password;
+            } else {
+                password = await generatePassword(12);
+            }
             
-            // Garantir que senha de saque tenha 6 dígitos numéricos
-            if (withdrawPassword && !/^\d{6}$/.test(withdrawPassword)) {
-                console.warn('Senha de saque inválida, gerando nova:', withdrawPassword);
+            // Senha de saque: usar definida ou gerar aleatória
+            if (automationSettings.withdrawPassword && automationSettings.withdrawPassword.trim() !== '') {
+                // Validar se tem 6 dígitos numéricos
+                if (/^\d{6}$/.test(automationSettings.withdrawPassword)) {
+                    withdrawPassword = automationSettings.withdrawPassword;
+                } else {
+                    console.warn('Senha de saque inválida (deve ter 6 dígitos), gerando nova:', automationSettings.withdrawPassword);
+                    withdrawPassword = (await generateRandomNumbers(100000, 999999)).toString();
+                }
+            } else {
                 withdrawPassword = (await generateRandomNumbers(100000, 999999)).toString();
             }
         }

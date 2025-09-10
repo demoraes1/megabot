@@ -50,7 +50,10 @@
                     </button>
                 </div>
                 
-                <button class="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gradient-to-br from-app-blue-900 to-app-blue-700 hover:from-app-blue-800 hover:to-app-blue-700 text-white border border-app-blue-800 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
+                <button id="jogar-btn" 
+                        data-inject-script="play" 
+                        data-notification="Executando automação de jogo em todos os navegadores"
+                        class="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gradient-to-br from-app-blue-900 to-app-blue-700 hover:from-app-blue-800 hover:to-app-blue-700 text-white border border-app-blue-800 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M8 5v14l11-7z"/>
                     </svg>
@@ -120,13 +123,13 @@
             <div id="tab-configuracao" class="tab-content space-y-6">
                 
                 <div class="flex gap-2.5 mb-5">
-                    <button class="flex items-center justify-center gap-2 flex-1 px-4 py-2.5 bg-gradient-to-br from-app-blue-900 to-app-blue-700 hover:from-app-blue-800 hover:to-app-blue-700 text-white border border-app-blue-800 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]" id="links-btn" onclick="window.testLinks()">
+                    <button class="flex items-center justify-center gap-2 flex-1 px-4 py-2.5 bg-gradient-to-br from-app-blue-900 to-app-blue-700 hover:from-app-blue-800 hover:to-app-blue-700 text-white border border-app-blue-800 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]" id="links-btn">
                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H6.9C4.01 7 1.9 9.11 1.9 12s2.11 5 5 5h4v-1.9H6.9c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9.1-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.89 0 5-2.11 5-5s-2.11-5-5-5z"/>
                         </svg>
                         Adicionar Links
                     </button>
-                    <button class="flex items-center justify-center gap-2 flex-1 px-4 py-2.5 bg-gradient-to-br from-app-green-600 to-app-green-700 hover:from-app-green-700 hover:to-green-800 text-white border border-white rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]" id="pix-btn" onclick="window.testPix()">
+                    <button class="flex items-center justify-center gap-2 flex-1 px-4 py-2.5 bg-gradient-to-br from-app-green-600 to-app-green-700 hover:from-app-green-700 hover:to-green-800 text-white border border-white rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]" id="pix-btn">
                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
                         </svg>
@@ -137,7 +140,7 @@
                 <!-- Proxy Section -->
                 <div class="bg-app-gray-800 rounded-lg p-4 border border-app-gray-700 mb-6">
                     <div class="mb-4">
-                        <button class="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-br from-app-blue-900 to-app-blue-700 hover:from-app-blue-800 hover:to-app-blue-700 text-white border border-app-blue-800 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]" id="add-proxies-btn" onclick="window.testProxies()">
+                        <button class="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-br from-app-blue-900 to-app-blue-700 hover:from-app-blue-800 hover:to-app-blue-700 text-white border border-app-blue-800 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]" id="add-proxies-btn">
                             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
                             </svg>
@@ -237,8 +240,14 @@
             <div id="tab-automacao" class="tab-content space-y-6 hidden">
                 <h3 class="text-xl font-bold text-white mb-4">Configurações de Automação</h3>
                 
+                <!-- Jogo -->
+                <div class="bg-app-gray-800 rounded-lg p-4 border border-app-gray-700">
+                    <div class="space-y-2">
+                        <label class="block text-white font-medium text-sm">Jogo</label>
+                        <input type="text" id="jogo-field" class="w-full px-3 py-2 bg-app-gray-700 border border-app-gray-600 rounded-lg text-white placeholder-app-gray-400 focus:outline-none focus:ring-2 focus:ring-app-blue-600 focus:border-transparent" placeholder="Digite o nome do jogo">
+                    </div>
+                </div>
 
-                
                 <!-- Senhas -->
                 <div class="bg-app-gray-800 rounded-lg p-4 border border-app-gray-700">
                     
@@ -280,10 +289,10 @@
                     </div>
                 </div>
                 
-                <!-- Delay entre criações -->
+                <!-- Delay entre contas -->
                 <div class="bg-app-gray-800 rounded-lg p-4 border border-app-gray-700">
                     <div class="flex items-center justify-between mb-3">
-                        <span class="text-white font-medium text-sm">Delay entre criações</span>
+                        <span class="text-white font-medium text-sm">Delay entre contas</span>
                         <label class="relative inline-block w-12 h-6">
                             <input type="checkbox" id="delay-toggle" class="opacity-0 w-0 h-0 peer">
                             <span class="absolute cursor-pointer top-0 left-0 right-0 bottom-0 bg-app-gray-700 transition-all duration-300 rounded-full before:absolute before:content-[''] before:h-4 before:w-4 before:left-1 before:bottom-1 before:bg-white before:transition-all before:duration-300 before:rounded-full peer-checked:bg-app-blue-900 peer-checked:before:translate-x-6"></span>
@@ -299,6 +308,7 @@
                             </div>
                             <button class="w-10 h-10 bg-app-gray-700 hover:bg-app-gray-600 border border-app-gray-600 rounded-lg text-white font-medium transition-all duration-200 hover:scale-105" id="increase-delay">+</button>
                         </div>
+                        
                         <p class="text-xs text-app-gray-400 mt-2 text-center">Aguarda entre cada criação quando múltiplos navegadores ativos</p>
                     </div>
                 </div>
@@ -323,11 +333,9 @@
                             <label class="text-sm text-app-gray-300">Filtrar por:</label>
                             <select id="profile-filter" class="bg-app-gray-700 border border-app-gray-600 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-app-blue-500">
                                 <option value="all">Todos os Perfis</option>
-                                <option value="link1">Link 1</option>
-                                <option value="link2">Link 2</option>
-                                <option value="link3">Link 3</option>
-                                <option value="link4">Link 4</option>
-                                <option value="link5">Link 5</option>
+                                <option value="profile">Perfil</option>
+                                <option value="user">Usuário</option>
+                                <option value="url">URL</option>
                             </select>
                         </div>
                         <div class="flex items-center gap-2">
@@ -340,7 +348,7 @@
                             </select>
                         </div>
                         <div class="flex items-center gap-2">
-                            <input type="text" id="search-profiles" placeholder="Buscar por ID ou usuário..." class="bg-app-gray-700 border border-app-gray-600 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-app-blue-500 w-48">
+                            <input type="text" id="search-profiles" placeholder="Buscar por perfil, usuário ou URL..." class="bg-app-gray-700 border border-app-gray-600 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-app-blue-500 w-48">
                         </div>
                         <button id="clear-filters" class="px-3 py-2 bg-app-gray-600 hover:bg-app-gray-500 text-white rounded-lg text-sm transition-all duration-200">
                             Limpar Filtros
@@ -364,9 +372,7 @@
                     <!-- Os perfis serão carregados aqui dinamicamente -->
                 </div>
                 
-                <div class="text-center py-8" id="no-profiles-message">
-                    <p class="text-app-gray-400">Nenhum perfil encontrado. Crie perfis usando o botão "Criar contas".</p>
-                </div>
+                <!-- Container será preenchido dinamicamente -->
             </div>
 
             <!-- Tab Perfil (vazia por enquanto) -->
@@ -636,6 +642,6 @@
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <script type="module" src="app.js"></script>
 </body>
 </html>

@@ -60,7 +60,8 @@
                 account: window.profileData.usuario,
                 password: window.profileData.senha,
                 phone: window.profileData.telefone,
-                realName: window.profileData.nome_completo
+                realName: window.profileData.nome_completo,
+                cpf: window.profileData.cpf
             };
         }
         
@@ -80,7 +81,8 @@
             account: `${firstName.toLowerCase()}${randomId}`,
             password: `SenhaForte${randomId}!`,
             phone: fullPhone, // Telefone agora com 11 dígitos
-            realName: `${firstName} ${lastName}`
+            realName: `${firstName} ${lastName}`,
+            cpf: '000.000.000-00' // CPF placeholder para fallback
         };
     }
 
@@ -164,6 +166,21 @@
             log('Preenchendo campo: Nome Real');
             await humanTyping(realNameInput, userData.realName);
             await sleep(config.fieldDelay);
+
+            // Verificar se existe campo de CPF
+            const cpfInput = registrationModal.querySelector('input[data-input-name="cpf"]') || 
+                           registrationModal.querySelector('input[placeholder*="CPF"]') || 
+                           registrationModal.querySelector('input[placeholder*="cpf"]') ||
+                           registrationModal.querySelector('input[name*="cpf"]') ||
+                           registrationModal.querySelector('input[id*="cpf"]');
+            
+            if (cpfInput) {
+                log('Preenchendo campo: CPF');
+                await humanTyping(cpfInput, userData.cpf);
+                await sleep(config.fieldDelay);
+            } else {
+                log('Campo CPF não encontrado no formulário');
+            }
 
             const agreeCheckbox = registrationModal.querySelector('input[type="checkbox"]');
             if (agreeCheckbox && !agreeCheckbox.checked) {

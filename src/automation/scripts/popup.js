@@ -15,6 +15,13 @@ if (!window._elementDeleterAttached) {
                 'inserir pin',
                 'lembrete',
                 'tenho mais de 18 anos',
+				'inserir senha',
+				'adicionar pix',
+				'phone',
+                'retirada',
+                'ontem',
+                'saques',
+                'todas'
             ],
             forceDeleteKeywords: [
                 'registrado',

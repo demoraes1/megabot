@@ -63,11 +63,16 @@ async function detectChromePath() {
     try {
         const chromiumDownloader = new ChromiumDownloader();
         
-        // Verificar se o Chrome já existe, se não, fazer download e instalação
-        const chromePath = await chromiumDownloader.ensureChromiumAvailable();
+        // Usar apenas o Chrome local - verificações de atualização são feitas na inicialização do app
+        if (await chromiumDownloader.checkBrowserExists()) {
+            const chromePath = chromiumDownloader.getChromePath();
+            console.log(`[Chrome] Usando Chrome local: ${chromePath}`);
+            return chromePath;
+        }
         
-        console.log(`[Chrome] Usando Chrome: ${chromePath}`);
-        return chromePath;
+        // Se não existir, retornar erro - o download deve ser feito na inicialização
+        console.error('[Chrome] Chrome não encontrado! Execute a verificação de atualizações na inicialização do app.');
+        throw new Error('Chrome não encontrado. Reinicie a aplicação para fazer o download.');
     } catch (error) {
         console.error('[Chrome] Erro ao obter Chrome:', error.message);
         return null;
@@ -75,6 +80,7 @@ async function detectChromePath() {
 }
 
 async function startBrowser(options) {
+    console.log(`[DEBUG] Iniciando função startBrowser para navegador ${options.navigatorId}`);
     let browser = null;
     let page = null; // Manter referência da página para navegação posterior
     const { url, navigatorId, proxy, automation = {}, blockedDomains, windowConfig } = options;
@@ -114,7 +120,7 @@ async function startBrowser(options) {
             windowHeight = windowConfig.ALTURA_LOGICA || windowHeight;
         }
         
-        const deviceScaleFactor = windowConfig?.FATOR_ESCALA || 0.65; // Usar 0.65 como padrão igual ao index.js
+        const deviceScaleFactor = 0.65; // Escala sempre fixa em 0.65
         
         logger.info(navigatorId, `Configurações finais de janela: ${windowWidth}x${windowHeight}, escala: ${deviceScaleFactor}`);
 
@@ -126,14 +132,19 @@ async function startBrowser(options) {
             '--no-first-run',
             '--disable-default-apps',
             '--disable-infobars',
-            '--disable-features=VizDisplayCompositor,TranslateUI',
-            // Argumentos para estabilidade e prevenção de crashes
+            '--disable-features=TranslateUI',
+            // Argumentos otimizados para performance e baixo consumo de CPU
+            '--enable-gpu-rasterization',
+            '--enable-zero-copy',
+            '--enable-hardware-overlays',
+            '--max-active-webgl-contexts=1',
+            '--renderer-process-limit=1',
+            '--max-unused-resource-memory-usage-percentage=5',
+            '--memory-pressure-off',
+            '--process-per-site',
             '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--disable-gpu',
             '--disable-backgrounding-occluded-windows',
             '--disable-renderer-backgrounding',
-            '--disable-ipc-flooding-protection',
             '--disable-hang-monitor',
             '--disable-prompt-on-repost',
             '--disable-domain-reliability',
@@ -151,7 +162,25 @@ async function startBrowser(options) {
         let proxyConfig = null;
         let proxyArgs = [];
         
-        if (proxy && proxy.mode && proxy.mode !== 'none') {
+        // Verificar se há proxy do perfil (formato do config.json)
+        if (proxy && proxy.host && proxy.port) {
+            try {
+                // Proxy do perfil - usar diretamente
+                proxyConfig = {
+                    host: proxy.host,
+                    port: proxy.port,
+                    protocol: proxy.protocol || 'http',
+                    username: proxy.username || null,
+                    password: proxy.password || null
+                };
+                proxyArgs = ProxyManager.getProxyChromeArgs(proxyConfig);
+                console.log(`[Navegador ${navigatorId}] Usando proxy do perfil: ${proxy.host}:${proxy.port}`);
+            } catch (error) {
+                console.error(`[Navegador ${navigatorId}] Erro ao configurar proxy do perfil:`, error.message);
+                proxyConfig = null;
+                proxyArgs = [];
+            }
+        } else if (proxy && proxy.mode && proxy.mode !== 'none') {
             try {
                 if (proxy.mode === 'rotating' && proxy.list && proxy.list.length > 0) {
                     // Modo rotativo: mesmo proxy para todas as instâncias
@@ -161,7 +190,7 @@ async function startBrowser(options) {
                     console.log(`[Navegador ${navigatorId}] Modo rotativo - Usando proxy: ${selectedProxy}`);
                 } else if (proxy.mode === 'list' && proxy.list && proxy.list.length > 0) {
                     // Modo lista: proxy diferente para cada navegador
-                    const proxyIndex = (navigatorId - 1) % proxy.list.length; // navigatorId começa em 1
+                    const proxyIndex = navigatorId % proxy.list.length; // navigatorId começa em 0
                     const selectedProxy = proxy.list[proxyIndex];
                     
                     if (selectedProxy) {
@@ -183,6 +212,7 @@ async function startBrowser(options) {
         
         // Adicionar argumentos de proxy ao Chrome
         chromeArgs.push(...proxyArgs);
+        console.log(`[DEBUG] Configuração de proxy concluída para navegador ${navigatorId}`);
         
         // Salvar informação do proxy no perfil se disponível
         if (options.profile && options.profile.id && proxyConfig) {
@@ -216,7 +246,9 @@ async function startBrowser(options) {
             console.log(`[Navegador ${navigatorId}] Carregando ${extensoes.length} extensões.`);
         }
 
+        console.log(`[DEBUG] Iniciando detectChromePath para navegador ${navigatorId}`);
         const executablePath = await detectChromePath();
+        console.log(`[DEBUG] detectChromePath concluído para navegador ${navigatorId}: ${executablePath}`);
         if (!executablePath) {
             throw new Error('Nenhuma instalação do Google Chrome foi encontrada. Verifique se o Chrome está instalado.');
         }
@@ -234,20 +266,28 @@ async function startBrowser(options) {
             ]
         };
 
+        console.log(`[Navegador ${navigatorId}] Iniciando puppeteer.launch...`);
         browser = await puppeteer.launch(launchOptions);
+        console.log(`[Navegador ${navigatorId}] Puppeteer.launch concluído com sucesso!`);
+        console.log(`[Navegador ${navigatorId}] Obtendo páginas do navegador...`);
         page = (await browser.pages())[0] || await browser.newPage();
+        console.log(`[Navegador ${navigatorId}] Página obtida com sucesso!`);
         
         // Configurar autenticação de proxy se necessário
         if (proxyConfig && proxyConfig.username && proxyConfig.password) {
+            console.log(`[Navegador ${navigatorId}] Configurando autenticação de proxy...`);
             await ProxyManager.setupAuthentication(page, proxyConfig);
+            console.log(`[Navegador ${navigatorId}] Autenticação de proxy configurada!`);
         }
 
         // =================================================================================
         // [NOVO] INÍCIO DA LÓGICA DE BLOQUEIO DE DOMÍNIO
         // =================================================================================
+        console.log(`[Navegador ${navigatorId}] Configurando bloqueio de domínios...`);
         const dominiosParaBloquear = blockedDomains || ['gcaptcha4-hrc.gsensebot.com', 'gcaptcha4-hrc.geetest.com'];
 
         if (dominiosParaBloquear.length > 0) {
+            console.log(`[Navegador ${navigatorId}] Ativando interceptação de requisições...`);
             await page.setRequestInterception(true);
             console.log(`[Navegador ${navigatorId}] Interceptação de requisições ativada.`);
             console.log(`[Navegador ${navigatorId}] Domínios para bloqueio:`, dominiosParaBloquear);
@@ -269,12 +309,16 @@ async function startBrowser(options) {
         // =================================================================================
 
         // Aplicar User Agent para emulação móvel (viewport adaptativa via Chrome args)
+        console.log(`[Navegador ${navigatorId}] Configurando User Agent...`);
         await page.setUserAgent(randomMobile.device.userAgent);
+        console.log(`[Navegador ${navigatorId}] User Agent configurado!`);
         
         // Configurar idioma português brasileiro
+        console.log(`[Navegador ${navigatorId}] Configurando headers HTTP...`);
         await page.setExtraHTTPHeaders({
             'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8'
         });
+        console.log(`[Navegador ${navigatorId}] Headers HTTP configurados!`);
         console.log(`[Navegador ${navigatorId}] Dispositivo configurado: ${randomMobile.name}`);
         console.log(`[Navegador ${navigatorId}] UserAgent aplicado: ${randomMobile.device.userAgent}`);
         console.log(`[Navegador ${navigatorId}] Viewport adaptativo: ${randomMobile.device.viewport.width}x${randomMobile.device.viewport.height}`);
@@ -283,6 +327,7 @@ async function startBrowser(options) {
         console.log(`[Navegador ${navigatorId}] Device scale factor: ${randomMobile.device.viewport.deviceScaleFactor}`);
         
         // Listeners úteis adicionados do seu script
+        console.log(`[Navegador ${navigatorId}] Configurando listeners de página...`);
         page.on('dialog', async dialog => {
             console.warn(`[Navegador ${navigatorId}] Diálogo detectado e dispensado: ${dialog.message()}`);
             await dialog.dismiss();
@@ -290,8 +335,10 @@ async function startBrowser(options) {
         page.on('error', err => {
             console.error(`[Navegador ${navigatorId}] ERRO NA PÁGINA: `, err.message);
         });
+        console.log(`[Navegador ${navigatorId}] Listeners de página configurados!`);
 
         // Configurar TouchSimulator integrado
+        console.log(`[Navegador ${navigatorId}] Configurando TouchSimulator...`);
         await page.evaluateOnNewDocument(() => {
             // CSS para ambiente mobile completo
             const mobileStyle = document.createElement('style');
@@ -609,6 +656,29 @@ async function startBrowser(options) {
         // [NOVO] FIM DA INJEÇÃO DO POPUP.JS
         // =================================================================================
 
+        // =================================================================================
+        // [NOVO] INJEÇÃO DO IPVIEW.JS - VISUALIZADOR DE IP
+        // =================================================================================
+        try {
+            const ipviewScriptPath = path.join(__dirname, '..', 'automation', 'scripts', 'ipview.js');
+            console.log(`[Navegador ${navigatorId}] Lendo script ipview.js de: ${ipviewScriptPath}`);
+            
+            if (fs.existsSync(ipviewScriptPath)) {
+                const ipviewScriptContent = fs.readFileSync(ipviewScriptPath, 'utf8');
+                
+                // ETAPA 1: Injeção permanente para garantir que o script exista desde o início e em reloads
+                await page.evaluateOnNewDocument(ipviewScriptContent);
+                console.log(`[Navegador ${navigatorId}] Script ipview.js injetado permanentemente via evaluateOnNewDocument`);
+            } else {
+                console.warn(`[Navegador ${navigatorId}] Arquivo ipview.js não encontrado em: ${ipviewScriptPath}`);
+            }
+        } catch (error) {
+            console.error(`[Navegador ${navigatorId}] Erro ao injetar ipview.js:`, error.message);
+        }
+        // =================================================================================
+        // [NOVO] FIM DA INJEÇÃO DO IPVIEW.JS
+        // =================================================================================
+
         // Configurar stealth - mascarar webdriver e automação
         await page.evaluateOnNewDocument((deviceInfo) => {
             // Mascarar webdriver completamente
@@ -789,8 +859,10 @@ async function startBrowser(options) {
                 });
             }, navigatorId);
         }
+        console.log(`[Navegador ${navigatorId}] TouchSimulator configurado com sucesso!`);
 
         // Configurar título único para identificação da janela
+        console.log(`[Navegador ${navigatorId}] Configurando título único...`);
         const uniqueTitle = `Navegador_ID_${navigatorId}`;
         await page.evaluateOnNewDocument((title) => {
             document.addEventListener('DOMContentLoaded', () => {
@@ -799,30 +871,24 @@ async function startBrowser(options) {
         }, uniqueTitle);
         
         // Normalizar URL - adicionar http/https se necessário
-        function normalizeUrl(inputUrl) {
-            if (!inputUrl || inputUrl.trim() === '') {
+        function normalizeUrl(url) {
+            if (!url || url.trim() === '') {
                 return 'about:blank';
             }
             
-            const trimmedUrl = inputUrl.trim();
+            const trimmedUrl = url.trim();
             
-            // Se já tem protocolo, retorna como está
-            if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
+            // Se já tem protocolo, retorna como está (usando regex que é mais conciso)
+            if (trimmedUrl.match(/^https?:\/\//)) {
                 return trimmedUrl;
             }
             
-            // Se é um protocolo especial, retorna como está
+            // Protocolos especiais
             if (trimmedUrl.startsWith('about:') || trimmedUrl.startsWith('file:') || trimmedUrl.startsWith('data:')) {
                 return trimmedUrl;
             }
             
-            // Para URLs sem protocolo, detectar se parece com domínio válido
-            // Se contém ponto ou parece com IP, adicionar https://, senão tratar como busca
-            if (trimmedUrl.includes('.') || /^\d+\.\d+\.\d+\.\d+/.test(trimmedUrl)) {
-                return `https://${trimmedUrl}`;
-            }
-            
-            // Se não parece com URL válida, adicionar https:// mesmo assim
+            // Para todos os outros casos, adiciona https://
             return `https://${trimmedUrl}`;
         }
         
@@ -873,191 +939,38 @@ async function startBrowser(options) {
         `;
         
         // Definir o conteúdo HTML personalizado
+        console.log(`[Navegador ${navigatorId}] Definindo conteúdo HTML personalizado...`);
         await page.setContent(htmlContent);
+        console.log(`[Navegador ${navigatorId}] Conteúdo HTML definido com sucesso!`);
 
-        process.send({ status: 'success', navigatorId, message: `Navegador ${navigatorId} iniciado com sucesso.` });
+        // Navegar para a URL do perfil se disponível
+        if (options.profile && options.profile.url) {
+            try {
+                const profileUrl = normalizeUrl(options.profile.url);
+                console.log(`[Navegador ${navigatorId}] Navegando para URL do perfil: ${profileUrl}`);
+                await page.goto(profileUrl, { waitUntil: 'networkidle2', timeout: 30000 });
+                console.log(`[Navegador ${navigatorId}] Navegação para URL do perfil concluída!`);
+            } catch (error) {
+                console.error(`[Navegador ${navigatorId}] Erro ao navegar para URL do perfil:`, error.message);
+            }
+        } else {
+            console.log(`[Navegador ${navigatorId}] Nenhuma URL de perfil definida, mantendo página inicial`);
+        }
 
-        // Armazenar referências globais para uso no listener de mensagens
-        global.browserPage = page;
-        global.browserNavigatorId = navigatorId;
-        global.browserProfile = options.profile;
+        logger.info(navigatorId, `Navegador ${navigatorId} iniciado com sucesso.`);
+        console.log(`[Navegador ${navigatorId}] Retornando objetos browser e page...`);
 
-        browser.on('disconnected', () => {
-            console.log(`[Navegador ${navigatorId}] Navegador fechado. Encerrando processo.`);
-            process.exit(0);
-        });
+        // Retornar os objetos browser e page para o browser-manager
+        return { browser, page };
 
     } catch (error) {
-        console.error(`[Navegador ${navigatorId}] Erro fatal:`, error);
+        logger.error(navigatorId, `Erro fatal:`, error);
         if (browser) await browser.close();
-        process.send({ status: 'error', navigatorId, message: error.message });
-        process.exit(1);
+        throw error;
     }
 }
 
-// Listener único para todas as mensagens do processo
-process.on('message', async (message) => {
-    // Se a mensagem tem navigatorId, é uma inicialização de navegador
-    if (message.navigatorId !== undefined && !message.action) {
-        console.log(`[Processo ${process.pid}] Recebeu tarefa para iniciar navegador com ID ${message.navigatorId}`);
-        startBrowser(message);
-    }
-    // Se a mensagem tem action 'navigate', é um comando de navegação
-    else if (message.action === 'navigate' && message.url && global.browserPage) {
-        try {
-            const navigatorId = global.browserNavigatorId;
-            console.log(`[Navegador ${navigatorId}] Navegando para: ${message.url}`);
-            
-            // Normalizar URL
-            const normalizedUrl = normalizeUrl(message.url);
-            
-            // Navegar para a URL
-            await global.browserPage.goto(normalizedUrl, {
-                waitUntil: 'load',
-                timeout: 30000
-            });
-            
-            console.log(`[Navegador ${navigatorId}] Navegação concluída para: ${normalizedUrl}`);
-            
-            // Executar varredura manual do popup.js após navegação (similar ao teste.js)
-            try {
-                console.log(`[Navegador ${navigatorId}] Acionando varredura manual do script popup.js...`);
-                await global.browserPage.evaluate(() => {
-                    if (typeof window.runElementDeleterScan === 'function') {
-                        window.runElementDeleterScan();
-                    }
-                });
-                console.log(`[Navegador ${navigatorId}] Varredura do popup.js executada com sucesso.`);
-            } catch (scanError) {
-                console.warn(`[Navegador ${navigatorId}] Erro ao executar varredura do popup.js:`, scanError.message);
-            }
-            
-            // Salvar URL no perfil se disponível
-            if (global.browserProfile && global.browserProfile.id) {
-                try {
-                    profileManager.updateProfile(global.browserProfile.id, { url: normalizedUrl });
-                    console.log(`[Navegador ${navigatorId}] URL salva no perfil: ${normalizedUrl}`);
-                } catch (profileError) {
-                    console.warn(`[Navegador ${navigatorId}] Erro ao salvar URL no perfil:`, profileError.message);
-                }
-            }
-            
-            // Enviar confirmação de sucesso
-            process.send({ 
-                status: 'navigation_success', 
-                navigatorId, 
-                url: normalizedUrl,
-                message: `Navegação concluída para ${normalizedUrl}` 
-            });
-            
-        } catch (error) {
-            console.error(`[Navegador ${global.browserNavigatorId}] Erro na navegação:`, error);
-            
-            // Enviar erro
-            process.send({ 
-                status: 'navigation_error', 
-                navigatorId: global.browserNavigatorId, 
-                url: message.url,
-                error: error.message 
-            });
-        }
-    }
-    // Se a mensagem tem action 'inject-script', é um comando de injeção de script
-    else if (message.action === 'inject-script' && message.script && global.browserPage) {
-        try {
-            const navigatorId = global.browserNavigatorId;
-            console.log(`[Navegador ${navigatorId}] Injetando script...`);
-            
-            // Verificar se é uma injeção após navegação (criar contas)
-            const isPostNavigation = message.waitForLoad === true;
-            
-            if (isPostNavigation) {
-                console.log(`[Navegador ${navigatorId}] Aguardando carregamento completo da página...`);
-                
-                try {
-                    // Aguardar até que não haja requisições de rede por 500ms
-                    await global.browserPage.waitForLoadState('networkidle', { timeout: 8000 });
-                } catch (error) {
-                    // Se waitForLoadState não existir ou falhar, usar abordagem alternativa
-                    console.log(`[Navegador ${navigatorId}] Usando método alternativo de espera...`);
-                    await new Promise(resolve => setTimeout(resolve, 3000));
-                }
-                
-                console.log(`[Navegador ${navigatorId}] Página carregada, injetando dados do perfil...`);
-                
-                // Injetar dados do perfil se disponíveis
-                if (global.browserProfile) {
-                    console.log(`[Navegador ${navigatorId}] Injetando dados do perfil: ${global.browserProfile.usuario}`);
-                    const profileDataScript = `
-                        window.profileData = {
-                            usuario: '${global.browserProfile.usuario}',
-                            nome_completo: '${global.browserProfile.nome_completo}',
-                            senha: '${global.browserProfile.senha}',
-                            telefone: '${global.browserProfile.telefone}',
-                            cpf: '${global.browserProfile.cpf}'
-                        };
-                        console.log('📋 Dados do perfil injetados:', window.profileData);
-                    `;
-                    await global.browserPage.evaluate(profileDataScript);
-                } else {
-                    console.log(`[Navegador ${navigatorId}] AVISO: Nenhum perfil disponível para injeção`);
-                }
-                
-                console.log(`[Navegador ${navigatorId}] Executando script principal...`);
-            }
-            
-            // Injetar e executar o script na página
-            const result = await global.browserPage.evaluate(message.script);
-            
-            console.log(`[Navegador ${navigatorId}] Script injetado com sucesso`);
-            
-            // Enviar confirmação de sucesso
-            process.send({ 
-                status: 'script_injection_success', 
-                navigatorId, 
-                result,
-                message: 'Script injetado com sucesso' 
-            });
-            
-        } catch (error) {
-            console.error(`[Navegador ${global.browserNavigatorId}] Erro na injeção de script:`, error);
-            
-            // Se o erro for de contexto destruído e for pós-navegação, tentar novamente
-            if (error.message.includes('Execution context was destroyed') && message.waitForLoad === true) {
-                console.log(`[Navegador ${global.browserNavigatorId}] Tentando novamente após erro de contexto...`);
-                
-                try {
-                    // Aguardar mais um pouco e tentar novamente
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                    
-                    // Verificar se a página ainda está disponível
-                    if (global.browserPage && !global.browserPage.isClosed()) {
-                        const result = await global.browserPage.evaluate(message.script);
-                        
-                        console.log(`[Navegador ${global.browserNavigatorId}] Script injetado com sucesso na segunda tentativa`);
-                        
-                        process.send({ 
-                            status: 'script_injection_success', 
-                            navigatorId: global.browserNavigatorId, 
-                            result,
-                            message: 'Script injetado com sucesso (segunda tentativa)' 
-                        });
-                        return;
-                    }
-                } catch (retryError) {
-                    console.error(`[Navegador ${global.browserNavigatorId}] Erro na segunda tentativa:`, retryError);
-                }
-            }
-            
-            // Enviar erro
-            process.send({ 
-                status: 'script_injection_error', 
-                navigatorId: global.browserNavigatorId, 
-                error: error.message 
-            });
-        }
-    }
-});
+
 
 // Função para normalizar URLs
 function normalizeUrl(url) {
@@ -1065,23 +978,24 @@ function normalizeUrl(url) {
         return 'about:blank';
     }
     
-    url = url.trim();
+    const trimmedUrl = url.trim();
     
-    // Se já tem protocolo, retorna como está
-    if (url.match(/^https?:\/\//)) {
-        return url;
+    // Se já tem protocolo, retorna como está (usando regex que é mais conciso)
+    if (trimmedUrl.match(/^https?:\/\//)) {
+        return trimmedUrl;
     }
     
     // Protocolos especiais
-    if (url.startsWith('about:') || url.startsWith('file:') || url.startsWith('data:')) {
-        return url;
+    if (trimmedUrl.startsWith('about:') || trimmedUrl.startsWith('file:') || trimmedUrl.startsWith('data:')) {
+        return trimmedUrl;
     }
     
-    // Se parece com domínio ou IP, adiciona https://
-    if (url.includes('.') || url.match(/^\d+\.\d+\.\d+\.\d+/)) {
-        return `https://${url}`;
-    }
-    
-    // Default: adiciona https://
-    return `https://${url}`;
+    // Para todos os outros casos, adiciona https://
+    return `https://${trimmedUrl}`;
 }
+
+// Exportar o módulo
+module.exports = {
+    startBrowser,
+    normalizeUrl
+};
