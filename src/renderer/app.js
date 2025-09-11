@@ -437,6 +437,7 @@ function applyLoadedSettings(settings) {
         }
     }
     
+
     // Carregar estados dos toggles POR ÚLTIMO, excluindo o checkbox de resolução
     if (settings.settings && settings.settings.toggles) {
         const togglesToApply = { ...settings.settings.toggles };
@@ -696,6 +697,15 @@ function initializeButtons() {
         criarContasBtn.addEventListener('click', () => {
             console.log('Criar contas clicado');
             toggleLinksDropdown();
+        });
+    }
+    
+    // Botão All (carregar todos os links sequencialmente)
+    const allBtn = document.getElementById('all-btn');
+    if (allBtn) {
+        allBtn.addEventListener('click', () => {
+            console.log('Botão All clicado');
+            executeAllLinksNavigation();
         });
     }
     
@@ -1423,6 +1433,81 @@ function hideLinksDropdown() {
         arrow.style.transform = 'rotate(0deg)';
         criarContasBtn.classList.remove('dropdown-active');
         criarContasText.textContent = 'Criar contas';
+    }
+}
+
+// Função para executar navegação com todos os links
+async function executeAllLinksNavigation() {
+    console.log('Iniciando navegação com todos os links...');
+    
+    try {
+        // Obter todos os links adicionados
+        const links = getAddedLinks();
+        
+        if (links.length === 0) {
+            showNotification('Nenhum link foi adicionado. Por favor, adicione links primeiro.', 'warning');
+            return;
+        }
+        
+        // Obter navegadores ativos com dados de perfil
+        const activeBrowsersResult = await window.electronAPI.getActiveBrowsersWithProfiles();
+        
+        if (!activeBrowsersResult.success) {
+            showNotification('Erro ao verificar navegadores ativos: ' + activeBrowsersResult.error, 'error');
+            return;
+        }
+        
+        const activeBrowsersWithProfiles = activeBrowsersResult.browsers;
+        const activeBrowsers = activeBrowsersWithProfiles.map(browser => browser.navigatorId);
+        
+        if (activeBrowsers.length === 0) {
+            showNotification('Nenhum navegador ativo encontrado. Abra os navegadores primeiro usando o botão "Abrir Navegadores".', 'warning');
+            return;
+        }
+        
+        // Verificar se há pelo menos o mesmo número de navegadores para os links
+        if (activeBrowsers.length < links.length) {
+            showNotification(`Número insuficiente de navegadores. Você tem ${links.length} links mas apenas ${activeBrowsers.length} navegador(es) ativo(s). Abra mais navegadores.`, 'warning');
+            return;
+        }
+        
+        console.log(`Encontrados ${activeBrowsers.length} navegadores ativos para ${links.length} links`);
+        
+        // Criar array de URLs distribuídas de forma sequencial natural
+        const distributedUrls = [];
+        
+        // Distribuir links de forma sequencial (link1, link2, link3, link1, link2, link3...)
+        for (let i = 0; i < activeBrowsers.length; i++) {
+            const linkIndex = i % links.length;
+            distributedUrls.push(links[linkIndex]);
+        }
+        
+        console.log('Distribuição de URLs:', distributedUrls);
+        
+        // Navegar todos os navegadores com as URLs distribuídas
+        const navigationResult = await window.electronAPI.navigateAllBrowsers(distributedUrls);
+        
+        if (navigationResult.success) {
+            const successCount = navigationResult.results ? navigationResult.results.filter(r => r.success).length : activeBrowsers.length;
+            showNotification(`Navegação iniciada com sucesso em ${successCount} navegador(es) com ${links.length} link(s) distribuído(s)`, 'success');
+            
+            // Log dos resultados detalhados
+            if (navigationResult.results) {
+                navigationResult.results.forEach((result, index) => {
+                    if (result.success) {
+                        console.log(`✓ Navegador ${result.browserId}: Navegando para ${distributedUrls[index]}`);
+                    } else {
+                        console.error(`✗ Navegador ${result.browserId}: ${result.error}`);
+                    }
+                });
+            }
+        } else {
+            showNotification('Erro ao navegar navegadores: ' + navigationResult.error, 'error');
+        }
+        
+    } catch (error) {
+        console.error('Erro na execução da navegação com todos os links:', error);
+        showNotification('Erro inesperado ao executar navegação: ' + error.message, 'error');
     }
 }
 

@@ -385,7 +385,8 @@ async function navigateToUrl(navigatorId, url) {
  * @returns {Array<string>} - Array com IDs dos navegadores ativos
  */
 function getActiveBrowsers() {
-    return Array.from(activeBrowsers.keys());
+    // Retornar IDs ordenados numericamente para garantir ordem consistente
+    return Array.from(activeBrowsers.keys()).sort((a, b) => a - b);
 }
 
 /**
@@ -394,7 +395,11 @@ function getActiveBrowsers() {
  */
 function getActiveBrowsersWithProfiles() {
     const result = [];
-    for (const [navigatorId, browserData] of activeBrowsers.entries()) {
+    // Obter IDs ordenados para garantir ordem consistente
+    const sortedIds = Array.from(activeBrowsers.keys()).sort((a, b) => a - b);
+    
+    for (const navigatorId of sortedIds) {
+        const browserData = activeBrowsers.get(navigatorId);
         result.push({
             navigatorId,
             profileId: browserData.profile ? browserData.profile.id : null,

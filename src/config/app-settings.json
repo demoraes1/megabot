@@ -1,35 +1,36 @@
 {
   "links": [
-    "https://d2uzaoqrzo1qmn.cloudfront.net/?id=492768761",
-    "https://www.voy-petscarepg.com/?id=635794439",
-    "https://www.petscarepg.com/?id=662649197",
-    "https://www.petscarepg.com/?id=867721694"
+    "https://google.com",
+    "https://instagram.com",
+    "https://facebook.com"
   ],
   "proxies": [
     "proxy.tourosnet.com.br:6037",
     "proxy.tourosnet.com.br:6038",
     "proxy.tourosnet.com.br:6039"
   ],
-  "rotatingProxies": [],
+  "rotatingProxies": [
+    "proxy.tourosnet.com.br:5900"
+  ],
   "pixKeys": [],
   "extensions": [],
   "settings": {
     "delay": 5,
-    "openings": 1,
+    "openings": 6,
     "toggles": {
-      "proxy-mode-list": true,
-      "proxy-mode-rotating": false,
+      "proxy-mode-list": false,
+      "proxy-mode-rotating": true,
       "proxy-mode-none": false,
-      "default-resolution-checkbox": false,
+      "default-resolution-checkbox": true,
       "random-passwords-toggle": false,
       "mute-audio-toggle": true,
       "delay-toggle": false
     },
-    "lastSaved": "2025-09-10T22:41:06.666Z"
+    "lastSaved": "2025-09-11T20:29:20.294Z"
   },
   "resolution": {
-    "useDefault": false,
-    "width": 800,
+    "useDefault": true,
+    "width": 502,
     "height": 800
   },
   "automation": {

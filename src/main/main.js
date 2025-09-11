@@ -16,7 +16,7 @@ function createWindow() {
   // Criar a janela do navegador
   const mainWindow = new BrowserWindow({
     width: 1000,
-    height: 680,
+    height: 620,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
