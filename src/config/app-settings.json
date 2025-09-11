@@ -1,8 +1,7 @@
 {
   "links": [
     "https://google.com",
-    "https://instagram.com",
-    "https://facebook.com"
+    "https://instagram.com"
   ],
   "proxies": [
     "proxy.tourosnet.com.br:6037",
@@ -16,7 +15,7 @@
   "extensions": [],
   "settings": {
     "delay": 5,
-    "openings": 6,
+    "openings": 2,
     "toggles": {
       "proxy-mode-list": false,
       "proxy-mode-rotating": true,
@@ -26,7 +25,7 @@
       "mute-audio-toggle": true,
       "delay-toggle": false
     },
-    "lastSaved": "2025-09-11T20:29:20.294Z"
+    "lastSaved": "2025-09-11T20:35:31.394Z"
   },
   "resolution": {
     "useDefault": true,

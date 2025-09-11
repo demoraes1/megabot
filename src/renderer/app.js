@@ -1484,12 +1484,36 @@ async function executeAllLinksNavigation() {
         
         console.log('Distribuição de URLs:', distributedUrls);
         
+        // Salvar URLs específicas nos perfis dos navegadores correspondentes
+        console.log('Salvando URLs específicas para cada navegador...');
+        
+        // Salvar a URL específica para cada navegador baseado na distribuição
+        for (let i = 0; i < activeBrowsersWithProfiles.length; i++) {
+            const browser = activeBrowsersWithProfiles[i];
+            const urlForThisBrowser = distributedUrls[i];
+            
+            if (browser.profileId !== null) {
+                try {
+                    const saveUrlResult = await window.electronAPI.saveUrlToProfiles(urlForThisBrowser, [browser.profileId]);
+                    if (saveUrlResult.success) {
+                        console.log(`URL ${urlForThisBrowser} salva no perfil ${browser.profileId} (navegador ${browser.navigatorId}) com sucesso:`, saveUrlResult.message);
+                    } else {
+                        console.warn(`Falha ao salvar URL ${urlForThisBrowser} no perfil ${browser.profileId}:`, saveUrlResult.error);
+                    }
+                } catch (urlSaveError) {
+                    console.error(`Erro ao salvar URL ${urlForThisBrowser} no perfil ${browser.profileId}:`, urlSaveError);
+                }
+            } else {
+                console.log(`Navegador ${browser.navigatorId} não possui perfil associado, URL ${urlForThisBrowser} não será salva.`);
+            }
+        }
+        
         // Navegar todos os navegadores com as URLs distribuídas
         const navigationResult = await window.electronAPI.navigateAllBrowsers(distributedUrls);
         
         if (navigationResult.success) {
             const successCount = navigationResult.results ? navigationResult.results.filter(r => r.success).length : activeBrowsers.length;
-            showNotification(`Navegação iniciada com sucesso em ${successCount} navegador(es) com ${links.length} link(s) distribuído(s)`, 'success');
+            showNotification(`Navegação iniciada com sucesso em ${successCount} navegador(es) com ${links.length} link(s) distribuído(s). URLs salvas nos perfis.`, 'success');
             
             // Log dos resultados detalhados
             if (navigationResult.results) {
