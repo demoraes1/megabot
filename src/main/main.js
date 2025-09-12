@@ -542,10 +542,27 @@ ipcMain.handle('start-browser-with-profile', async (event, profileId) => {
       useAllMonitors: false,
       selectedMonitors: [],
       profileId: profileId,
-      proxy: profile.proxy || null
+      proxy: profile.proxy || null,
+      urls: profile.url ? [profile.url] : ['about:blank'] // Usar URL salva no perfil
     };
     
+    console.log(`Iniciando navegador com URL: ${profile.url || 'about:blank'}`);
     const browsers = await launchInstances(options);
+    
+    // Se há URL salva, navegar para ela após inicialização
+    if (profile.url && browsers && browsers.length > 0) {
+      try {
+        // Aguardar um pouco para o navegador estar pronto
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Navegar para a URL do perfil
+        const navigationResult = await navigateToUrl(0, profile.url); // Usar navegador ID 0
+        console.log(`Navegação para ${profile.url}:`, navigationResult);
+      } catch (navError) {
+        console.warn('Erro na navegação automática:', navError.message);
+      }
+    }
+    
     return { success: true, browsers, message: `Navegador iniciado para perfil ${profileId}` };
   } catch (error) {
     console.error('Erro ao iniciar navegador:', error);

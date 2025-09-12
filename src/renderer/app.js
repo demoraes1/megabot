@@ -1515,6 +1515,24 @@ async function executeAllLinksNavigation() {
             const successCount = navigationResult.results ? navigationResult.results.filter(r => r.success).length : activeBrowsers.length;
             showNotification(`Navegação iniciada com sucesso em ${successCount} navegador(es) com ${links.length} link(s) distribuído(s). URLs salvas nos perfis.`, 'success');
             
+            // Injetar script de registro após navegação bem-sucedida
+            // Usar injeção pós-navegação para aguardar carregamento completo da página automaticamente
+            try {
+                console.log('Iniciando injeção do script de registro (pós-navegação)...');
+                const injectionResult = await window.electronAPI.injectScriptPostNavigation('registro');
+                
+                if (injectionResult.success) {
+                    console.log('Script de registro injetado com sucesso em todos os navegadores');
+                    showNotification('Script de registro injetado com sucesso!', 'success');
+                } else {
+                    console.warn('Falha na injeção do script de registro:', injectionResult.message);
+                    showNotification(`Aviso: ${injectionResult.message}`, 'warning');
+                }
+            } catch (injectionError) {
+                console.error('Erro ao injetar script de registro:', injectionError);
+                showNotification('Erro ao injetar script de registro', 'error');
+            }
+            
             // Log dos resultados detalhados
             if (navigationResult.results) {
                 navigationResult.results.forEach((result, index) => {
@@ -3131,7 +3149,7 @@ function createProfileCard(profile) {
         </div>
         
         <div class="flex justify-center space-x-1">
-            <button class="hover:bg-gray-700 text-white p-2 rounded flex items-center justify-center" onclick="playProfile('${profile.id}')" title="Iniciar">
+            <button class="hover:bg-gray-700 text-white p-2 rounded flex items-center justify-center play-button" data-profile-id="${profile.id}" title="Iniciar">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                     <path d="M8 5v14l11-7z" fill="#10b981"/>
                 </svg>
@@ -3162,14 +3180,24 @@ function createProfileCard(profile) {
                 </svg>
             </button>
         </div>
-    `;
+    `;    
+    
+    // Adicionar event listener para o botão play
+    const playButton = card.querySelector('.play-button');
+    if (playButton) {
+        playButton.addEventListener('click', () => {
+            const profileId = playButton.getAttribute('data-profile-id');
+            console.log('Botão clicado via addEventListener para perfil:', profileId);
+            playProfile(profileId);
+        });
+    }
     
     return card;
 }
 
 // Funções dos botões dos cards de perfil
 async function playProfile(profileId) {
-    console.log('Play profile:', profileId);
+    console.log('Iniciando navegador para perfil:', profileId);
     try {
         const result = await window.electronAPI.startBrowserWithProfile(profileId);
         if (result.success) {

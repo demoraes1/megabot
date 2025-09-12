@@ -21,7 +21,9 @@ if (!window._elementDeleterAttached) {
                 'retirada',
                 'ontem',
                 'saques',
-                'todas'
+                'todas',
+                'login',
+                'anormal'
             ],
             forceDeleteKeywords: [
                 'registrado',
