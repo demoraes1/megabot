@@ -1,31 +1,8 @@
 {
   "links": [
-    "https://www.we-bakerypg.com/?id=582151795",
-    "https://www.bakerypg.com/?id=521513022",
-    "https://d3jnlbph3h3f35.cloudfront.net/?id=711568607",
-    "https://www.we-bakerypg.com/?id=788808872"
+    "https://fffalfa.com"
   ],
   "proxies": [
-    "proxy.tourosnet.com.br:6030",
-    "proxy.tourosnet.com.br:6031",
-    "proxy.tourosnet.com.br:6032",
-    "proxy.tourosnet.com.br:6033",
-    "proxy.tourosnet.com.br:6034",
-    "proxy.tourosnet.com.br:6035",
-    "proxy.tourosnet.com.br:6036",
-    "proxy.tourosnet.com.br:6037",
-    "proxy.tourosnet.com.br:6038",
-    "proxy.tourosnet.com.br:6039",
-    "proxy.tourosnet.com.br:6040",
-    "proxy.tourosnet.com.br:6041",
-    "proxy.tourosnet.com.br:6042",
-    "proxy.tourosnet.com.br:6043",
-    "proxy.tourosnet.com.br:6044",
-    "proxy.tourosnet.com.br:6045",
-    "proxy.tourosnet.com.br:6046",
-    "proxy.tourosnet.com.br:6047",
-    "proxy.tourosnet.com.br:6048",
-    "proxy.tourosnet.com.br:6049",
     "proxy.tourosnet.com.br:6050",
     "proxy.tourosnet.com.br:6051",
     "proxy.tourosnet.com.br:6052",
@@ -186,19 +163,19 @@
     "delay": 5,
     "openings": 1,
     "toggles": {
-      "proxy-mode-list": true,
+      "proxy-mode-list": false,
       "proxy-mode-rotating": false,
-      "proxy-mode-none": false,
-      "default-resolution-checkbox": false,
-      "random-passwords-toggle": false,
+      "proxy-mode-none": true,
+      "default-resolution-checkbox": true,
+      "random-passwords-toggle": true,
       "mute-audio-toggle": true,
       "delay-toggle": false
     },
-    "lastSaved": "2025-09-13T13:03:54.283Z"
+    "lastSaved": "2025-09-13T20:46:47.291Z"
   },
   "resolution": {
-    "useDefault": false,
-    "width": 800,
+    "useDefault": true,
+    "width": 502,
     "height": 800
   },
   "automation": {
@@ -209,7 +186,8 @@
     "delaySeconds": 5,
     "password": "",
     "withdrawPassword": "",
-    "randomPasswords": false,
-    "jogo": "golden land"
+    "randomPasswords": true,
+    "categoria": "blockchain",
+    "jogo": "aviator"
   }
 }

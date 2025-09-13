@@ -1,80 +1,123 @@
-// Função auxiliar para criar uma pausa, facilitando a leitura do código
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+(async function() {
+    'use strict';
 
-// Função principal que executa todas as etapas
-async function findAndClickGame() {
-  try {
-    // --- ETAPA 1: Clicar na categoria "Slots" no menu lateral ---
-    console.log('Etapa 1: Procurando pela categoria "Slots"...');
-    const allMenuItems = Array.from(document.querySelectorAll('p'));
-    const slotsCategory = allMenuItems.find(p => p.innerText && p.innerText.trim() === 'Slots');
+    // =================================================================================
+    // --- ÁREA DE CONFIGURAÇÃO ---
+    // =================================================================================
+    const config = {
+        // --- Seletores da Interface (DOM) ---
+        selectors: {
+            // Etapa 1: Cabeçalho da Seção de Jogos
+            sectionHeader: 'section[class*="_game-headline_"]',
+            sectionTitle: 'p[class*="_title-text_"]',
+            seeAllButtonContainer: 'div[class*="_click-area_"]',
+            seeAllButtonText: 'Tudo', // Texto do botão para ver todos
 
-    if (!slotsCategory) {
-      console.error('ERRO: Categoria "Slots" não encontrada no menu lateral.');
-      return; // Para a execução se não encontrar
-    }
-    slotsCategory.click();
-    console.log('SUCESSO: Categoria "Slots" clicada.');
-    await sleep(1500); // Espera 1.5 segundos para o conteúdo da página de slots carregar
+            // Etapa 2: Pesquisa
+            searchInput: 'input[placeholder="Pesquisar"]',
 
-    // --- ETAPA 2: Clicar no botão "Tudo" dentro da área de Slots ---
-    console.log('Etapa 2: Procurando pelo botão "Tudo"...');
-    const allDivs = Array.from(document.querySelectorAll('div'));
-    const tudoButton = allDivs.find(div => div.innerText && div.innerText.trim() === 'Tudo' && div.classList.contains('_click-area_14vs5_56'));
+            // Etapa 3: Resultados da Pesquisa
+            gameNameElement: 'h4',
+            gameContainer: 'div[class*="_poster-box_"]'
+        },
 
-    if (!tudoButton) {
-      console.error('ERRO: Botão "Tudo" não encontrado. A página de Slots pode não ter carregado corretamente.');
-      return;
-    }
-    tudoButton.click();
-    console.log('SUCESSO: Botão "Tudo" clicado.');
-    await sleep(1500); // Espera 1 segundo para a página de pesquisa aparecer
+        // --- Configurações de Atraso (Delays em milissegundos) ---
+        delays: {
+            afterSeeAllClick: 1500,
+            afterSearchInput: 1500
+        },
+    };
+    // =================================================================================
+    // --- FIM DA ÁREA DE CONFIGURAÇÃO ---
+    // =================================================================================
 
-    // --- ETAPA 3: Digitar "wild ape" no campo de pesquisa ---
-    console.log('Etapa 3: Procurando pelo campo de pesquisa...');
-    const searchInput = document.querySelector('input[placeholder="Pesquisar"]');
-
-    if (!searchInput) {
-      console.error('ERRO: Campo de pesquisa com placeholder "Pesquisar" não foi encontrado.');
-      return;
-    }
-    
-    const gameToSearch = window.megabotConfig?.jogo || 'wild ape';
-    searchInput.value = gameToSearch;
-    // Dispara eventos para que o site reconheça a digitação
-    searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-    searchInput.dispatchEvent(new Event('change', { bubbles: true }));
-    console.log(`SUCESSO: Digitado "${gameToSearch}" no campo de pesquisa.`);
-    await sleep(1500); // Espera 2 segundos para os resultados da pesquisa aparecerem
-
-    // --- ETAPA 4: Clicar na imagem do jogo ---
-    const gameToFind = window.megabotConfig?.jogo || 'Wild Ape';
-    console.log(`Etapa 4: Procurando pelo jogo "${gameToFind}" nos resultados...`);
-    const allGameNames = Array.from(document.querySelectorAll('h4'));
-    const gameNameElement = allGameNames.find(h4 => h4.innerText && h4.innerText.trim().toLowerCase() === gameToFind.toLowerCase());
-    
-    if (!gameNameElement) {
-      console.error(`ERRO: Jogo "${gameToFind}" não encontrado nos resultados da pesquisa.`);
-      return;
+    // Função auxiliar para criar uma pausa
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    // O elemento clicável é o container da imagem, não apenas o texto do nome
-    const gameContainer = gameNameElement.closest('div[class*="_poster-box_"]');
-    
-    if (!gameContainer) {
-        console.error(`ERRO: Container clicável do jogo "${gameToFind}" não foi encontrado.`);
-        return;
+    // Função principal que executa todas as etapas
+    async function findAndClickGame() {
+      try {
+        // --- ETAPA 0: Validar e obter dados do sistema ---
+        if (!window.megabotConfig || !window.megabotConfig.categoria || !window.megabotConfig.jogo) {
+            console.error('ERRO: Dados essenciais (categoria e jogo) não foram fornecidos pelo sistema em window.megabotConfig. Abortando script.');
+            return; // Para a execução
+        }
+        
+        const categoryToSearch = window.megabotConfig.categoria;
+        const gameToSearch = window.megabotConfig.jogo;
+
+        console.log(`--- Iniciando automação para Categoria: "${categoryToSearch}", Jogo: "${gameToSearch}" ---`);
+
+        // --- ETAPA 1: Clicar no botão "Tudo" da categoria correta ---
+        console.log(`Etapa 1: Procurando pela seção de ${categoryToSearch} e seu botão "${config.selectors.seeAllButtonText}"...`);
+        const allSectionHeaders = Array.from(document.querySelectorAll(config.selectors.sectionHeader));
+        let tudoButton = null;
+
+        for (const header of allSectionHeaders) {
+          const titleElement = header.querySelector(config.selectors.sectionTitle);
+          if (titleElement && titleElement.innerText.trim().toLowerCase() === categoryToSearch.toLowerCase()) {
+            console.log('Encontrada a seção correta. Procurando o botão "Tudo" dentro dela.');
+            const clickableArea = Array.from(header.querySelectorAll(config.selectors.seeAllButtonContainer))
+                                    .find(div => div.innerText && div.innerText.trim() === config.selectors.seeAllButtonText);
+            if (clickableArea) {
+                tudoButton = clickableArea;
+                break;
+            }
+          }
+        }
+
+        if (!tudoButton) {
+          console.error(`ERRO: Botão "${config.selectors.seeAllButtonText}" na seção de ${categoryToSearch} não foi encontrado.`);
+          return;
+        }
+
+        tudoButton.click();
+        console.log('SUCESSO: Botão "Tudo" clicado.');
+        await sleep(config.delays.afterSeeAllClick);
+
+        // --- ETAPA 2: Digitar o nome do jogo no campo de pesquisa ---
+        console.log('Etapa 2: Procurando pelo campo de pesquisa...');
+        const searchInput = document.querySelector(config.selectors.searchInput);
+
+        if (!searchInput) {
+          console.error('ERRO: Campo de pesquisa não foi encontrado.');
+          return;
+        }
+        
+        searchInput.value = gameToSearch;
+        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        searchInput.dispatchEvent(new Event('change', { bubbles: true }));
+        console.log(`SUCESSO: Digitado "${gameToSearch}" no campo de pesquisa.`);
+        await sleep(config.delays.afterSearchInput);
+
+        // --- ETAPA 3: Clicar na imagem do jogo ---
+        console.log(`Etapa 3: Procurando pelo jogo "${gameToSearch}" nos resultados...`);
+        const allGameNames = Array.from(document.querySelectorAll(config.selectors.gameNameElement));
+        const gameNameElement = allGameNames.find(h4 => h4.innerText && h4.innerText.trim().toLowerCase() === gameToSearch.toLowerCase());
+        
+        if (!gameNameElement) {
+          console.error(`ERRO: Jogo "${gameToSearch}" não encontrado nos resultados da pesquisa.`);
+          return;
+        }
+
+        const gameContainer = gameNameElement.closest(config.selectors.gameContainer);
+        
+        if (!gameContainer) {
+            console.error(`ERRO: Container clicável do jogo "${gameToSearch}" não foi encontrado.`);
+            return;
+        }
+
+        gameContainer.click();
+        console.log(`SUCESSO FINAL: Jogo "${gameToSearch}" foi clicado!`);
+
+      } catch (error) {
+        console.error('Ocorreu um erro inesperado durante a automação:', error);
+      }
     }
 
-    gameContainer.click();
-    console.log(`SUCESSO FINAL: Jogo "${gameToFind}" foi clicado!`);
+    // Inicia a automação
+    findAndClickGame();
 
-  } catch (error) {
-    console.error('Ocorreu um erro inesperado durante a automação:', error);
-  }
-}
-
-// Inicia a automação
-findAndClickGame();
+})();

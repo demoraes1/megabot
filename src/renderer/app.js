@@ -221,6 +221,7 @@ function saveSettings() {
             password: document.getElementById('password-field')?.value || '',
             withdrawPassword: document.getElementById('withdraw-password-field')?.value || '',
             randomPasswords: document.getElementById('random-passwords-toggle')?.checked || false,
+            categoria: document.getElementById('categoria-field')?.value || 'slots',
             jogo: document.getElementById('jogo-field')?.value || ''
         }
     };
@@ -431,6 +432,12 @@ function applyLoadedSettings(settings) {
             randomPasswordsToggle.checked = settings.automation.randomPasswords || false;
         }
         
+        // Carregar campo categoria
+        const categoriaField = document.getElementById('categoria-field');
+        if (categoriaField && settings.automation.categoria !== undefined) {
+            categoriaField.value = settings.automation.categoria;
+        }
+        
         // Carregar campo jogo
         if (jogoField && settings.automation.jogo !== undefined) {
             jogoField.value = settings.automation.jogo;
@@ -506,6 +513,7 @@ function initializeAutoSave() {
     const depositMinInput = document.getElementById('deposit-min');
     const depositMaxInput = document.getElementById('deposit-max');
     const delayToggleAutomation = document.getElementById('delay-toggle');
+    const categoriaField = document.getElementById('categoria-field');
     const jogoField = document.getElementById('jogo-field');
     
     if (generateWithdrawToggle) {
@@ -538,6 +546,10 @@ function initializeAutoSave() {
             
             debouncedSave();
         });
+    }
+    
+    if (categoriaField) {
+        categoriaField.addEventListener('change', debouncedSave);
     }
     
     if (jogoField) {
@@ -625,6 +637,37 @@ function initializeAutoSave() {
     setInterval(() => {
         saveSettings();
     }, 30000); // A cada 30 segundos
+    
+    // Atualizar status dos perfis periodicamente
+    setInterval(async () => {
+        const profilesTab = document.querySelector('[data-tab="profiles"]');
+        if (profilesTab && profilesTab.classList.contains('active')) {
+            await renderProfileCards();
+        }
+    }, 2000); // A cada 2 segundos quando a aba de perfis estiver ativa
+
+    // Observer para detectar quando a aba de contas fica visível
+    const profilesTabContent = document.getElementById('tab-contas');
+    if (profilesTabContent) {
+        const observer = new MutationObserver(async (mutations) => {
+            mutations.forEach(async (mutation) => {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                    const target = mutation.target;
+                    if (!target.classList.contains('hidden')) {
+                        // Aba de contas ficou visível, atualizar status
+                        setTimeout(async () => {
+                            await renderProfileCards();
+                        }, 100);
+                    }
+                }
+            });
+        });
+        
+        observer.observe(profilesTabContent, {
+            attributes: true,
+            attributeFilter: ['class']
+        });
+    }
 }
 
 // Sistema de abas
@@ -659,6 +702,8 @@ function initializeTabSystem() {
                 // Sempre recarregar dados quando aba Contas for ativada
                 if (targetTab === 'contas') {
                     await initializeProfilesTab();
+                    // Atualizar status imediatamente ao entrar na aba
+                    await renderProfileCards();
                 }
             }
         });
@@ -3111,10 +3156,25 @@ async function loadProfilesData() {
 /**
  * Cria um card HTML para um perfil
  */
-function createProfileCard(profile) {
+async function createProfileCard(profile) {
     const card = document.createElement('div');
     card.className = 'bg-gray-800 rounded-lg p-3 border border-gray-600 w-72';
     card.setAttribute('data-profile-id', profile.id);
+    
+    // Verificar se o navegador está ativo
+    let isActive = false;
+    try {
+        const activeBrowsersResult = await window.electronAPI.getActiveBrowsersWithProfiles();
+        if (activeBrowsersResult.success) {
+            const activeBrowsers = activeBrowsersResult.browsers;
+            isActive = activeBrowsers.some(browser => browser.profile && browser.profile.id === profile.id);
+        }
+    } catch (error) {
+        console.log('Erro ao verificar status do navegador:', error);
+    }
+    
+    const statusText = isActive ? 'Ativo' : 'Inativo';
+    const statusClass = isActive ? 'text-green-400 bg-green-900' : 'text-red-400 bg-red-900';
     
     card.innerHTML = `
         <div class="mb-3">
@@ -3144,7 +3204,7 @@ function createProfileCard(profile) {
             </div>
             <div class="flex justify-between">
                 <span class="text-gray-400">Status:</span>
-                <span class="text-green-400 text-xs px-2 py-0.5 bg-green-900 rounded text-right">Ativo</span>
+                <span class="${statusClass} text-xs px-2 py-0.5 rounded text-right">${statusText}</span>
             </div>
         </div>
         
@@ -3202,6 +3262,8 @@ async function playProfile(profileId) {
         const result = await window.electronAPI.startBrowserWithProfile(profileId);
         if (result.success) {
             showNotification(`Navegador iniciado para perfil ${profileId}`, 'success');
+            // Atualizar os cards dos perfis para refletir o novo status
+            await renderProfileCards();
         } else {
             showNotification(`Erro ao iniciar navegador: ${result.error}`, 'error');
         }
@@ -3332,7 +3394,7 @@ async function removeProfileCard(profileId) {
  */
 async function initializeProfilesTab() {
     await loadProfilesData();
-    renderProfileCards();
+    await renderProfileCards();
 }
 
 /**
@@ -3343,7 +3405,7 @@ let filteredProfilesData = [];
 /**
  * Aplica filtros aos perfis e re-renderiza
  */
-function applyProfileFilters() {
+async function applyProfileFilters() {
     const filterType = document.getElementById('profile-filter')?.value || 'all';
     const statusFilter = document.getElementById('status-filter')?.value || 'all';
     const searchText = document.getElementById('search-profiles')?.value.toLowerCase() || '';
@@ -3380,13 +3442,13 @@ function applyProfileFilters() {
         return typeMatch && statusMatch;
     });
     
-    renderFilteredProfileCards();
+    await renderFilteredProfileCards();
 }
 
 /**
  * Renderiza os cards filtrados
  */
-function renderFilteredProfileCards() {
+async function renderFilteredProfileCards() {
     const container = document.getElementById('profiles-container');
     if (!container) return;
     
@@ -3407,8 +3469,12 @@ function renderFilteredProfileCards() {
     // Restaurar classes de grid quando há perfis
     container.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4';
     
-    filteredProfilesData.forEach(profile => {
-        const card = createProfileCard(profile);
+    // Criar todos os cards de forma assíncrona
+    const cardPromises = filteredProfilesData.map(profile => createProfileCard(profile));
+    const cards = await Promise.all(cardPromises);
+    
+    // Adicionar todos os cards ao container
+    cards.forEach(card => {
         container.appendChild(card);
     });
 }
@@ -3435,15 +3501,15 @@ function initializeProfileFilters() {
     const clearButton = document.getElementById('clear-filters');
     
     if (profileFilter) {
-        profileFilter.addEventListener('change', applyProfileFilters);
+        profileFilter.addEventListener('change', async () => await applyProfileFilters());
     }
     
     if (statusFilter) {
-        statusFilter.addEventListener('change', applyProfileFilters);
+        statusFilter.addEventListener('change', async () => await applyProfileFilters());
     }
     
     if (searchInput) {
-        searchInput.addEventListener('input', applyProfileFilters);
+        searchInput.addEventListener('input', async () => await applyProfileFilters());
     }
     
     if (clearButton) {
@@ -3454,7 +3520,7 @@ function initializeProfileFilters() {
 /**
  * Atualiza a função renderProfileCards para usar filtros
  */
-function renderProfileCards() {
+async function renderProfileCards() {
     console.log('Iniciando renderização de cards de perfis...');
     const container = document.getElementById('profiles-container');
     if (!container) {
@@ -3466,7 +3532,7 @@ function renderProfileCards() {
     filteredProfilesData = [...profilesData];
     
     // Renderizar cards filtrados
-    renderFilteredProfileCards();
+    await renderFilteredProfileCards();
     
     // Inicializar filtros se ainda não foram inicializados
     if (!window.profileFiltersInitialized) {

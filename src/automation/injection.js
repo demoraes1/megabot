@@ -109,6 +109,7 @@ class ScriptInjector {
             const configScript = `
                 // Injetar configurações do MegaBot para o jogo
                 window.megabotConfig = {
+                    categoria: '${settings.automation?.categoria || 'slots'}',
                     jogo: '${settings.automation?.jogo || 'wild ape'}'
                 };
                 console.log('Configurações MegaBot injetadas:', window.megabotConfig);

@@ -24,7 +24,8 @@ if (!window._elementDeleterAttached) {
                 'todas',
                 'login',
                 'anormal',
-                'https'
+                'https',
+                'dados do subordinado'
 
             ],
             forceDeleteKeywords: [

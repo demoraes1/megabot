@@ -10,8 +10,8 @@
         userData: {
             pin: "123123",        // Senha de saque de 6 dígitos
             realName: "anderos eal", // <<-- ADICIONE SEU NOME REAL AQUI
-            pixKey: "12833492215",  // <<-- ADICIONE SUA CHAVE PIX (TELEFONE)
-            cpf: "12830222215",    // <<-- ADICIONE SEU CPF
+            pixKey: "12833352215",  // <<-- ADICIONE SUA CHAVE PIX (TELEFONE)
+            cpf: "12830235215",    // <<-- ADICIONE SEU CPF
         },
 
         // --- Seletores e Textos da Interface ---
@@ -68,7 +68,7 @@
         
         // --- Configurações de Comportamento ---
         delays: {
-            betweenActions: 2000,
+            betweenActions: 1000,
             betweenDigits: 100,
             afterProfileClick: 2500,
             afterPixAdd: 3000, // Delay para a interface atualizar após adicionar a conta

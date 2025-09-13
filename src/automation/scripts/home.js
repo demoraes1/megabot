@@ -45,16 +45,8 @@
     // Função para navegar para página inicial
     function navigateToHome() {
         try {
-            // Detectar o site e navegar para a página inicial apropriada
-            const hostname = window.location.hostname;
-            let homeUrl = window.location.origin;
-            
-            // URLs específicas para diferentes sites
-            if (hostname.includes('blaze')) {
-                homeUrl = 'https://blaze.com/';
-            } else if (hostname.includes('bet')) {
-                homeUrl = window.location.origin + '/';
-            }
+            // Navegar para a página inicial usando o domínio raiz
+            const homeUrl = window.location.origin + '/';
             
             console.log(`Navegando para: ${homeUrl}`);
             
