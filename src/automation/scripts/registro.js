@@ -138,7 +138,7 @@
             const userData = generateUserData();
             log(`Dados gerados: ${JSON.stringify(userData)}`);
 
-            const registrationModal = accountInput.closest('._loginRegisterDialog_1vl2x_30');
+            const registrationModal = accountInput.closest('.loginRegisterFragment');
             if (!registrationModal) {
                  throw new Error('Não foi possível encontrar o contêiner do formulário principal.');
             }

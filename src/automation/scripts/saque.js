@@ -10,41 +10,41 @@
         userData: {
             pin: "123123",        // Senha de saque de 6 dígitos
             realName: "anderos eal", // <<-- ADICIONE SEU NOME REAL AQUI
-            pixKey: "12830492215",  // <<-- ADICIONE SUA CHAVE PIX (TELEFONE)
-            cpf: "12830492215",    // <<-- ADICIONE SEU CPF
+            pixKey: "12833492215",  // <<-- ADICIONE SUA CHAVE PIX (TELEFONE)
+            cpf: "12830222215",    // <<-- ADICIONE SEU CPF
         },
 
         // --- Seletores e Textos da Interface ---
         selectors: {
-            // Botão de navegação para o Perfil (adicionado)
+            // Navegação
             profileButton: {
                 textToFind: 'Perfil',
                 textElementSelector: 'span.tabbar-text',
                 clickableParentSelector: '.ui-tab'
             },
-            // Tela principal
             mainScreen: {
                 withdrawPageButtonText: 'Saques',
             },
-            // Teclado virtual de PIN
+
+            // Elementos Genéricos
             pinPad: {
                 keyboard: '.ui-number-keyboard:not([style*="display: none"])',
                 keys: '.ui-number-keyboard-key',
             },
-            // Campos de senha
             passwordField: '.ui-password-input__security',
-            // Botões genéricos
             buttonTextSpan: 'button .ui-button__text',
-            // Abas de navegação
             tab: '.ui-tab',
-            // Tela de Definir Senha de Saque
+            
+            // Cenário 1: Definir Senha de Saque
             setPinScreen: {
                 confirmButtonText: 'Confirmar',
             },
-            // Tela de Adicionar Conta PIX
+
+            // Cenário 2: Adicionar Conta
             addPixScreen: {
-                tabText: 'Conta para recebimento',
-                addButtonId: 'addAccountClick',
+                formContainerSelector: 'section[data-route-for-scroll="withdraw"]', 
+                addAccountKeyword: 'Adicionar Conta para Saque',
+                addAccountButtonId: 'addAccountClick',
                 nextButtonText: 'Próximo',
                 pixTypeSelector: '.ui-select-single__content',
                 pixTypeOption: '.ui-options__option-content',
@@ -54,10 +54,14 @@
                 placeholderPixKey: 'Introduza a sua chave do PIX',
                 placeholderCpf: 'Insira o número de 11 dígitos do CPF',
             },
-            // Tela de Solicitar Saque
+
+            // Cenário 3: Solicitar Saque
             withdrawScreen: {
                 tabText: 'Solicitar saque',
-                allAmountButton: '[class*="_allAmount_"]', // Seletor robusto para classe gerada
+                accountSelector: '.ui-select-single__content', // O campo que mostra a conta selecionada
+                accountOption: 'div.ui-options__option',    // A opção de conta clicável na lista
+                pixKeyword: 'PIX',                          // Palavra-chave para encontrar a conta certa
+                allAmountButton: 'span[class*="_allAmount_"]',
                 confirmButtonText: 'Confirmar retirada',
             }
         },
@@ -66,8 +70,8 @@
         delays: {
             betweenActions: 2000,
             betweenDigits: 100,
-            afterProfileClick: 2500, // Adicionado delay para a página de perfil carregar
-            afterPixAdd: 3000,
+            afterProfileClick: 2500,
+            afterPixAdd: 3000, // Delay para a interface atualizar após adicionar a conta
         },
         debug: true
     };
@@ -76,10 +80,11 @@
     // =================================================================================
 
 
-    // --- Funções Auxiliares (Consolidadas) ---
+    // --- Funções Auxiliares ---
     const log = (message) => {
-        if (config.debug) console.log(`[Script de Saque Completo] ${message}`);
+        if (config.debug) console.log(`[Script de Saque] ${message}`);
     };
+
     const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
     async function robustClick(element) {
@@ -112,7 +117,7 @@
         }
         return true;
     }
-
+    
     async function fillInput(placeholderText, value) {
         const targetInput = Array.from(document.querySelectorAll('input')).find(input => input.placeholder === placeholderText);
         if (targetInput) {
@@ -129,7 +134,7 @@
         log(`ERRO: Campo com placeholder "${placeholderText}" não foi encontrado.`);
         return false;
     }
-    
+
     async function waitForElement(selector, timeout = 7000) {
         const startTime = Date.now();
         while (Date.now() - startTime < timeout) {
@@ -155,26 +160,23 @@
     // --- Funções de Etapa ---
 
     async function navigateToProfile() {
-        log('Procurando pelo botão de Perfil na página inicial...');
+        log('Procurando pelo botão de Perfil...');
         try {
             const perfilSpan = await waitForElementByText(
                 config.selectors.profileButton.textElementSelector,
                 config.selectors.profileButton.textToFind
             );
-            
             const clickableButton = perfilSpan.closest(config.selectors.profileButton.clickableParentSelector);
             if (!clickableButton) {
-                log(`ERRO: O elemento de texto "Perfil" foi encontrado, mas seu contêiner clicável não.`);
+                log(`ERRO: Contêiner clicável do "Perfil" não foi encontrado.`);
                 return false;
             }
-
             await robustClick(clickableButton);
-            log(`Botão de Perfil clicado. Aguardando ${config.delays.afterProfileClick / 1000}s para a navegação...`);
+            log(`Botão de Perfil clicado. Aguardando ${config.delays.afterProfileClick / 1000}s...`);
             await sleep(config.delays.afterProfileClick);
             return true;
-
         } catch (error) {
-            log(`ERRO ao tentar navegar para a tela de Perfil: ${error.message}`);
+            log(`ERRO ao navegar para o Perfil: ${error.message}`);
             return false;
         }
     }
@@ -183,54 +185,45 @@
         log('Iniciando a definição da senha de saque...');
         const pinTargets = document.querySelectorAll(config.selectors.passwordField);
         if (pinTargets.length < 2) {
-            log('ERRO: Não foi possível encontrar os dois campos de senha para cadastro.');
-            return;
+            log('ERRO: Campos de senha para cadastro não encontrados.');
+            return false;
         }
-
-        log('Ativando o primeiro campo de senha...');
-        if (!await robustClick(pinTargets[0])) return;
-        if (!await enterPin(config.userData.pin)) return;
-
+        log('Preenchendo o primeiro campo de senha...');
+        if (!await robustClick(pinTargets[0]) || !await enterPin(config.userData.pin)) return false;
         await sleep(config.delays.betweenActions);
-
-        log('Digitando no segundo campo...');
-        if (!await robustClick(pinTargets[1])) return;
-        if (!await enterPin(config.userData.pin)) return;
-
+        log('Preenchendo o segundo campo de senha...');
+        if (!await robustClick(pinTargets[1]) || !await enterPin(config.userData.pin)) return false;
         await sleep(config.delays.betweenActions);
-
         const confirmButton = Array.from(document.querySelectorAll(config.selectors.buttonTextSpan))
             .find(span => span.textContent.trim() === config.selectors.setPinScreen.confirmButtonText);
-
         if (confirmButton) {
-            log('Clicando no botão "Confirmar"...');
+            log('Clicando em "Confirmar"...');
             await robustClick(confirmButton.parentElement);
-            log('✅ Processo de definição de senha finalizado!');
+            log('✅ Definição de senha finalizada!');
+            return true;
         } else {
-            log(`ERRO: Botão "${config.selectors.setPinScreen.confirmButtonText}" da definição de senha não foi encontrado.`);
+            log(`ERRO: Botão "${config.selectors.setPinScreen.confirmButtonText}" não encontrado.`);
+            return false;
         }
     }
-
+    
     async function addPixAccount() {
-        log('Iniciando a adição de conta PIX...');
-        
-        const receiveAccountTab = Array.from(document.querySelectorAll(config.selectors.tab)).find(el => el.textContent === config.selectors.addPixScreen.tabText);
-        if (!await robustClick(receiveAccountTab)) return;
-        await sleep(config.delays.betweenActions);
+        log('Iniciando processo de adição de conta...');
+        const addButton = document.getElementById(config.selectors.addPixScreen.addAccountButtonId);
+        if (!await robustClick(addButton)) return false;
 
-        const addAccountButton = document.getElementById(config.selectors.addPixScreen.addButtonId);
-        if (!await robustClick(addAccountButton)) return;
-        
         try {
             await waitForElement(config.selectors.pinPad.keyboard);
             log('Tela de verificação de PIN detectada.');
 
-            if (!await enterPin(config.userData.pin)) return;
+            if (!await enterPin(config.userData.pin)) return false;
             await sleep(config.delays.betweenActions);
-            const nextButton = Array.from(document.querySelectorAll(config.selectors.buttonTextSpan)).find(span => span.textContent.trim() === config.selectors.addPixScreen.nextButtonText);
+
+            const nextButton = Array.from(document.querySelectorAll(config.selectors.buttonTextSpan))
+                .find(span => span.textContent.trim() === config.selectors.addPixScreen.nextButtonText);
             if (!nextButton || !await robustClick(nextButton.parentElement)) {
-                log(`ERRO: Botão "${config.selectors.addPixScreen.nextButtonText}" não foi encontrado após o PIN.`);
-                return;
+                log(`ERRO: Botão "${config.selectors.addPixScreen.nextButtonText}" não encontrado após o PIN.`);
+                return false;
             }
             log('PIN verificado. Aguardando tela de dados da conta...');
 
@@ -238,41 +231,69 @@
             log('Tela de dados PIX detectada. Preenchendo...');
 
             const typeSelector = document.querySelector(config.selectors.addPixScreen.pixTypeSelector);
-            if (!await robustClick(typeSelector)) return;
+            if (!await robustClick(typeSelector)) return false;
             await sleep(500);
-            const phoneOption = Array.from(document.querySelectorAll(config.selectors.addPixScreen.pixTypeOption)).find(opt => opt.textContent.trim() === config.selectors.addPixScreen.pixTypeOptionText);
-            if (!phoneOption || !await robustClick(phoneOption.parentElement)) return;
+
+            const phoneOption = Array.from(document.querySelectorAll(config.selectors.addPixScreen.pixTypeOption))
+                .find(opt => opt.textContent.trim() === config.selectors.addPixScreen.pixTypeOptionText);
+            if (!phoneOption || !await robustClick(phoneOption.parentElement)) return false;
             await sleep(config.delays.betweenActions);
 
-            if (!await fillInput(config.selectors.addPixScreen.placeholderName, config.userData.realName)) return;
+            if (!await fillInput(config.selectors.addPixScreen.placeholderName, config.userData.realName)) return false;
             await sleep(500);
-            if (!await fillInput(config.selectors.addPixScreen.placeholderPixKey, config.userData.pixKey)) return;
+            if (!await fillInput(config.selectors.addPixScreen.placeholderPixKey, config.userData.pixKey)) return false;
             await sleep(500);
-            if (!await fillInput(config.selectors.addPixScreen.placeholderCpf, config.userData.cpf)) return;
+            if (!await fillInput(config.selectors.addPixScreen.placeholderCpf, config.userData.cpf)) return false;
             await sleep(500);
 
             const confirmAddButton = document.getElementById(config.selectors.addPixScreen.confirmAddButtonId);
             if (await robustClick(confirmAddButton)) {
-                 log('Dados da conta PIX preenchidos e confirmados.');
+                 log('✅ Dados da conta PIX preenchidos e confirmados.');
+                 return true;
             }
+            return false;
         } catch (error) {
             log(`ERRO durante a adição da conta PIX: ${error.message}`);
+            return false;
         }
     }
 
     async function requestWithdrawal() {
         log('Iniciando o processo de solicitação de saque...');
-        
         try {
-            const mainWithdrawTab = await waitForElementByText(config.selectors.tab, config.selectors.withdrawScreen.tabText);
-            log('Aba "Solicitar Saque" encontrada. Clicando para garantir o foco...');
-            await robustClick(mainWithdrawTab);
+            // Garante que a aba "Solicitar saque" está ativa
+            const mainWithdrawTab = Array.from(document.querySelectorAll(config.selectors.tab))
+                .find(el => el.textContent.trim() === config.selectors.withdrawScreen.tabText);
+            if (mainWithdrawTab && !mainWithdrawTab.classList.contains('ui-tab--active')) {
+                log('Clicando na aba "Solicitar saque" para garantir o foco.');
+                await robustClick(mainWithdrawTab);
+                await sleep(config.delays.betweenActions);
+            }
 
-            log('Aguardando o conteúdo da aba de saque carregar...');
-            const tudoButton = await waitForElement(config.selectors.withdrawScreen.allAmountButton);
-            log('Botão "Tudo" encontrado. Prosseguindo com o saque.');
+            // Garante que a conta PIX correta está selecionada
+            const accountSelector = await waitForElement(config.selectors.withdrawScreen.accountSelector);
+            if (!accountSelector.textContent.includes(config.selectors.withdrawScreen.pixKeyword)) {
+                log('Conta PIX não está selecionada. Abrindo opções...');
+                await robustClick(accountSelector);
+                await sleep(config.delays.betweenActions);
 
-            if (!await robustClick(tudoButton)) return;
+                const pixOptions = Array.from(document.querySelectorAll(config.selectors.withdrawScreen.accountOption));
+                const targetAccount = pixOptions.find(opt => opt.textContent.includes(config.selectors.withdrawScreen.pixKeyword));
+
+                if (targetAccount) {
+                    log('Conta PIX encontrada na lista. Selecionando...');
+                    await robustClick(targetAccount);
+                    await sleep(config.delays.betweenActions);
+                } else {
+                    throw new Error('Nenhuma conta PIX encontrada na lista de opções.');
+                }
+            } else {
+                log('Conta PIX já está selecionada.');
+            }
+
+            // Continua com o fluxo de saque
+            const allAmountButton = await waitForElement(config.selectors.withdrawScreen.allAmountButton);
+            if (!await robustClick(allAmountButton)) return;
             await sleep(config.delays.betweenActions);
 
             const passwordField = document.querySelector(config.selectors.passwordField);
@@ -280,69 +301,70 @@
             await sleep(config.delays.betweenActions);
 
             if (!await enterPin(config.userData.pin)) return;
-            log('PIN de saque inserido com sucesso!');
+            log('PIN de saque inserido.');
             await sleep(config.delays.betweenActions);
 
-            const confirmButtonSpan = Array.from(document.querySelectorAll(config.selectors.buttonTextSpan))
+            const confirmButton = Array.from(document.querySelectorAll(config.selectors.buttonTextSpan))
                 .find(span => span.textContent.trim() === config.selectors.withdrawScreen.confirmButtonText);
-            if (confirmButtonSpan) {
-                await robustClick(confirmButtonSpan.parentElement);
+            if (confirmButton) {
+                log('Clicando em "Confirmar retirada"...');
+                await robustClick(confirmButton.parentElement);
                 log('✅ Processo de saque finalizado!');
             } else {
                 log(`ERRO: Botão "${config.selectors.withdrawScreen.confirmButtonText}" não foi encontrado.`);
             }
+
         } catch (error) {
             log(`ERRO na função requestWithdrawal: ${error.message}`);
         }
     }
 
-
     // --- FLUXO PRINCIPAL DE EXECUÇÃO ---
     async function main() {
         log('Iniciando automação...');
+        if (!await navigateToProfile()) return;
         
-        // Etapa 1: Navegar para a tela de Perfil a partir da tela inicial
-        if (!await navigateToProfile()) {
-            log('Falha ao navegar para a tela de Perfil. O script será encerrado.');
+        const saqueButton = Array.from(document.querySelectorAll('div')).find(div => div.textContent.trim() === config.selectors.mainScreen.withdrawPageButtonText);
+        if (!saqueButton) {
+            log(`ERRO: Botão "${config.selectors.mainScreen.withdrawPageButtonText}" não encontrado.`);
             return;
         }
-        
-        // Etapa 2: Clicar no botão "Saques" dentro da tela de Perfil
-        const saqueButton = Array.from(document.querySelectorAll('div')).find(div => div.textContent.trim() === config.selectors.mainScreen.withdrawPageButtonText);
-
-        if (!saqueButton) return log(`ERRO: Botão "${config.selectors.mainScreen.withdrawPageButtonText}" não encontrado na página de Perfil.`);
-        
         await robustClick(saqueButton);
-        log(`Sucesso: O elemento "${config.selectors.mainScreen.withdrawPageButtonText}" foi clicado.`);
+        log('Botão "Saques" clicado.');
         await sleep(config.delays.betweenActions);
 
-        // Etapa 3: Identificar o cenário correto (cadastro de senha, add de conta ou saque direto)
+        // Identificar o cenário correto
         try {
             const pinTargets = document.querySelectorAll(config.selectors.passwordField);
-            const addAccountTab = Array.from(document.querySelectorAll(config.selectors.tab)).find(el => el.textContent === config.selectors.addPixScreen.tabText);
-            const withdrawButton = document.querySelector(config.selectors.withdrawScreen.allAmountButton);
-
             if (pinTargets.length >= 2) {
-                log('Cenário 1: Tela de cadastro de senha detectada.');
-                await setWithdrawPassword();
-                await waitForElement(config.selectors.tab); 
-                await addPixAccount();
-                log(`Aguardando ${config.delays.afterPixAdd / 1000} segundos para a chave PIX ser processada...`);
-                await sleep(config.delays.afterPixAdd);
-                await requestWithdrawal();
-            
-            } else if (addAccountTab) {
-                log('Cenário 2: Tela de gerenciamento de conta detectada.');
-                await addPixAccount();
-                log(`Aguardando ${config.delays.afterPixAdd / 1000} segundos para a chave PIX ser processada...`);
-                await sleep(config.delays.afterPixAdd);
-                await requestWithdrawal();
-            
-            } else if (withdrawButton) {
-                log('Cenário 3: Tela de saque direto detectada.');
-                await requestWithdrawal();
+                log('Cenário 1: Cadastro de senha de saque.');
+                if (await setWithdrawPassword()) {
+                    log('Senha cadastrada. Aguardando transição para a tela de adicionar conta...');
+                    await waitForElement(`#${config.selectors.addPixScreen.addAccountButtonId}`);
+                    if (await addPixAccount()) {
+                        log('Conta adicionada. Prosseguindo para o saque...');
+                        await sleep(config.delays.afterPixAdd);
+                        await requestWithdrawal();
+                    }
+                }
+                return; 
+            }
+
+            const formContainer = document.querySelector(config.selectors.addPixScreen.formContainerSelector);
+            if (formContainer) {
+                if (formContainer.textContent.includes(config.selectors.addPixScreen.addAccountKeyword)) {
+                    log('Cenário 2: Adicionar conta PIX.');
+                    if (await addPixAccount()) {
+                        log('Conta adicionada. Prosseguindo para o saque...');
+                        await sleep(config.delays.afterPixAdd);
+                        await requestWithdrawal();
+                    }
+                } else {
+                    log('Cenário 3: Saque direto.');
+                    await requestWithdrawal();
+                }
             } else {
-                log('ERRO: Não foi possível identificar a tela após clicar em "Saques". O script será encerrado.');
+                 log('ERRO: Nenhum cenário de saque foi identificado.');
             }
         } catch (error) {
             log(`ERRO no fluxo principal: ${error.message}`);
@@ -352,3 +374,4 @@
     main();
 
 })();
+

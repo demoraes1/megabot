@@ -23,7 +23,9 @@ if (!window._elementDeleterAttached) {
                 'saques',
                 'todas',
                 'login',
-                'anormal'
+                'anormal',
+                'https'
+
             ],
             forceDeleteKeywords: [
                 'registrado',

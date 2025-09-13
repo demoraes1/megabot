@@ -183,7 +183,7 @@ async function generatePassword(length = 12) {
     const lowercase = 'abcdefghijklmnopqrstuvwxyz';
     const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     const numbers = '0123456789';
-    const symbols = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+    const symbols = '!@#$%^&*()_+-=[]{}|;:,.?';
     
     const allChars = lowercase + uppercase + numbers + symbols;
     
