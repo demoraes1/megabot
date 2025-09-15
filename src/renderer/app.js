@@ -3228,27 +3228,27 @@ async function createProfileCard(profile) {
                     <path d="M8 5v14l11-7z" fill="#10b981"/>
                 </svg>
             </button>
-            <button class="hover:bg-gray-700 text-white p-2 rounded flex items-center justify-center" onclick="withdrawProfile('${profile.profile}')" title="Saque">
+            <button class="hover:bg-gray-700 text-white p-2 rounded flex items-center justify-center" onclick="withdrawProfile('${profile.navigatorId}')" title="Saque">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="#f59e0b"/>
                 </svg>
             </button>
-            <button class="hover:bg-gray-700 text-white p-2 rounded flex items-center justify-center" onclick="depositProfile('${profile.profile}')" title="Depósito">
+            <button class="hover:bg-gray-700 text-white p-2 rounded flex items-center justify-center" onclick="depositProfile('${profile.navigatorId}')" title="Depósito">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z" fill="#3b82f6"/>
                 </svg>
             </button>
-            <button class="hover:bg-gray-700 text-white p-2 rounded flex items-center justify-center" onclick="statsProfile('${profile.profile}')" title="Relatório">
+            <button class="hover:bg-gray-700 text-white p-2 rounded flex items-center justify-center" onclick="statsProfile('${profile.navigatorId}')" title="Relatório">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                     <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z" fill="#8b5cf6"/>
                 </svg>
             </button>
-            <button class="hover:bg-gray-700 text-white p-2 rounded flex items-center justify-center" onclick="homeProfile('${profile.profile}')" title="Home">
+            <button class="hover:bg-gray-700 text-white p-2 rounded flex items-center justify-center" onclick="homeProfile('${profile.navigatorId}')" title="Home">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                     <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" fill="#6b7280"/>
                 </svg>
             </button>
-            <button class="hover:bg-gray-700 text-white p-2 rounded flex items-center justify-center" onclick="deleteProfile('${profile.profile}')" title="Delete">
+            <button class="hover:bg-gray-700 text-white p-2 rounded flex items-center justify-center" onclick="deleteProfile('${profile.navigatorId}')" title="Delete">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                     <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="#ef4444"/>
                 </svg>

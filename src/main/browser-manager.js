@@ -402,16 +402,21 @@ async function launchInstances(options) {
             launchedBrowsers.push({ browser, page });
             
             // Mover a janela deste navegador assim que for lançado (assíncrono)
-            moverJanelas([posicao], configMovimentacao).then((janelasMovidas) => {
-                if (janelasMovidas > 0) {
-                    totalJanelasMovidas++;
-                    logger.info(`Janela do navegador ${navegadorId} reposicionada com sucesso (${totalJanelasMovidas}/${numNavegadores})`);
-                } else {
-                    logger.warn(`Falha ao reposicionar janela do navegador ${navegadorId}`);
-                }
-            }).catch((error) => {
-                logger.error(`Erro ao mover janela do navegador ${navegadorId}:`, error.message);
-            });
+            // Verificar se moverJanelas está desabilitado
+            if (!options.disableMoverJanelas) {
+                moverJanelas([posicao], configMovimentacao).then((janelasMovidas) => {
+                    if (janelasMovidas > 0) {
+                        totalJanelasMovidas++;
+                        logger.info(`Janela do navegador ${navegadorId} reposicionada com sucesso (${totalJanelasMovidas}/${numNavegadores})`);
+                    } else {
+                        logger.warn(`Falha ao reposicionar janela do navegador ${navegadorId}`);
+                    }
+                }).catch((error) => {
+                    logger.error(`Erro ao mover janela do navegador ${navegadorId}:`, error.message);
+                });
+            } else {
+                logger.info(`Movimento de janela desabilitado para navegador ${navegadorId}`);
+            }
             
             return { browser, page };
         } catch (error) {
