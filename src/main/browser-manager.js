@@ -7,6 +7,9 @@ const stealth = require('../browser-logic/stealth-instance.js');
 // Importar o profile-manager
 const profileManager = require('../automation/profile-manager.js');
 
+// Caminho para o arquivo de configuração principal
+const CONFIG_FILE = path.join(profileManager.PROFILES_DIR, 'config.json');
+
 // Sistema de logging com níveis
 const LOG_LEVELS = {
     DEBUG: 0,
@@ -46,8 +49,63 @@ const DELAY_PARA_REGISTRO_JANELAS = 0; // ms - delay para registro de janelas (p
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+/**
+ * Carrega o último ID usado do arquivo de configuração
+ * @returns {number} Último ID usado ou 0 se não existir
+ */
+function loadLastBrowserId() {
+    try {
+        if (fs.existsSync(CONFIG_FILE)) {
+            const configData = fs.readFileSync(CONFIG_FILE, 'utf8');
+            const config = JSON.parse(configData);
+            // Se lastBrowserId não existir, adicionar automaticamente com valor 0
+            if (config.lastBrowserId === undefined) {
+                config.lastBrowserId = 0;
+                fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), 'utf8');
+                logger.info('lastBrowserId adicionado automaticamente ao config.json com valor 0');
+            }
+            return config.lastBrowserId || 0;
+        }
+    } catch (error) {
+        logger.warn('Erro ao carregar último ID do navegador, iniciando do 0:', error.message);
+    }
+    return 0;
+}
+
+/**
+ * Salva o último ID usado no arquivo de configuração
+ * @param {number} lastId - Último ID usado
+ */
+function saveLastBrowserId(lastId) {
+    try {
+        // Garantir que o diretório existe
+        profileManager.ensureProfilesDirectory();
+        
+        // Carregar configuração existente
+        let config = { profiles: [] };
+        if (fs.existsSync(CONFIG_FILE)) {
+            const configData = fs.readFileSync(CONFIG_FILE, 'utf8');
+            config = JSON.parse(configData);
+        }
+        
+        // Atualizar apenas o lastBrowserId
+        config.lastBrowserId = lastId;
+        
+        fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), 'utf8');
+        logger.info(`Último ID do navegador salvo: ${lastId}`);
+    } catch (error) {
+        logger.error('Erro ao salvar último ID do navegador:', error.message);
+    }
+}
+
+// Variável para controle sequencial de IDs
+let idSequencial = 0;
+
 async function launchInstances(options) {
+    // Recarregar idSequencial do arquivo para garantir valor atualizado
+    idSequencial = loadLastBrowserId();
     logger.info('Iniciando lançamento de navegadores com opções:', options);
+    logger.info(`ID sequencial carregado: ${idSequencial}`);
     
     // Aplicar configuração de resolução das opções se fornecida
     // IMPORTANTE: A escala sempre será 0.65, apenas as dimensões lógicas mudam
@@ -134,7 +192,6 @@ async function launchInstances(options) {
             } else {
                 // Gerar configuração todosMonitores dinamicamente
                 logger.info('Configuração todosMonitores não encontrada, gerando dinamicamente');
-                let idSequencial = 0;
                 
                 // Verificar se posicionamento é array ou objeto
                 const posicionamentoArray = Array.isArray(dadosMonitores.posicionamento) 
@@ -146,7 +203,7 @@ async function launchInstances(options) {
                         logger.info(`Processando ${monitorData.posicoes.length} posições do monitor ${monitorData.id || monitorData.monitor?.id}`);
                         monitorData.posicoes.forEach(pos => {
                             posicoesDisponiveis.push({
-                                id: idSequencial++, // ID sequencial contínuo
+                                id: posicoesDisponiveis.length, // ID baseado no índice da posição
                                 x: pos.x,
                                 y: pos.y,
                                 largura: monitorData.dimensoesFisicas?.largura || Math.round(LARGURA_LOGICA * FATOR_ESCALA),
@@ -225,7 +282,9 @@ async function launchInstances(options) {
     logger.info(`\nIniciando o processo para ${numNavegadores} navegadores em paralelo.\n`);
 
     // 6. Lançar todos os navegadores em paralelo com movimento assíncrono
-    const launchPromises = posicoesParaLancar.map(async (posicao, index) => {
+    const launchPromises = posicoesParaLancar.map(async (posicao) => {
+        const navegadorId = idSequencial++; // ID sequencial para o navegador
+        const urlIndex = navegadorId % (options.urls ? options.urls.length : 1); // Índice para URL baseado no ID
         // Usar perfil existente se fornecido, caso contrário gerar novo
         let profile = null;
         if (options.profileId && profileManager) {
@@ -233,7 +292,7 @@ async function launchInstances(options) {
                 // Usar perfil específico passado nas opções
                 profile = profileManager.getProfileById(options.profileId);
                 if (profile) {
-                    logger.info(`Usando perfil existente para navegador ${posicao.id}:`, {
+                    logger.info(`Usando perfil existente para navegador ${navegadorId}:`, {
                         profileId: profile.id,
                         usuario: profile.usuario,
                         nome: profile.nome_completo
@@ -250,22 +309,22 @@ async function launchInstances(options) {
             try {
                 // Gerar novo perfil apenas se não foi especificado um
                 profile = await profileManager.createNewProfile();
-                logger.info(`Perfil gerado para navegador ${posicao.id}:`, {
+                logger.info(`Perfil gerado para navegador ${navegadorId}:`, {
                     profileId: profile.id,
                     usuario: profile.usuario,
                     nome: profile.nome_completo
                 });
             } catch (error) {
-                logger.error(`Erro ao gerar perfil para navegador ${posicao.id}:`, error.message);
+                logger.error(`Erro ao gerar perfil para navegador ${navegadorId}:`, error.message);
             }
         } else {
-            logger.warn(`Profile Manager não disponível para navegador ${posicao.id}`);
+            logger.warn(`Profile Manager não disponível para navegador ${navegadorId}`);
         }
         
         const instanceOptions = {
             ...options,
-            navigatorId: posicao.id,
-            url: options.urls ? options.urls[index % options.urls.length] : 'about:blank',
+            navigatorId: navegadorId,
+            url: options.urls ? options.urls[urlIndex] : 'about:blank',
             position: posicao,
             profile: profile, // Adicionar o perfil às opções
             windowConfig: {
@@ -276,34 +335,34 @@ async function launchInstances(options) {
         };
         
         try {
-            console.log(`[DEBUG] Iniciando stealth.startBrowser para navegador ${posicao.id}`);
+            console.log(`[DEBUG] Iniciando stealth.startBrowser para navegador ${navegadorId}`);
             const { browser, page } = await stealth.startBrowser(instanceOptions);
-            console.log(`[DEBUG] stealth.startBrowser concluído para navegador ${posicao.id}`);
-            activeBrowsers.set(posicao.id, { browser, page, profile: profile });
+            console.log(`[DEBUG] stealth.startBrowser concluído para navegador ${navegadorId}`);
+            activeBrowsers.set(navegadorId, { browser, page, profile: profile });
             
             browser.on('disconnected', () => {
-                console.log(`Navegador ${posicao.id} foi fechado.`);
-                activeBrowsers.delete(posicao.id);
+                console.log(`Navegador ${navegadorId} foi fechado.`);
+                activeBrowsers.delete(navegadorId);
             });
             
-            logger.info(`Navegador ID_${posicao.id} lançado com sucesso em single-process.`);
+            logger.info(`Navegador ID_${navegadorId} lançado com sucesso em single-process.`);
             launchedBrowsers.push({ browser, page });
             
             // Mover a janela deste navegador assim que for lançado (assíncrono)
             moverJanelas([posicao], configMovimentacao).then((janelasMovidas) => {
                 if (janelasMovidas > 0) {
                     totalJanelasMovidas++;
-                    logger.info(`Janela do navegador ${posicao.id} reposicionada com sucesso (${totalJanelasMovidas}/${numNavegadores})`);
+                    logger.info(`Janela do navegador ${navegadorId} reposicionada com sucesso (${totalJanelasMovidas}/${numNavegadores})`);
                 } else {
-                    logger.warn(`Falha ao reposicionar janela do navegador ${posicao.id}`);
+                    logger.warn(`Falha ao reposicionar janela do navegador ${navegadorId}`);
                 }
             }).catch((error) => {
-                logger.error(`Erro ao mover janela do navegador ${posicao.id}:`, error.message);
+                logger.error(`Erro ao mover janela do navegador ${navegadorId}:`, error.message);
             });
             
             return { browser, page };
         } catch (error) {
-            logger.error(`Falha ao lançar o navegador ID_${posicao.id}:`, error.message);
+            logger.error(`Falha ao lançar o navegador ID_${navegadorId}:`, error.message);
             return null;
         }
     });
@@ -343,6 +402,12 @@ async function launchInstances(options) {
         logger.info('Injeção de scripts pós-reposicionamento concluída');
     } catch (error) {
         logger.error('Erro durante injeção de scripts pós-reposicionamento:', error.message);
+    }
+
+    // Salvar o último ID usado para persistência
+    if (posicoesDisponiveis.length > 0) {
+        saveLastBrowserId(idSequencial);
+        logger.info(`Sistema de IDs persistentes: último ID salvo = ${idSequencial}`);
     }
 
     return {
@@ -600,5 +665,7 @@ module.exports = {
     injectScriptInAllBrowsers,
     injectScriptInAllBrowsersPostNavigation,
     initializeProfileSystem,
-    getAllProfiles
+    getAllProfiles,
+    loadLastBrowserId,
+    saveLastBrowserId
 };

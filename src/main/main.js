@@ -2,7 +2,7 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs').promises;
 const { detectarMonitores, calcularCapacidadeMonitor, salvarDadosMonitores, carregarDadosMonitores, configurarListenerMonitores } = require('./monitor-detector');
-const { launchInstances, navigateToUrl, navigateAllBrowsers, getActiveBrowsers, getActiveBrowsersWithProfiles, injectScriptInBrowser, injectScriptInAllBrowsers } = require('./browser-manager');
+const { launchInstances, navigateToUrl, navigateAllBrowsers, getActiveBrowsers, getActiveBrowsersWithProfiles, injectScriptInBrowser, injectScriptInAllBrowsers, saveLastBrowserId } = require('./browser-manager');
 const ChromiumDownloader = require('../infrastructure/chromium-downloader');
 const scriptInjector = require('../automation/injection');
 const { getAllProfiles, getProfileById, removeProfile, generateProfile, addProfile, updateProfile, loadConfig, saveConfig, PROFILES_DIR } = require('../automation/profile-manager');
@@ -508,8 +508,11 @@ ipcMain.handle('delete-all-profiles', async (event) => {
     }
     
     // Limpar config.json
-    const config = { profiles: [] };
+    const config = { profiles: [], lastBrowserId: 0 };
     saveConfig(config);
+    
+    // Zerar lastBrowserId no sistema
+    await saveLastBrowserId(0);
     
     // Enviar progresso final
     event.sender.send('delete-progress', {
