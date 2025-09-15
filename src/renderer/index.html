@@ -33,7 +33,10 @@
                 </div>
                 
                 <div class="flex gap-2.5">
-                    <button id="saque-btn" class="flex items-center justify-center gap-2 flex-1 px-4 py-2.5 bg-gradient-to-br from-app-blue-900 to-app-blue-700 hover:from-app-blue-800 hover:to-app-blue-700 text-white border border-app-blue-800 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
+                    <button id="saque-btn" 
+                            data-inject-script="saque" 
+                            data-notification="Executando automação de saque em todos os navegadores"
+                            class="flex items-center justify-center gap-2 flex-1 px-4 py-2.5 bg-gradient-to-br from-app-blue-900 to-app-blue-700 hover:from-app-blue-800 hover:to-app-blue-700 text-white border border-app-blue-800 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                         </svg>
@@ -238,93 +241,138 @@
             </div>
             
             <!-- Tab Automação -->
-            <div id="tab-automacao" class="tab-content space-y-6 hidden">
+            <div id="tab-automacao" class="tab-content space-y-4 hidden">
                 <h3 class="text-xl font-bold text-white mb-4">Configurações de Automação</h3>
                 
-                <!-- Jogo -->
-                <div class="bg-app-gray-800 rounded-lg p-4 border border-app-gray-700">
-                    <div class="space-y-4">
-                        <!-- Categoria -->
-                        <div class="space-y-2">
-                            <label class="block text-white font-medium text-sm">Categoria</label>
-                            <select id="categoria-field" class="w-full px-3 py-2 bg-app-gray-700 border border-app-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-app-blue-600 focus:border-transparent">
-                                <option value="slots">Slots</option>
-                                <option value="blockchain">Blockchain</option>
-                                <option value="pescaria">Pescaria</option>
-                            </select>
-                        </div>
+                <!-- Grid de 3 colunas para organizar as categorias -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    
+                    <!-- Categoria: Jogos -->
+                    <div class="bg-app-gray-800 rounded-lg p-4 border border-app-gray-700">
+                        <h4 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-app-blue-400" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z"/>
+                            </svg>
+                            Jogos
+                        </h4>
                         
-                        <!-- Jogo -->
-                        <div class="space-y-2">
-                            <label class="block text-white font-medium text-sm">Jogo</label>
-                            <input type="text" id="jogo-field" class="w-full px-3 py-2 bg-app-gray-700 border border-app-gray-600 rounded-lg text-white placeholder-app-gray-400 focus:outline-none focus:ring-2 focus:ring-app-blue-600 focus:border-transparent" placeholder="Digite o nome do jogo">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Senhas -->
-                <div class="bg-app-gray-800 rounded-lg p-4 border border-app-gray-700">
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <div class="space-y-2">
-                            <label class="block text-white font-medium text-sm">Senha</label>
-                            <input type="text" id="password-field" class="w-full px-3 py-2 bg-app-gray-700 border border-app-gray-600 rounded-lg text-white placeholder-app-gray-400 focus:outline-none focus:ring-2 focus:ring-app-blue-600 focus:border-transparent" placeholder="Digite a senha">
-                        </div>
-                        <div class="space-y-2">
-                            <label class="block text-white font-medium text-sm">Senha de saque</label>
-                            <input type="text" id="withdraw-password-field" class="w-full px-3 py-2 bg-app-gray-700 border border-app-gray-600 rounded-lg text-white placeholder-app-gray-400 focus:outline-none focus:ring-2 focus:ring-app-blue-600 focus:border-transparent" placeholder="Digite 6 números" pattern="[0-9]{6}" maxlength="6" inputmode="numeric">
-                        </div>
-                    </div>
-                    
-                    <div class="flex items-center">
-                        <input type="checkbox" id="random-passwords-toggle" class="w-4 h-4 text-app-blue-600 bg-app-gray-700 border-app-gray-600 rounded focus:ring-app-blue-500 focus:ring-2">
-                        <label for="random-passwords-toggle" class="ml-2 text-white font-medium text-sm">Aleatória</label>
-                    </div>
-                </div>
-
-                <!-- Sem Som -->
-                <div class="flex items-center justify-between p-3 bg-app-gray-800 rounded-lg border border-app-gray-700">
-                    <span class="text-white font-medium text-sm">Sem som</span>
-                    <label class="relative inline-block w-12 h-6">
-                        <input type="checkbox" id="mute-audio-toggle" class="opacity-0 w-0 h-0 peer">
-                        <span class="absolute cursor-pointer top-0 left-0 right-0 bottom-0 bg-app-gray-700 transition-all duration-300 rounded-full before:absolute before:content-[''] before:h-4 before:w-4 before:left-1 before:bottom-1 before:bg-white before:transition-all before:duration-300 before:rounded-full peer-checked:bg-app-blue-900 peer-checked:before:translate-x-6"></span>
-                    </label>
-                </div>
-
-                <!-- Depósitos -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="space-y-2">
-                        <label class="block text-white font-medium text-sm">Depósito mínimo</label>
-                        <input type="number" id="deposit-min" class="w-full px-3 py-2 bg-app-gray-800 border border-app-gray-700 rounded-lg text-white placeholder-app-gray-400 focus:outline-none focus:ring-2 focus:ring-app-blue-600 focus:border-transparent" placeholder="0.00">
-                    </div>
-                    <div class="space-y-2">
-                        <label class="block text-white font-medium text-sm">Depósito máximo</label>
-                        <input type="number" id="deposit-max" class="w-full px-3 py-2 bg-app-gray-800 border border-app-gray-700 rounded-lg text-white placeholder-app-gray-400 focus:outline-none focus:ring-2 focus:ring-app-blue-600 focus:border-transparent" placeholder="0.00">
-                    </div>
-                </div>
-                
-                <!-- Delay entre contas -->
-                <div class="bg-app-gray-800 rounded-lg p-4 border border-app-gray-700">
-                    <div class="flex items-center justify-between mb-3">
-                        <span class="text-white font-medium text-sm">Delay entre contas</span>
-                        <label class="relative inline-block w-12 h-6">
-                            <input type="checkbox" id="delay-toggle" class="opacity-0 w-0 h-0 peer">
-                            <span class="absolute cursor-pointer top-0 left-0 right-0 bottom-0 bg-app-gray-700 transition-all duration-300 rounded-full before:absolute before:content-[''] before:h-4 before:w-4 before:left-1 before:bottom-1 before:bg-white before:transition-all before:duration-300 before:rounded-full peer-checked:bg-app-blue-900 peer-checked:before:translate-x-6"></span>
-                        </label>
-                    </div>
-                    
-                    <div id="delay-controls" class="hidden">
-                        <div class="flex items-center justify-center space-x-4">
-                            <button class="w-10 h-10 bg-app-gray-700 hover:bg-app-gray-600 border border-app-gray-600 rounded-lg text-white font-medium transition-all duration-200 hover:scale-105" id="decrease-delay">-</button>
-                            <div class="text-center">
-                                <span class="text-lg font-bold text-white min-w-[4rem] text-center" id="delay-count">5</span>
-                                <div class="text-xs text-app-gray-400">segundos</div>
+                        <div class="space-y-3">
+                            <!-- Categoria -->
+                            <div class="space-y-1">
+                                <label class="block text-white font-medium text-xs">Categoria</label>
+                                <select id="categoria-field" class="w-full px-2 py-1.5 bg-app-gray-700 border border-app-gray-600 rounded text-white text-sm focus:outline-none focus:ring-1 focus:ring-app-blue-600">
+                                    <option value="slots">Slots</option>
+                                    <option value="blockchain">Blockchain</option>
+                                    <option value="pescaria">Pescaria</option>
+                                </select>
                             </div>
-                            <button class="w-10 h-10 bg-app-gray-700 hover:bg-app-gray-600 border border-app-gray-600 rounded-lg text-white font-medium transition-all duration-200 hover:scale-105" id="increase-delay">+</button>
+                            
+                            <!-- Jogo -->
+                            <div class="space-y-1">
+                                <label class="block text-white font-medium text-xs">Jogo</label>
+                                <input type="text" id="jogo-field" class="w-full px-2 py-1.5 bg-app-gray-700 border border-app-gray-600 rounded text-white text-sm placeholder-app-gray-400 focus:outline-none focus:ring-1 focus:ring-app-blue-600" placeholder="Nome do jogo">
+                            </div>
+                            
+                            <!-- Depósito mínimo -->
+                            <div class="space-y-1">
+                                <label class="block text-white font-medium text-xs">Depósito mínimo</label>
+                                <input type="number" id="deposit-min" class="w-full px-2 py-1.5 bg-app-gray-700 border border-app-gray-600 rounded text-white text-sm placeholder-app-gray-400 focus:outline-none focus:ring-1 focus:ring-app-blue-600" placeholder="0.00">
+                            </div>
+                            
+                            <!-- Depósito máximo -->
+                            <div class="space-y-1">
+                                <label class="block text-white font-medium text-xs">Depósito máximo</label>
+                                <input type="number" id="deposit-max" class="w-full px-2 py-1.5 bg-app-gray-700 border border-app-gray-600 rounded text-white text-sm placeholder-app-gray-400 focus:outline-none focus:ring-1 focus:ring-app-blue-600" placeholder="0.00">
+                            </div>
                         </div>
-                        
-                        <p class="text-xs text-app-gray-400 mt-2 text-center">Aguarda entre cada criação quando múltiplos navegadores ativos</p>
                     </div>
+                    
+                    <!-- Categoria: Dados -->
+                    <div class="bg-app-gray-800 rounded-lg p-4 border border-app-gray-700">
+                        <h4 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-app-green-400" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                            Dados
+                        </h4>
+                        
+                        <div class="space-y-3">
+                            <!-- Senha -->
+                            <div class="space-y-1">
+                                <label class="block text-white font-medium text-xs">Senha</label>
+                                <input type="text" id="password-field" class="w-full px-2 py-1.5 bg-app-gray-700 border border-app-gray-600 rounded text-white text-sm placeholder-app-gray-400 focus:outline-none focus:ring-1 focus:ring-app-blue-600" placeholder="Digite a senha">
+                            </div>
+                            
+                            <!-- Senha de saque -->
+                            <div class="space-y-1">
+                                <label class="block text-white font-medium text-xs">Senha de saque</label>
+                                <input type="text" id="withdraw-password-field" class="w-full px-2 py-1.5 bg-app-gray-700 border border-app-gray-600 rounded text-white text-sm placeholder-app-gray-400 focus:outline-none focus:ring-1 focus:ring-app-blue-600" placeholder="6 números" pattern="[0-9]{6}" maxlength="6" inputmode="numeric">
+                            </div>
+                            
+                            <!-- Checkbox Aleatória -->
+                            <div class="flex items-center pt-2">
+                                <input type="checkbox" id="random-passwords-toggle" class="w-3 h-3 text-app-blue-600 bg-app-gray-700 border-app-gray-600 rounded focus:ring-app-blue-500 focus:ring-1">
+                                <label for="random-passwords-toggle" class="ml-2 text-white font-medium text-xs">Aleatória</label>
+                            </div>
+                            
+                            <!-- Dropdown Tipos de Chave PIX -->
+                            <div class="space-y-1">
+                                <label class="block text-white font-medium text-xs">Tipo de Chave PIX</label>
+                                <select id="pix-key-type" class="w-full px-2 py-1.5 bg-app-gray-700 border border-app-gray-600 rounded text-white text-sm focus:outline-none focus:ring-1 focus:ring-app-blue-600">
+                                    <option value="cpf">CPF</option>
+                                    <option value="cnpj">CNPJ</option>
+                                    <option value="email">E-mail</option>
+                                    <option value="telefone">Telefone</option>
+                                    <option value="aleatoria">Chave Aleatória</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Categoria: Sistema -->
+                    <div class="bg-app-gray-800 rounded-lg p-4 border border-app-gray-700">
+                        <h4 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-app-purple-400" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            </svg>
+                            Sistema
+                        </h4>
+                        
+                        <div class="space-y-4">
+                            <!-- Delay entre contas -->
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-white font-medium text-xs">Delay entre contas</span>
+                                    <label class="relative inline-block w-12 h-6">
+                                        <input type="checkbox" id="delay-toggle" class="opacity-0 w-0 h-0 peer">
+                                        <span class="absolute cursor-pointer top-0 left-0 right-0 bottom-0 bg-gray-700 transition-all duration-300 rounded-full before:absolute before:content-[''] before:h-4 before:w-4 before:left-1 before:bottom-1 before:bg-white before:transition-all before:duration-300 before:rounded-full peer-checked:bg-blue-900 peer-checked:before:translate-x-6"></span>
+                                    </label>
+                                </div>
+                                
+                                <div id="delay-controls" class="hidden">
+                                    <div class="flex items-center justify-center space-x-2">
+                                        <button class="w-8 h-8 bg-app-gray-700 hover:bg-app-gray-600 border border-app-gray-600 rounded text-white text-sm font-medium transition-all duration-200 hover:scale-105" id="decrease-delay">-</button>
+                                        <div class="text-center min-w-[3rem]">
+                                            <span class="text-sm font-bold text-white" id="delay-count">5</span>
+                                            <div class="text-xs text-app-gray-400">seg</div>
+                                        </div>
+                                        <button class="w-8 h-8 bg-app-gray-700 hover:bg-app-gray-600 border border-app-gray-600 rounded text-white text-sm font-medium transition-all duration-200 hover:scale-105" id="increase-delay">+</button>
+                                    </div>
+                                    <p class="text-xs text-app-gray-400 mt-1 text-center">Aguarda entre criações</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Sem Som -->
+                            <div class="flex items-center justify-between">
+                                <span class="text-white font-medium text-xs">Sem som</span>
+                                <label class="relative inline-block w-12 h-6">
+                                    <input type="checkbox" id="mute-audio-toggle" class="opacity-0 w-0 h-0 peer">
+                                    <span class="absolute cursor-pointer top-0 left-0 right-0 bottom-0 bg-gray-700 transition-all duration-300 rounded-full before:absolute before:content-[''] before:h-4 before:w-4 before:left-1 before:bottom-1 before:bg-white before:transition-all before:duration-300 before:rounded-full peer-checked:bg-blue-900 peer-checked:before:translate-x-6"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
                 </div>
             </div>
 
@@ -479,8 +527,50 @@
                 <button class="w-8 h-8 bg-app-gray-700 hover:bg-app-red-600 rounded-lg text-white text-lg font-bold transition-colors duration-200" id="close-pix-popup">×</button>
             </div>
             <div class="p-4 h-[calc(100%-80px)] overflow-y-auto">
-                <p class="text-app-gray-400 text-sm mb-4">Configure as chaves PIX para poder operar</p>
+                <p class="text-app-gray-400 text-sm mb-4">Configure as chaves PIX para o sistema</p>
                 
+                <!-- Seção de Lista de Chaves PIX -->
+                <div class="bg-app-gray-800 rounded-lg p-4 border border-app-gray-700 mb-4">
+                    <h4 class="text-white font-medium text-sm mb-3">Adicionar Chaves PIX</h4>
+                    <div class="space-y-3">
+                        <div>
+                            <textarea id="pix-list-popup" rows="6" class="w-full px-3 py-2 bg-app-gray-900 border border-app-gray-600 rounded-lg text-white placeholder-app-gray-400 focus:outline-none focus:ring-2 focus:ring-app-blue-600 focus:border-transparent resize-vertical" placeholder="Insira as chaves PIX, uma por linha"></textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Contadores por tipo de chave PIX -->
+                <div class="bg-app-gray-800 rounded-lg p-4 border border-app-gray-700 mb-4">
+                    <h4 class="text-white font-medium text-sm mb-3">Chaves por tipo:</h4>
+                    <div class="grid grid-cols-2 gap-2 text-sm">
+                        <div class="flex justify-between items-center p-2 bg-app-gray-900 rounded">
+                            <span class="text-app-gray-400">CPF:</span>
+                            <span class="text-white font-medium" id="cpf-count">0</span>
+                        </div>
+                        <div class="flex justify-between items-center p-2 bg-app-gray-900 rounded">
+                            <span class="text-app-gray-400">CNPJ:</span>
+                            <span class="text-white font-medium" id="cnpj-count">0</span>
+                        </div>
+                        <div class="flex justify-between items-center p-2 bg-app-gray-900 rounded">
+                            <span class="text-app-gray-400">E-mail:</span>
+                            <span class="text-white font-medium" id="email-count">0</span>
+                        </div>
+                        <div class="flex justify-between items-center p-2 bg-app-gray-900 rounded">
+                            <span class="text-app-gray-400">Telefone:</span>
+                            <span class="text-white font-medium" id="phone-count">0</span>
+                        </div>
+                        <div class="flex justify-between items-center p-2 bg-app-gray-900 rounded">
+                            <span class="text-app-gray-400">Aleatória:</span>
+                            <span class="text-white font-medium" id="random-count">0</span>
+                        </div>
+                        <div class="flex justify-between items-center p-2 bg-app-gray-900 rounded">
+                            <span class="text-app-gray-400">Inválidas:</span>
+                            <span class="text-red-400 font-medium" id="invalid-count">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Informações sobre formatos aceitos -->
                 <div class="bg-app-gray-800 rounded-lg p-4 border border-app-gray-700 mb-4">
                     <h4 class="text-white font-medium text-sm mb-3">Formatos aceitos:</h4>
                     <ul class="space-y-1 text-sm text-app-gray-400">
@@ -491,15 +581,11 @@
                     </ul>
                 </div>
                 
-                <button class="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gradient-to-br from-app-green-600 to-app-green-700 hover:from-app-green-700 hover:to-green-800 text-white border border-green-800 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]" id="add-pix-file-btn">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z"/>
-                    </svg>
-                    Adicionar Chaves
-                </button>
-                
-                <div class="mt-6 space-y-3" id="pix-list">
-                    <!-- Chaves PIX serão adicionadas aqui dinamicamente -->
+                <!-- Botões de Ação -->
+                <div class="flex gap-3">
+                    <button class="flex-1 px-4 py-2.5 bg-gradient-to-br from-app-red-600 to-app-red-700 hover:from-app-red-700 hover:to-red-800 text-white border border-red-800 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]" id="clear-pix-btn">
+                        Limpar Tudo
+                    </button>
                 </div>
             </div>
         </div>
@@ -571,7 +657,6 @@
 
 
     <!-- Input files ocultos -->
-    <input type="file" id="pix-file-input" accept=".txt" class="hidden">
     <input type="file" id="extension-folder-input" webkitdirectory directory class="hidden">
     
     <!-- Bottom Tabs -->
@@ -656,6 +741,7 @@
         </div>
     </div>
 
+    <script src="pix-validator.js"></script>
     <script type="module" src="app.js"></script>
 </body>
 </html>

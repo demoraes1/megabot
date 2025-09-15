@@ -222,7 +222,8 @@ function saveSettings() {
             withdrawPassword: document.getElementById('withdraw-password-field')?.value || '',
             randomPasswords: document.getElementById('random-passwords-toggle')?.checked || false,
             categoria: document.getElementById('categoria-field')?.value || 'slots',
-            jogo: document.getElementById('jogo-field')?.value || ''
+            jogo: document.getElementById('jogo-field')?.value || '',
+            pixKeyType: document.getElementById('pix-key-type')?.value || 'CPF'
         }
     };
     
@@ -442,6 +443,12 @@ function applyLoadedSettings(settings) {
         if (jogoField && settings.automation.jogo !== undefined) {
             jogoField.value = settings.automation.jogo;
         }
+        
+        // Carregar tipo de chave PIX
+        const pixKeyTypeField = document.getElementById('pix-key-type');
+        if (pixKeyTypeField && settings.automation.pixKeyType !== undefined) {
+            pixKeyTypeField.value = settings.automation.pixKeyType;
+        }
     }
     
 
@@ -555,6 +562,12 @@ function initializeAutoSave() {
     if (jogoField) {
         jogoField.addEventListener('input', debouncedSave);
         jogoField.addEventListener('change', debouncedSave);
+    }
+    
+    // Observar mudanças no dropdown de tipo de chave PIX
+    const pixKeyTypeField = document.getElementById('pix-key-type');
+    if (pixKeyTypeField) {
+        pixKeyTypeField.addEventListener('change', debouncedSave);
     }
     
     // Observar mudanças nos toggles, checkboxes e radio buttons
@@ -977,16 +990,8 @@ function initializeLinkManagement() {
     // Atualizar o botão na inicialização
     updateCriarContasButton();
     
-    // Botão adicionar chaves PIX
-    const addPixBtn = document.getElementById('add-pix-file-btn');
-    if (addPixBtn) {
-        addPixBtn.addEventListener('click', () => {
-            const pixFileInput = document.getElementById('pix-file-input');
-            if (pixFileInput) {
-                pixFileInput.click();
-            }
-        });
-    }
+    // Funcionalidade para chaves PIX
+    initializePixManagement();
     
     // Botão adicionar extensão
     const uploadExtensionBtn = document.getElementById('upload-extension-btn');
@@ -1205,12 +1210,12 @@ function getRotatingProxy() {
 function getAddedPixKeys() {
     const pixKeys = [];
     
-    // Obter chaves PIX da lista dinâmica
-    const pixList = document.getElementById('pix-list');
-    if (pixList) {
-        const pixElements = pixList.querySelectorAll('.font-mono');
-        pixElements.forEach(element => {
-            const pixKey = element.textContent.trim();
+    // Obter chaves PIX do textarea
+    const pixListPopup = document.getElementById('pix-list-popup');
+    if (pixListPopup && pixListPopup.value) {
+        const lines = pixListPopup.value.split('\n');
+        lines.forEach(line => {
+            const pixKey = line.trim();
             if (pixKey !== '') {
                 pixKeys.push(pixKey);
             }
@@ -1323,28 +1328,15 @@ function loadRotatingProxies(rotatingProxies) {
 
 // Função para carregar chaves PIX
 function loadPixKeys(pixKeys) {
-    if (!pixKeys || pixKeys.length === 0) return;
+    const pixListPopup = document.getElementById('pix-list-popup');
+    if (!pixListPopup) return;
     
-    const pixList = document.getElementById('pix-list');
-    if (!pixList) return;
-    
-    // Limpar lista atual
-    pixList.innerHTML = '';
-    
-    // Adicionar cada chave PIX
-    pixKeys.forEach(pixKey => {
-        const pixItem = document.createElement('div');
-        pixItem.className = 'flex items-center justify-between p-2 bg-gray-50 rounded';
-        pixItem.innerHTML = `
-            <span class="font-mono text-sm">${pixKey}</span>
-            <button onclick="removePixKey(this)" class="text-red-500 hover:text-red-700">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-            </button>
-        `;
-        pixList.appendChild(pixItem);
-    });
+    // Carregar chaves PIX no textarea
+    if (pixKeys && pixKeys.length > 0) {
+        pixListPopup.value = pixKeys.join('\n');
+    } else {
+        pixListPopup.value = '';
+    }
     
     // Atualizar contador
     updatePixCount();
@@ -1381,12 +1373,14 @@ function loadExtensions(extensions) {
 
 // Função para atualizar contador de chaves PIX
 function updatePixCount() {
-    const pixList = document.getElementById('pix-list');
+    const pixListPopup = document.getElementById('pix-list-popup');
     let totalPixKeys = 0;
+    let pixKeys = [];
     
-    if (pixList) {
-        const pixElements = pixList.querySelectorAll('.font-mono');
-        totalPixKeys = pixElements.length;
+    if (pixListPopup && pixListPopup.value) {
+        const lines = pixListPopup.value.split('\n');
+        pixKeys = lines.filter(line => line.trim() !== '').map(line => line.trim());
+        totalPixKeys = pixKeys.length;
     }
     
     // Atualizar contador na interface (se existir)
@@ -1395,7 +1389,38 @@ function updatePixCount() {
         pixCounter.textContent = `${totalPixKeys} chaves PIX disponíveis`;
     }
     
+    // Atualizar contadores por tipo usando o PixValidator
+    updatePixCountsByType(pixKeys);
+    
     console.log(`Total de chaves PIX: ${totalPixKeys}`);
+}
+
+// Função para atualizar contadores por tipo de chave PIX
+function updatePixCountsByType(pixKeys) {
+    if (typeof PixValidator === 'undefined') {
+        console.warn('PixValidator não está disponível');
+        return;
+    }
+    
+    const validator = new PixValidator();
+    const counts = validator.countPixKeysByType(pixKeys);
+    
+    // Atualizar elementos na interface
+    const cpfCount = document.getElementById('cpf-count');
+    const cnpjCount = document.getElementById('cnpj-count');
+    const emailCount = document.getElementById('email-count');
+    const phoneCount = document.getElementById('phone-count');
+    const randomCount = document.getElementById('random-count');
+    const invalidCount = document.getElementById('invalid-count');
+    
+    if (cpfCount) cpfCount.textContent = counts['CPF'] || 0;
+    if (cnpjCount) cnpjCount.textContent = counts['CNPJ'] || 0;
+    if (emailCount) emailCount.textContent = counts['E-mail'] || 0;
+    if (phoneCount) phoneCount.textContent = counts['Telefone'] || 0;
+    if (randomCount) randomCount.textContent = counts['Chave Aleatória'] || 0;
+    if (invalidCount) invalidCount.textContent = counts['Inválidas'] || 0;
+    
+    console.log('Contadores por tipo atualizados:', counts);
 }
 
 // Função para atualizar contador de extensões
@@ -1860,25 +1885,7 @@ function updateCriarContasButton() {
 window.removeLinkInputGlobal = removeLinkInput;
 
 // Funções para upload de arquivos
-function handlePixFileUpload(event) {
-    const file = event.target.files[0];
-    if (file && file.type === 'text/plain') {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const content = e.target.result;
-            const pixKeys = content.split('\n').filter(key => key.trim() !== '');
-            
-            console.log('Chaves PIX carregadas:', pixKeys.length);
-            showNotification(`${pixKeys.length} chaves PIX carregadas com sucesso!`, 'success');
-            
-            // Aqui você pode processar as chaves PIX
-            displayPixKeys(pixKeys);
-        };
-        reader.readAsText(file);
-    } else {
-        showNotification('Por favor, selecione um arquivo .txt válido', 'warning');
-    }
-}
+// Função handlePixFileUpload removida - não é mais necessária com o novo formato de textarea
 
 function handleExtensionUpload(event) {
     const files = event.target.files;
@@ -1891,22 +1898,7 @@ function handleExtensionUpload(event) {
     }
 }
 
-function displayPixKeys(keys) {
-    const pixList = document.getElementById('pix-list');
-    if (pixList) {
-        pixList.innerHTML = '';
-        keys.forEach((key, index) => {
-            const keyElement = document.createElement('div');
-            keyElement.className = 'flex items-center justify-between p-3 bg-app-gray-800 rounded-lg border border-app-gray-700';
-            keyElement.innerHTML = `
-                <span class="text-white text-sm font-mono">${key}</span>
-                <button class="w-6 h-6 bg-app-red-600 hover:bg-app-red-500 rounded text-white text-xs font-bold transition-colors duration-200" onclick="removePixKey(${index})" title="Remover chave">×</button>
-            `;
-            pixList.appendChild(keyElement);
-        });
-        debouncedSave();
-    }
-}
+// Função displayPixKeys removida - não é mais necessária com o novo formato de textarea
 
 function displayExtension(path) {
     const extensionsList = document.getElementById('extensions-list');
@@ -1922,11 +1914,7 @@ function displayExtension(path) {
     }
 }
 
-function removePixKey(index) {
-    // Implementar remoção de chave PIX
-    console.log('Removendo chave PIX:', index);
-    debouncedSave();
-}
+// Função removePixKey removida - não é mais necessária com o novo formato de textarea
 
 function removeExtension(button) {
     button.parentElement.remove();
@@ -1957,6 +1945,36 @@ function updateProxyCount() {
 }
 
 // Gerenciamento de proxies
+function initializePixManagement() {
+    const pixListPopup = document.getElementById('pix-list-popup');
+    const pixCounter = document.getElementById('pix-counter-text');
+    const clearPixBtn = document.getElementById('clear-pix-btn');
+    
+    // Event listener para campo do popup
+    if (pixListPopup) {
+        pixListPopup.addEventListener('input', () => {
+            updatePixCount();
+            debouncedSave();
+        });
+    }
+    
+    // Botão limpar chaves PIX
+    if (clearPixBtn) {
+        clearPixBtn.addEventListener('click', async () => {
+            const confirmed = await showCustomConfirm('Tem certeza que deseja limpar todas as chaves PIX?');
+            if (confirmed) {
+                if (pixListPopup) pixListPopup.value = '';
+                updatePixCount();
+                debouncedSave();
+                showNotification('Chaves PIX limpas com sucesso!', 'success');
+            }
+        });
+    }
+    
+    // Atualizar contagem inicial
+    updatePixCount();
+}
+
 function initializeProxyManagement() {
     const proxyList = document.getElementById('proxy-list');
     const rotatingProxyList = document.getElementById('rotating-proxy-list');

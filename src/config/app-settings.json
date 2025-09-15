@@ -157,21 +157,25 @@
   "rotatingProxies": [
     "proxy.tourosnet.com.br:5900"
   ],
-  "pixKeys": [],
+  "pixKeys": [
+    "21995944781",
+    "150.307.237.14",
+    "17457edc-8d7f-47c2-b75e-48b9ebadae36"
+  ],
   "extensions": [],
   "settings": {
     "delay": 5,
-    "openings": 1,
+    "openings": 2,
     "toggles": {
       "proxy-mode-list": false,
       "proxy-mode-rotating": false,
       "proxy-mode-none": true,
       "default-resolution-checkbox": true,
       "random-passwords-toggle": true,
-      "mute-audio-toggle": true,
-      "delay-toggle": false
+      "delay-toggle": false,
+      "mute-audio-toggle": true
     },
-    "lastSaved": "2025-09-13T20:46:47.291Z"
+    "lastSaved": "2025-09-15T15:54:44.964Z"
   },
   "resolution": {
     "useDefault": true,
@@ -188,6 +192,7 @@
     "withdrawPassword": "",
     "randomPasswords": true,
     "categoria": "blockchain",
-    "jogo": "aviator"
+    "jogo": "aviator",
+    "pixKeyType": "cnpj"
   }
 }
