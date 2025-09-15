@@ -3,13 +3,6 @@
     "https://fffalfa.com"
   ],
   "proxies": [
-    "proxy.tourosnet.com.br:6073",
-    "proxy.tourosnet.com.br:6074",
-    "proxy.tourosnet.com.br:6075",
-    "proxy.tourosnet.com.br:6076",
-    "proxy.tourosnet.com.br:6077",
-    "proxy.tourosnet.com.br:6078",
-    "proxy.tourosnet.com.br:6079",
     "proxy.tourosnet.com.br:6080",
     "proxy.tourosnet.com.br:6081",
     "proxy.tourosnet.com.br:6082",
@@ -152,7 +145,7 @@
       "delay-toggle": false,
       "mute-audio-toggle": true
     },
-    "lastSaved": "2025-09-15T20:32:17.030Z"
+    "lastSaved": "2025-09-15T21:01:05.965Z"
   },
   "resolution": {
     "useDefault": true,
