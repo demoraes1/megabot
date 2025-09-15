@@ -3,29 +3,6 @@
     "https://fffalfa.com"
   ],
   "proxies": [
-    "proxy.tourosnet.com.br:6050",
-    "proxy.tourosnet.com.br:6051",
-    "proxy.tourosnet.com.br:6052",
-    "proxy.tourosnet.com.br:6053",
-    "proxy.tourosnet.com.br:6054",
-    "proxy.tourosnet.com.br:6055",
-    "proxy.tourosnet.com.br:6056",
-    "proxy.tourosnet.com.br:6057",
-    "proxy.tourosnet.com.br:6058",
-    "proxy.tourosnet.com.br:6059",
-    "proxy.tourosnet.com.br:6060",
-    "proxy.tourosnet.com.br:6061",
-    "proxy.tourosnet.com.br:6062",
-    "proxy.tourosnet.com.br:6063",
-    "proxy.tourosnet.com.br:6064",
-    "proxy.tourosnet.com.br:6065",
-    "proxy.tourosnet.com.br:6066",
-    "proxy.tourosnet.com.br:6067",
-    "proxy.tourosnet.com.br:6068",
-    "proxy.tourosnet.com.br:6069",
-    "proxy.tourosnet.com.br:6070",
-    "proxy.tourosnet.com.br:6071",
-    "proxy.tourosnet.com.br:6072",
     "proxy.tourosnet.com.br:6073",
     "proxy.tourosnet.com.br:6074",
     "proxy.tourosnet.com.br:6075",
@@ -165,17 +142,17 @@
   "extensions": [],
   "settings": {
     "delay": 5,
-    "openings": 2,
+    "openings": 1,
     "toggles": {
-      "proxy-mode-list": false,
+      "proxy-mode-list": true,
       "proxy-mode-rotating": false,
-      "proxy-mode-none": true,
+      "proxy-mode-none": false,
       "default-resolution-checkbox": true,
       "random-passwords-toggle": true,
       "delay-toggle": false,
       "mute-audio-toggle": true
     },
-    "lastSaved": "2025-09-15T17:12:36.169Z"
+    "lastSaved": "2025-09-15T20:32:17.030Z"
   },
   "resolution": {
     "useDefault": true,

@@ -133,7 +133,8 @@ async function generateProfile() {
         
         const profileId = generateProfileId();
         const profile = {
-            id: `profile_${profileId}`,
+            navigatorId: null, // Será definido quando o navegador for lançado
+            profile: `profile_${profileId}`,
             url: null,
             usuario: userData.username,
             nome_completo: userData.fullName,
@@ -147,7 +148,7 @@ async function generateProfile() {
         };
         
         console.log('Perfil gerado:', {
-            id: profile.id,
+            profile: profile.profile,
             usuario: profile.usuario,
             nome_completo: profile.nome_completo,
             telefone: profile.telefone,
@@ -171,17 +172,17 @@ function addProfile(profile) {
     const config = loadConfig();
     
     // Verificar se já existe um perfil com o mesmo ID
-    const existingProfile = config.profiles.find(p => p.id === profile.id);
+    const existingProfile = config.profiles.find(p => p.profile === profile.profile);
     if (existingProfile) {
-        console.warn(`Perfil com ID ${profile.id} já existe, gerando novo ID`);
+        console.warn(`Perfil com ID ${profile.profile} já existe, gerando novo ID`);
         const newProfileId = generateProfileId();
-        profile.id = `profile_${newProfileId}`;
+        profile.profile = `profile_${newProfileId}`;
     }
     
     config.profiles.push(profile);
     saveConfig(config);
     
-    console.log(`Perfil ${profile.id} adicionado com sucesso`);
+    console.log(`Perfil ${profile.profile} adicionado com sucesso`);
     return config;
 }
 
@@ -211,7 +212,7 @@ function getAllProfiles() {
  */
 function getProfileById(profileId) {
     const config = loadConfig();
-    return config.profiles.find(p => p.id === profileId) || null;
+    return config.profiles.find(p => p.profile === profileId) || null;
 }
 
 /**
@@ -223,7 +224,7 @@ function removeProfile(profileId) {
     const config = loadConfig();
     const initialLength = config.profiles.length;
     
-    config.profiles = config.profiles.filter(p => p.id !== profileId);
+    config.profiles = config.profiles.filter(p => p.profile !== profileId);
     
     if (config.profiles.length < initialLength) {
         saveConfig(config);
@@ -243,7 +244,7 @@ function removeProfile(profileId) {
  */
 function updateProfile(profileId, updates) {
     const config = loadConfig();
-    const profileIndex = config.profiles.findIndex(p => p.id === profileId);
+    const profileIndex = config.profiles.findIndex(p => p.profile === profileId);
     
     if (profileIndex === -1) {
         console.warn(`Perfil ${profileId} não encontrado para atualização`);
@@ -279,17 +280,17 @@ function syncProfilesWithFolders() {
         let hasChanges = false;
         
         for (const profile of config.profiles) {
-            const profileFolderExists = profileFolders.includes(profile.id);
+            const profileFolderExists = profileFolders.includes(profile.profile);
             
             if (!profileFolderExists) {
                 // Procurar uma pasta órfã para associar a este perfil
                 const orphanFolder = profileFolders.find(folder => 
-                    !config.profiles.some(p => p.id === folder)
+                    !config.profiles.some(p => p.profile === folder)
                 );
                 
                 if (orphanFolder) {
-                    console.log(`Sincronizando perfil ${profile.id} -> ${orphanFolder}`);
-                    profile.id = orphanFolder;
+                    console.log(`Sincronizando perfil ${profile.profile} -> ${orphanFolder}`);
+                    profile.profile = orphanFolder;
                     hasChanges = true;
                 }
             }

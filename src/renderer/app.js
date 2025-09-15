@@ -667,10 +667,8 @@ function initializeAutoSave() {
                 if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
                     const target = mutation.target;
                     if (!target.classList.contains('hidden')) {
-                        // Aba de contas ficou visível, atualizar status
-                        setTimeout(async () => {
-                            await renderProfileCards();
-                        }, 100);
+                        // Aba de contas ficou visível - renderização já é feita pelo initializeProfilesTab
+                        console.log('Aba de perfis ficou visível');
                     }
                 }
             });
@@ -715,8 +713,6 @@ function initializeTabSystem() {
                 // Sempre recarregar dados quando aba Contas for ativada
                 if (targetTab === 'contas') {
                     await initializeProfilesTab();
-                    // Atualizar status imediatamente ao entrar na aba
-                    await renderProfileCards();
                 }
             }
         });
@@ -3177,7 +3173,7 @@ async function loadProfilesData() {
 async function createProfileCard(profile) {
     const card = document.createElement('div');
     card.className = 'bg-gray-800 rounded-lg p-3 border border-gray-600 w-72';
-    card.setAttribute('data-profile-id', profile.id);
+    card.setAttribute('data-profile-id', profile.navigatorId);
     
     // Verificar se o navegador está ativo
     let isActive = false;
@@ -3185,7 +3181,7 @@ async function createProfileCard(profile) {
         const activeBrowsersResult = await window.electronAPI.getActiveBrowsersWithProfiles();
         if (activeBrowsersResult.success) {
             const activeBrowsers = activeBrowsersResult.browsers;
-            isActive = activeBrowsers.some(browser => browser.profile && browser.profile.id === profile.id);
+            isActive = activeBrowsers.some(browser => browser.profile && browser.profile.navigatorId === profile.navigatorId);
         }
     } catch (error) {
         console.log('Erro ao verificar status do navegador:', error);
@@ -3196,7 +3192,7 @@ async function createProfileCard(profile) {
     
     card.innerHTML = `
         <div class="mb-3">
-            <h3 class="text-white font-semibold text-base mb-3">${profile.id}</h3>
+            <h3 class="text-white font-semibold text-base mb-3">Navegador ${profile.navigatorId}</h3>
         </div>
         
         <div class="space-y-1.5 text-xs mb-4">
@@ -3227,32 +3223,32 @@ async function createProfileCard(profile) {
         </div>
         
         <div class="flex justify-center space-x-1">
-            <button class="hover:bg-gray-700 text-white p-2 rounded flex items-center justify-center play-button" data-profile-id="${profile.id}" title="Iniciar">
+            <button class="hover:bg-gray-700 text-white p-2 rounded flex items-center justify-center play-button" data-profile-id="${profile.navigatorId}" title="Iniciar">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                     <path d="M8 5v14l11-7z" fill="#10b981"/>
                 </svg>
             </button>
-            <button class="hover:bg-gray-700 text-white p-2 rounded flex items-center justify-center" onclick="withdrawProfile('${profile.id}')" title="Saque">
+            <button class="hover:bg-gray-700 text-white p-2 rounded flex items-center justify-center" onclick="withdrawProfile('${profile.profile}')" title="Saque">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="#f59e0b"/>
                 </svg>
             </button>
-            <button class="hover:bg-gray-700 text-white p-2 rounded flex items-center justify-center" onclick="depositProfile('${profile.id}')" title="Depósito">
+            <button class="hover:bg-gray-700 text-white p-2 rounded flex items-center justify-center" onclick="depositProfile('${profile.profile}')" title="Depósito">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z" fill="#3b82f6"/>
                 </svg>
             </button>
-            <button class="hover:bg-gray-700 text-white p-2 rounded flex items-center justify-center" onclick="statsProfile('${profile.id}')" title="Relatório">
+            <button class="hover:bg-gray-700 text-white p-2 rounded flex items-center justify-center" onclick="statsProfile('${profile.profile}')" title="Relatório">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                     <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z" fill="#8b5cf6"/>
                 </svg>
             </button>
-            <button class="hover:bg-gray-700 text-white p-2 rounded flex items-center justify-center" onclick="homeProfile('${profile.id}')" title="Home">
+            <button class="hover:bg-gray-700 text-white p-2 rounded flex items-center justify-center" onclick="homeProfile('${profile.profile}')" title="Home">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                     <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" fill="#6b7280"/>
                 </svg>
             </button>
-            <button class="hover:bg-gray-700 text-white p-2 rounded flex items-center justify-center" onclick="deleteProfile('${profile.id}')" title="Delete">
+            <button class="hover:bg-gray-700 text-white p-2 rounded flex items-center justify-center" onclick="deleteProfile('${profile.profile}')" title="Delete">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                     <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="#ef4444"/>
                 </svg>
@@ -3264,9 +3260,16 @@ async function createProfileCard(profile) {
     const playButton = card.querySelector('.play-button');
     if (playButton) {
         playButton.addEventListener('click', () => {
-            const profileId = playButton.getAttribute('data-profile-id');
-            console.log('Botão clicado via addEventListener para perfil:', profileId);
-            playProfile(profileId);
+            const navigatorId = playButton.getAttribute('data-profile-id');
+            console.log('Botão clicado via addEventListener para navigatorId:', navigatorId);
+            // Buscar o profile.profile correspondente ao navigatorId
+            const profileData = profilesData.find(p => p.navigatorId.toString() === navigatorId);
+            if (profileData) {
+                playProfile(profileData.profile);
+            } else {
+                console.error('Perfil não encontrado para navigatorId:', navigatorId);
+                showNotification('Perfil não encontrado', 'error');
+            }
         });
     }
     
@@ -3389,10 +3392,10 @@ async function removeProfileCard(profileId) {
         const success = await window.electronAPI.removeProfile(profileId);
         if (success) {
             // Remover da lista local
-            profilesData = profilesData.filter(p => p.id !== profileId);
+            profilesData = profilesData.filter(p => p.navigatorId !== profileId);
             
             // Atualizar dados filtrados
-            filteredProfilesData = filteredProfilesData.filter(p => p.id !== profileId);
+            filteredProfilesData = filteredProfilesData.filter(p => p.navigatorId !== profileId);
             
             // Re-renderizar cards filtrados imediatamente
             renderFilteredProfileCards();
@@ -3433,8 +3436,8 @@ async function applyProfileFilters() {
         let typeMatch = true;
         if (filterType !== 'all') {
             switch (filterType) {
-                case 'profile':
-                    typeMatch = profile.id.toLowerCase().includes(searchText);
+                case 'id':
+                    typeMatch = profile.navigatorId.toString().includes(searchText);
                     break;
                 case 'user':
                     typeMatch = profile.usuario.toLowerCase().includes(searchText);
@@ -3445,7 +3448,7 @@ async function applyProfileFilters() {
             }
         } else {
             // Busca geral em todos os campos
-            typeMatch = profile.id.toLowerCase().includes(searchText) ||
+            typeMatch = profile.navigatorId.toString().includes(searchText) ||
                        profile.usuario.toLowerCase().includes(searchText) ||
                        (profile.url || '').toLowerCase().includes(searchText);
         }

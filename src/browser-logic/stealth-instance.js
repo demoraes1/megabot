@@ -88,8 +88,8 @@ async function startBrowser(options) {
     try {
         // Usar o ID do perfil gerado pelo profile-manager ou gerar um aleatório como fallback
         let profileId;
-        if (options.profile && options.profile.id) {
-            profileId = options.profile.id;
+        if (options.profile && options.profile.profile) {
+        profileId = options.profile.profile;
             logger.info(navigatorId, `Usando perfil existente: ${profileId}`);
         } else {
             const randomId = Math.random().toString(36).substring(2, 7);
@@ -215,7 +215,7 @@ async function startBrowser(options) {
         console.log(`[DEBUG] Configuração de proxy concluída para navegador ${navigatorId}`);
         
         // Salvar informação do proxy no perfil se disponível
-        if (options.profile && options.profile.id && proxyConfig) {
+        if (options.profile && options.profile.profile && proxyConfig) {
             try {
                 const proxyInfo = {
                     host: proxyConfig.host,
@@ -224,7 +224,7 @@ async function startBrowser(options) {
                     username: proxyConfig.username || null,
                     password: proxyConfig.password || null
                 };
-                await profileManager.updateProfile(options.profile.id, { proxy: proxyInfo });
+                await profileManager.updateProfile(options.profile.profile, { proxy: proxyInfo });
                 console.log(`[Navegador ${navigatorId}] Proxy salvo no perfil: ${proxyConfig.host}:${proxyConfig.port}`);
             } catch (error) {
                 console.error(`[Navegador ${navigatorId}] Erro ao salvar proxy no perfil:`, error.message);

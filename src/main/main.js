@@ -487,20 +487,20 @@ ipcMain.handle('delete-all-profiles', async (event) => {
     // Remover todas as pastas de perfis
     for (let i = 0; i < profiles.length; i++) {
       const profile = profiles[i];
-      const profilePath = path.join(PROFILES_DIR, profile.id);
+      const profilePath = path.join(PROFILES_DIR, profile.profile);
       
       // Enviar progresso atual
       event.sender.send('delete-progress', {
         current: i,
         total: totalProfiles,
-        currentItem: `Excluindo perfil: ${profile.name || profile.id}`
+        currentItem: `Excluindo perfil: ${profile.name || profile.profile}`
       });
       
       try {
         await fs.rmdir(profilePath, { recursive: true });
-        console.log(`Pasta do perfil ${profile.id} removida`);
+        console.log(`Pasta do perfil ${profile.profile} removida`);
       } catch (error) {
-        console.warn(`Erro ao remover pasta do perfil ${profile.id}:`, error.message);
+        console.warn(`Erro ao remover pasta do perfil ${profile.profile}:`, error.message);
       }
       
       // Pequeno delay para permitir atualização da UI
@@ -508,11 +508,11 @@ ipcMain.handle('delete-all-profiles', async (event) => {
     }
     
     // Limpar config.json
-    const config = { profiles: [], lastBrowserId: 0 };
+    const config = { profiles: [], lastBrowserId: 1 };
     saveConfig(config);
     
-    // Zerar lastBrowserId no sistema
-    await saveLastBrowserId(0);
+    // Resetar lastBrowserId no sistema para 1
+    await saveLastBrowserId(1);
     
     // Enviar progresso final
     event.sender.send('delete-progress', {
@@ -559,7 +559,7 @@ ipcMain.handle('start-browser-with-profile', async (event, profileId) => {
         await new Promise(resolve => setTimeout(resolve, 2000));
         
         // Navegar para a URL do perfil
-        const navigationResult = await navigateToUrl(0, profile.url); // Usar navegador ID 0
+        const navigationResult = await navigateToUrl(profile.navigatorId || '1', profile.url); // Usar navigatorId do perfil ou ID '1' como fallback
         console.log(`Navegação para ${profile.url}:`, navigationResult);
       } catch (navError) {
         console.warn('Erro na navegação automática:', navError.message);
@@ -580,16 +580,16 @@ ipcMain.handle('inject-script-in-profile', async (event, profileId, scriptName) 
     // Usando imports globais já disponíveis
     
     // Encontrar o navegador ativo para este perfil
-    const activeBrowsers = getActiveBrowsers();
-    const browserEntry = Array.from(activeBrowsers.entries()).find(([id, browser]) => {
-      return id.includes(profileId);
+    const activeBrowsersWithProfiles = getActiveBrowsersWithProfiles();
+    const browserData = activeBrowsersWithProfiles.find(browser => {
+      return browser.profileId === profileId;
     });
     
-    if (!browserEntry) {
+    if (!browserData) {
       return { success: false, error: 'Navegador não encontrado para este perfil' };
     }
     
-    const [navigatorId] = browserEntry;
+    const navigatorId = browserData.navigatorId;
     
     // Carregar e injetar o script
     const scriptContent = await scriptInjector.loadScript(scriptName);
@@ -646,7 +646,7 @@ ipcMain.handle('save-url-to-profiles', async (event, url, profileIds = null) => 
       // Atualizar apenas perfis específicos
       console.log(`Atualizando URL apenas nos perfis: ${profileIds.join(', ')}`);
       config.profiles.forEach(profile => {
-        if (profileIds.includes(profile.id)) {
+        if (profileIds.includes(profile.profile)) {
           profile.url = url;
           updatedCount++;
         }
