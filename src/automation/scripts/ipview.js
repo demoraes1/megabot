@@ -29,10 +29,16 @@ function showIpDisplay() {
                 font-size: 14px;
                 pointer-events: none;
               }
+              .navigation-id {
+                color: #ffff00;
+                font-weight: bold;
+              }
             `;
 
             const ipBox = document.createElement("div");
-            ipBox.textContent = `IP: ${data.ip}`;
+            // Aguardar megabotConfig estar disponível ou usar fallback
+            const navigationId = window.megabotConfig?.browserIndex ?? window.navigatorId ?? 0;
+            ipBox.innerHTML = `<span class="navigation-id">${navigationId}</span><span style="color: red;"> | </span>${data.ip}`;
 
             shadowRoot.appendChild(style);
             shadowRoot.appendChild(ipBox);

@@ -666,9 +666,17 @@ async function startBrowser(options) {
             if (fs.existsSync(ipviewScriptPath)) {
                 const ipviewScriptContent = fs.readFileSync(ipviewScriptPath, 'utf8');
                 
+                // Injetar configuração do browserIndex antes do script
+                const configScript = `
+                    // Injetar configuração do navegador para ipview.js
+                    window.megabotConfig = window.megabotConfig || {};
+                    window.megabotConfig.browserIndex = ${navigatorId};
+                    console.log('Configuração MegaBot injetada para ipview.js:', window.megabotConfig);
+                `;
+                
                 // ETAPA 1: Injeção permanente para garantir que o script exista desde o início e em reloads
-                await page.evaluateOnNewDocument(ipviewScriptContent);
-                console.log(`[Navegador ${navigatorId}] Script ipview.js injetado permanentemente via evaluateOnNewDocument`);
+                await page.evaluateOnNewDocument(configScript + '\n' + ipviewScriptContent);
+                console.log(`[Navegador ${navigatorId}] Script ipview.js injetado permanentemente via evaluateOnNewDocument com browserIndex ${navigatorId}`);
             } else {
                 console.warn(`[Navegador ${navigatorId}] Arquivo ipview.js não encontrado em: ${ipviewScriptPath}`);
             }
