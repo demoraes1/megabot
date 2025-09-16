@@ -730,6 +730,15 @@ function initializeButtons() {
         { id: 'refresh-pages-btn', action: () => atualizarPaginas() },
         { id: 'mirror-mode-btn', action: () => console.log('Modo Espelho') },
         { id: 'manage-extensions-btn', action: () => showPopup('extensions-popup-overlay') },
+        { id: 'sync-btn', action: () => { 
+            console.log('Botão de sincronização clicado');
+            if (window.syncPopup) {
+                console.log('window.syncPopup encontrado, abrindo popup...');
+                window.syncPopup.open();
+            } else {
+                console.error('window.syncPopup não encontrado!');
+            }
+        }},
         { id: 'pix-btn', action: () => showPopup('pix-popup-overlay') },
         { id: 'add-proxies-btn', action: () => showPopup('proxy-popup-overlay') }
         // Nota: home-btn e reports-btn agora usam o sistema padronizado de injeção
