@@ -4,10 +4,26 @@
     // ====================================================================
     // 1. CONFIGURAÇÕES E FUNÇÕES AUXILIARES
     // ====================================================================
+    // O delay inicial agora é configurado dinamicamente via window.megabotConfig
+    const getInitialDelay = () => {
+        if (window.megabotConfig) {
+            if (window.megabotConfig.delayEnabled) {
+                const sequentialDelay = window.megabotConfig.sequentialDelay || 0;
+                console.log(`Delay sequencial aplicado: ${sequentialDelay}ms (navegador ${window.megabotConfig.browserIndex || 0})`);
+                return sequentialDelay;
+            } else {
+                console.log(`Delay entre contas desativado - usando delay 0 (navegador ${window.megabotConfig.browserIndex || 0})`);
+                return 0;
+            }
+        }
+        return 20000; // fallback para 20 segundos se não houver configuração
+    };
+
     const config = {
+        initialDelay: getInitialDelay(),
         fieldDelay: 400,
         charDelay: { min: 50, max: 120 },
-        submitDelay: 1000,
+        submitDelay: 500,
         debug: true
     };
 
@@ -16,7 +32,7 @@
     };
     const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-    function waitForElement(selector, timeout = 15000) {
+    function waitForElement(selector, timeout = 60000) {
         log(`Aguardando pelo elemento: ${selector}`);
         return new Promise((resolve, reject) => {
             const initialElement = document.querySelector(selector);
@@ -53,7 +69,6 @@
     // 2. GERADOR DE DADOS E LÓGICA DE PREENCHIMENTO
     // ====================================================================
     function generateUserData() {
-        // Verificar se há dados do perfil injetados
         if (window.profileData && window.profileData.usuario) {
             log('✅ Usando dados do perfil injetado');
             return {
@@ -65,24 +80,21 @@
             };
         }
         
-        // Fallback: gerar dados aleatórios se não houver dados do perfil
         log('⚠️ AVISO: Dados do perfil não encontrados, usando fallback');
         
         const randomId = Math.floor(Math.random() * 90000 + 10000);
         const firstName = "Usuario";
         const lastName = `Teste${randomId}`;
-
-        // CORREÇÃO: Lógica para gerar um número de telefone com 11 dígitos
-        const ddd = '11'; // Usando um DDD comum para testes
-        const randomNumberPart = Math.floor(Math.random() * 90000000 + 10000000); // Gera 8 dígitos aleatórios
-        const fullPhone = `${ddd}9${randomNumberPart}`; // Formato: DD + 9 + 8 dígitos = 11 dígitos
+        const ddd = '11';
+        const randomNumberPart = Math.floor(Math.random() * 90000000 + 10000000);
+        const fullPhone = `${ddd}9${randomNumberPart}`;
 
         return {
             account: `${firstName.toLowerCase()}${randomId}`,
             password: `SenhaForte${randomId}!`,
-            phone: fullPhone, // Telefone agora com 11 dígitos
+            phone: fullPhone,
             realName: `${firstName} ${lastName}`,
-            cpf: '000.000.000-00' // CPF placeholder para fallback
+            cpf: '000.000.000-00'
         };
     }
 
@@ -130,6 +142,13 @@
     async function runAutoRegister() {
         log('Iniciando script de registro automático...');
 
+        // --- BLOCO ADICIONADO: Atraso Inicial ---
+        if (config.initialDelay > 0) {
+            log(`Aguardando ${config.initialDelay / 1000} segundos antes de começar...`);
+            await sleep(config.initialDelay);
+        }
+        // --- FIM DO BLOCO ---
+
         try {
             const accountInputSelector = 'input[data-input-name="account"]';
             const accountInput = await waitForElement(accountInputSelector);
@@ -167,7 +186,6 @@
             await humanTyping(realNameInput, userData.realName);
             await sleep(config.fieldDelay);
 
-            // Verificar se existe campo de CPF
             const cpfInput = registrationModal.querySelector('input[data-input-name="cpf"]') || 
                            registrationModal.querySelector('input[placeholder*="CPF"]') || 
                            registrationModal.querySelector('input[placeholder*="cpf"]') ||

@@ -88,7 +88,7 @@ class ScriptInjector {
     }
 
     // Função auxiliar para injetar configurações específicas do script
-    injectScriptConfiguration(scriptName, scriptContent) {
+    injectScriptConfiguration(scriptName, scriptContent, browserIndex = 0) {
         let finalScriptContent = scriptContent;
         
         if (scriptName === 'deposito') {
@@ -113,6 +113,26 @@ class ScriptInjector {
                     jogo: '${settings.automation?.jogo || 'wild ape'}'
                 };
                 console.log('Configurações MegaBot injetadas:', window.megabotConfig);
+            `;
+            finalScriptContent = configScript + '\n' + scriptContent;
+        }
+        
+        if (scriptName === 'registro') {
+            const settings = loadAppSettings();
+            const delayValue = settings.automation?.delaySeconds || 5; // delay em segundos
+            const isDelayEnabled = settings.automation?.delayEnabled || false;
+            // Se delay estiver desativado, usar 0. Caso contrário, calcular delay sequencial
+            const sequentialDelay = isDelayEnabled ? browserIndex * delayValue * 1000 : 0; // converter para ms
+            
+            const configScript = `
+                // Injetar configurações do MegaBot para registro
+                window.megabotConfig = {
+                    sequentialDelay: ${sequentialDelay},
+                    browserIndex: ${browserIndex},
+                    delayEnabled: ${isDelayEnabled},
+                    baseDelay: ${delayValue}
+                };
+                console.log('Configurações MegaBot injetadas para registro:', window.megabotConfig);
             `;
             finalScriptContent = configScript + '\n' + scriptContent;
         }
@@ -315,11 +335,9 @@ class ScriptInjector {
 
             logger.info(`Injetando script '${scriptName}' em todos os navegadores ativos (pós-navegação)`, { scriptName });
             
-            // Aplicar configurações específicas do script
-            const finalScriptContent = this.injectScriptConfiguration(scriptName, scriptContent);
-            
             // Usar a função do browser-manager para injetar em todos os navegadores com aguardo de carregamento
-            const result = await injectScriptInAllBrowsersPostNavigation(finalScriptContent);
+            // As configurações específicas serão aplicadas no browser-manager com o índice correto de cada navegador
+            const result = await injectScriptInAllBrowsersPostNavigation(scriptContent, scriptName);
             
             return result;
 
