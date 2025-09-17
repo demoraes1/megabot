@@ -842,8 +842,11 @@ function initializeScriptInjectionButtons() {
                     return;
                 }
                 
+                // Obter syncStates do localStorage para respeitar o filtro
+                const syncStates = JSON.parse(localStorage.getItem('syncStates') || '{}');
+                
                 // Executa a injeção do script
-                await window.electronAPI.injectScript(scriptName);
+                await window.electronAPI.injectScript(scriptName, syncStates);
                 
                 // Mostra notificação de sucesso
                 showNotification(notificationMessage, 'success');
@@ -860,7 +863,8 @@ function initializeScriptInjectionButtons() {
 // Função para injetar script customizado
 async function injectCustomScript(scriptCode, notificationMessage = 'Script customizado executado') {
     try {
-        await window.electronAPI.injectCustomScript(scriptCode);
+        const syncStates = JSON.parse(localStorage.getItem('syncStates') || 'null');
+        await window.electronAPI.injectCustomScript(scriptCode, syncStates);
         showNotification(notificationMessage, 'success');
         console.log('Script customizado injetado com sucesso');
     } catch (error) {
@@ -1524,8 +1528,21 @@ async function executeAllLinksNavigation() {
             return;
         }
         
-        // Obter navegadores ativos com dados de perfil
-        const activeBrowsersResult = await window.electronAPI.getActiveBrowsersWithProfiles();
+        // Obter estados do localStorage para filtragem
+        let syncStates = null;
+        try {
+            const savedStates = localStorage.getItem('syncPopupCheckboxStates');
+            console.log('[executeAllLinksNavigation] Estados salvos no localStorage:', savedStates);
+            if (savedStates) {
+                syncStates = JSON.parse(savedStates);
+                console.log('[executeAllLinksNavigation] Estados parseados:', syncStates);
+            }
+        } catch (error) {
+            console.warn('Erro ao carregar estados do localStorage:', error);
+        }
+        
+        // Obter navegadores ativos com dados de perfil (filtrados pelos estados)
+        const activeBrowsersResult = await window.electronAPI.getActiveBrowsersWithProfiles(syncStates);
         
         if (!activeBrowsersResult.success) {
             showNotification('Erro ao verificar navegadores ativos: ' + activeBrowsersResult.error, 'error');
@@ -1584,7 +1601,7 @@ async function executeAllLinksNavigation() {
         }
         
         // Navegar todos os navegadores com as URLs distribuídas
-        const navigationResult = await window.electronAPI.navigateAllBrowsers(distributedUrls);
+        const navigationResult = await window.electronAPI.navigateAllBrowsers(distributedUrls, syncStates);
         
         if (navigationResult.success) {
             const successCount = navigationResult.results ? navigationResult.results.filter(r => r.success).length : activeBrowsers.length;
@@ -1594,7 +1611,7 @@ async function executeAllLinksNavigation() {
             // Usar injeção pós-navegação para aguardar carregamento completo da página automaticamente
             try {
                 console.log('Iniciando injeção do script de registro (pós-navegação)...');
-                const injectionResult = await window.electronAPI.injectScriptPostNavigation('registro');
+                const injectionResult = await window.electronAPI.injectScriptPostNavigation('registro', syncStates);
                 
                 if (injectionResult.success) {
                     console.log('Script de registro injetado com sucesso em todos os navegadores');
@@ -1633,8 +1650,22 @@ async function executeAccountCreation(link) {
     console.log('Iniciando criação de contas para:', link);
     
     try {
-        // Obter navegadores ativos com dados de perfil
-        const activeBrowsersResult = await window.electronAPI.getActiveBrowsersWithProfiles();
+        // Obter estados do localStorage para filtragem
+        let syncStates = null;
+        try {
+            const savedStates = localStorage.getItem('syncPopupCheckboxStates');
+            console.log('[executeAccountCreation] Estados salvos no localStorage:', savedStates);
+            if (savedStates) {
+                syncStates = JSON.parse(savedStates);
+                console.log('[executeAccountCreation] Estados parseados:', syncStates);
+            }
+        } catch (error) {
+            console.warn('Erro ao carregar estados do localStorage:', error);
+        }
+        
+        // Obter navegadores ativos com dados de perfil (filtrados pelos estados)
+        console.log('[executeAccountCreation] Chamando getActiveBrowsersWithProfiles com syncStates:', syncStates);
+        const activeBrowsersResult = await window.electronAPI.getActiveBrowsersWithProfiles(syncStates);
         
         if (!activeBrowsersResult.success) {
             showNotification('Erro ao verificar navegadores ativos: ' + activeBrowsersResult.error, 'error');
@@ -1673,7 +1704,7 @@ async function executeAccountCreation(link) {
         console.log(`Encontrados ${activeBrowsers.length} navegadores ativos. Navegando para: ${link}`);
         
         // Navegar todos os navegadores para o link selecionado
-        const navigationResult = await window.electronAPI.navigateAllBrowsers(link);
+        const navigationResult = await window.electronAPI.navigateAllBrowsers(link, syncStates);
         
         if (navigationResult.success) {
             const successCount = navigationResult.results ? navigationResult.results.filter(r => r.success).length : activeBrowsers.length;
@@ -1683,7 +1714,7 @@ async function executeAccountCreation(link) {
             // Usar injeção pós-navegação para aguardar carregamento completo da página automaticamente
             try {
                 console.log('Iniciando injeção do script de registro (pós-navegação)...');
-                const injectionResult = await window.electronAPI.injectScriptPostNavigation('registro');
+            const injectionResult = await window.electronAPI.injectScriptPostNavigation('registro', syncStates);
                 
                 if (injectionResult.success) {
                     console.log('Script de registro injetado com sucesso em todos os navegadores');
@@ -2796,6 +2827,71 @@ function validateProxyConfiguration(proxyMode, settings, simultaneousOpenings) {
     };
 }
 
+// Função para atualizar localStorage do popup de sincronização automaticamente
+async function updateSyncPopupLocalStorage() {
+    try {
+        console.log('Atualizando localStorage do popup de sincronização...');
+        
+        // Obter navegadores ativos SEM filtrar pelos estados para não criar loop
+        const result = await window.electronAPI.getActiveBrowsers();
+        
+        if (result.success && result.browsers && result.browsers.length > 0) {
+            const activeBrowsers = result.browsers;
+            console.log('Navegadores ativos encontrados para localStorage:', activeBrowsers);
+            
+            // Verificar se já existem estados salvos
+            let existingStates = null;
+            try {
+                const savedStates = localStorage.getItem('syncPopupCheckboxStates');
+                if (savedStates) {
+                    existingStates = JSON.parse(savedStates);
+                    console.log('Estados existentes encontrados:', existingStates);
+                }
+            } catch (error) {
+                console.warn('Erro ao carregar estados existentes:', error);
+            }
+            
+            // Se não há estados existentes, criar estados padrão
+            if (!existingStates) {
+                const states = {
+                    selectAll: true // Marcar "Todos" como verdadeiro por padrão
+                };
+                
+                // Marcar todos os navegadores ativos como selecionados
+                activeBrowsers.forEach(browserId => {
+                    states[browserId] = true;
+                });
+                
+                // Salvar no localStorage
+                localStorage.setItem('syncPopupCheckboxStates', JSON.stringify(states));
+                console.log('Estados padrão criados e salvos no localStorage:', states);
+            } else {
+                // Atualizar estados existentes apenas para novos navegadores
+                let updated = false;
+                activeBrowsers.forEach(browserId => {
+                    if (!(browserId in existingStates)) {
+                        existingStates[browserId] = true; // Novos navegadores marcados por padrão
+                        updated = true;
+                    }
+                });
+                
+                if (updated) {
+                    localStorage.setItem('syncPopupCheckboxStates', JSON.stringify(existingStates));
+                    console.log('Estados existentes atualizados com novos navegadores:', existingStates);
+                } else {
+                    console.log('Nenhuma atualização necessária nos estados existentes');
+                }
+            }
+            
+            console.log('localStorage do popup de sincronização atualizado com sucesso!');
+        } else {
+            console.log('Nenhum navegador ativo encontrado para atualizar localStorage');
+        }
+    } catch (error) {
+        console.error('Erro ao atualizar localStorage do popup de sincronização:', error);
+    }
+}
+
 // Função para abrir navegadores
 async function abrirNavegadores() {
     try {
@@ -2914,6 +3010,9 @@ async function abrirNavegadores() {
                 }
                 console.log(`${quantidadeUsada} proxies consumidos da lista`);
             }
+            
+            // Atualizar localStorage automaticamente após abertura dos navegadores
+            await updateSyncPopupLocalStorage();
             
             showNotification(`${result.janelasMovidas || 0} navegadores foram abertos e posicionados com sucesso!`, 'success');
         } else {
@@ -3130,8 +3229,11 @@ async function atualizarPaginas() {
         // Mostrar notificação de início
         showNotification('Atualizando páginas dos navegadores...', 'info');
         
+        // Obter syncStates do localStorage para respeitar o filtro
+        const syncStates = JSON.parse(localStorage.getItem('syncStates') || '{}');
+        
         // Usar o módulo de injeção para carregar o script reload.js
-        const result = await window.electronAPI.injectScript('reload');
+        const result = await window.electronAPI.injectScript('reload', syncStates);
         
         if (result.success) {
             console.log('✅ Páginas atualizadas com sucesso:', result.message);
@@ -3187,7 +3289,9 @@ async function createProfileCard(profile) {
     // Verificar se o navegador está ativo
     let isActive = false;
     try {
-        const activeBrowsersResult = await window.electronAPI.getActiveBrowsersWithProfiles();
+        // Obter syncStates do localStorage para respeitar o filtro
+        const syncStates = JSON.parse(localStorage.getItem('syncStates') || 'null');
+        const activeBrowsersResult = await window.electronAPI.getActiveBrowsersWithProfiles(syncStates);
         if (activeBrowsersResult.success) {
             const activeBrowsers = activeBrowsersResult.browsers;
             isActive = activeBrowsers.some(browser => browser.profile && browser.profile.navigatorId === profile.navigatorId);

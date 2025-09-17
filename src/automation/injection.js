@@ -283,7 +283,7 @@ class ScriptInjector {
      * @param {string} scriptName - Nome do script a ser injetado
      * @returns {Promise<Object>} - Resultado da operação
      */
-    async injectScriptInAllBrowsers(scriptName) {
+    async injectScriptInAllBrowsers(scriptName, syncStates = null) {
         try {
             const scriptContent = this.loadScriptContent(scriptName);
             if (!scriptContent) {
@@ -301,7 +301,7 @@ class ScriptInjector {
             const finalScriptContent = this.injectScriptConfiguration(scriptName, scriptContent);
             
             // Usar a função do browser-manager para injetar em todos os navegadores
-            const result = await injectScriptInAllBrowsers(finalScriptContent);
+            const result = await injectScriptInAllBrowsers(finalScriptContent, syncStates);
             
             return result;
 
@@ -321,7 +321,7 @@ class ScriptInjector {
      * @param {string} scriptName - Nome do script a ser injetado
      * @returns {Promise<Object>} - Resultado da operação
      */
-    async injectScriptPostNavigation(scriptName) {
+    async injectScriptPostNavigation(scriptName, syncStates = null) {
         try {
             const scriptContent = this.loadScriptContent(scriptName);
             if (!scriptContent) {
@@ -337,7 +337,7 @@ class ScriptInjector {
             
             // Usar a função do browser-manager para injetar em todos os navegadores com aguardo de carregamento
             // As configurações específicas serão aplicadas no browser-manager com o índice correto de cada navegador
-            const result = await injectScriptInAllBrowsersPostNavigation(scriptContent, scriptName);
+            const result = await injectScriptInAllBrowsersPostNavigation(scriptContent, scriptName, syncStates);
             
             return result;
 
@@ -355,9 +355,9 @@ class ScriptInjector {
     /**
      * Injeta script customizado (código direto) em todos os navegadores
      */
-    async injectCustomScript(scriptCode) {
+    async injectCustomScript(scriptCode, syncStates = null) {
         try {
-            const activeBrowsers = getActiveBrowsers();
+            const activeBrowsers = getActiveBrowsers(syncStates);
             
             if (activeBrowsers.length === 0) {
                 return {

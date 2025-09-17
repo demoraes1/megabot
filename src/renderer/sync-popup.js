@@ -391,9 +391,6 @@ class SyncPopup {
      * Aplica os estados salvos aos checkboxes
      */
     applyCheckboxStates() {
-        // Limpar localStorage para forçar estado padrão (temporário para debug)
-        localStorage.removeItem('syncPopupCheckboxStates');
-        
         const savedStates = localStorage.getItem('syncPopupCheckboxStates');
         console.log('Estados salvos encontrados:', savedStates);
         

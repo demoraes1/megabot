@@ -507,23 +507,41 @@ async function navigateToUrl(navigatorId, url) {
 
 /**
  * Obtém lista de navegadores ativos
+ * @param {Object} syncStates - Estados do localStorage syncPopupCheckboxStates (opcional)
  * @returns {Array<string>} - Array com IDs dos navegadores ativos
  */
-function getActiveBrowsers() {
-    // Retornar IDs ordenados numericamente para garantir ordem consistente
-    return Array.from(activeBrowsers.keys()).sort((a, b) => Number(a) - Number(b));
+function getActiveBrowsers(syncStates = null) {
+    // Obter todos os IDs ordenados numericamente
+    const allIds = Array.from(activeBrowsers.keys()).sort((a, b) => Number(a) - Number(b));
+    
+    console.log('[getActiveBrowsers] Todos os IDs:', allIds);
+    console.log('[getActiveBrowsers] syncStates recebido:', syncStates);
+    
+    // Se não há estados de sincronização ou selectAll é true, retornar todos
+    if (!syncStates || syncStates.selectAll === true) {
+        console.log('[getActiveBrowsers] Retornando todos os navegadores (syncStates null ou selectAll=true)');
+        return allIds;
+    }
+    
+    // Se selectAll é false, filtrar apenas os navegadores marcados como true
+    const filteredIds = allIds.filter(id => syncStates[id] === true);
+    console.log('[getActiveBrowsers] IDs filtrados:', filteredIds);
+    console.log('[getActiveBrowsers] Estados individuais:', Object.keys(syncStates).filter(key => key !== 'selectAll').map(key => `${key}: ${syncStates[key]}`));
+    
+    return filteredIds;
 }
 
 /**
  * Obtém dados completos dos navegadores ativos incluindo perfis
+ * @param {Object} syncStates - Estados do localStorage syncPopupCheckboxStates (opcional)
  * @returns {Array<Object>} - Array com dados dos navegadores ativos
  */
-function getActiveBrowsersWithProfiles() {
-    const result = [];
-    // Obter IDs ordenados para garantir ordem consistente
-    const sortedIds = Array.from(activeBrowsers.keys()).sort((a, b) => Number(a) - Number(b));
+function getActiveBrowsersWithProfiles(syncStates = null) {
+    // Obter IDs filtrados baseado nos estados de sincronização
+    const filteredIds = getActiveBrowsers(syncStates);
     
-    for (const navigatorId of sortedIds) {
+    const result = [];
+    for (const navigatorId of filteredIds) {
         const browserData = activeBrowsers.get(String(navigatorId));
         result.push({
             navigatorId,
@@ -539,8 +557,8 @@ function getActiveBrowsersWithProfiles() {
  * @param {string|Array<string>} urls - URL ou array de URLs
  * @returns {Promise<Object>} - Resultado da operação
  */
-async function navigateAllBrowsers(urls) {
-    const activeBrowserIds = getActiveBrowsers();
+async function navigateAllBrowsers(urls, syncStates = null) {
+    const activeBrowserIds = getActiveBrowsers(syncStates);
     
     if (activeBrowserIds.length === 0) {
         return {
@@ -630,8 +648,8 @@ async function injectScriptInBrowser(navigatorId, scriptContent, waitForLoad = f
  * @param {boolean} waitForLoad - Se deve aguardar o carregamento da página
  * @returns {Promise<Object>} - Resultado da operação
  */
-async function injectScriptInAllBrowsers(scriptContent, waitForLoad = false, scriptName = null) {
-    const activeBrowserIds = getActiveBrowsers();
+async function injectScriptInAllBrowsers(scriptContent, waitForLoad = false, scriptName = null, syncStates = null) {
+    const activeBrowserIds = getActiveBrowsers(syncStates);
     
     if (activeBrowserIds.length === 0) {
         return {
@@ -691,8 +709,8 @@ async function injectScriptInAllBrowsers(scriptContent, waitForLoad = false, scr
  * @param {string} scriptName - Nome do script (opcional, para configurações específicas)
  * @returns {Promise<Object>} - Resultado da operação
  */
-async function injectScriptInAllBrowsersPostNavigation(scriptContent, scriptName = null) {
-    return injectScriptInAllBrowsers(scriptContent, true, scriptName);
+async function injectScriptInAllBrowsersPostNavigation(scriptContent, scriptName = null, syncStates = null) {
+    return injectScriptInAllBrowsers(scriptContent, true, scriptName, syncStates);
 }
 
 /**

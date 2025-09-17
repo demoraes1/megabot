@@ -270,10 +270,10 @@ ipcMain.handle('navigate-browser', async (event, navigatorId, url) => {
 });
 
 // Handler para navegar URL em todos os navegadores ativos
-ipcMain.handle('navigate-all-browsers', async (event, url) => {
+ipcMain.handle('navigate-all-browsers', async (event, url, syncStates = null) => {
   try {
     console.log(`Navegando todos os navegadores para: ${url}`);
-    const result = await navigateAllBrowsers(url);
+    const result = await navigateAllBrowsers(url, syncStates);
     return {
       success: result.success,
       navigatedBrowsers: result.navigatedBrowsers || 0,
@@ -289,9 +289,9 @@ ipcMain.handle('navigate-all-browsers', async (event, url) => {
 });
 
 // Handler para obter lista de navegadores ativos
-ipcMain.handle('get-active-browsers', async () => {
+ipcMain.handle('get-active-browsers', async (event, syncStates = null) => {
   try {
-    const activeBrowsers = getActiveBrowsers();
+    const activeBrowsers = getActiveBrowsers(syncStates);
     return {
       success: true,
       browsers: activeBrowsers
@@ -306,9 +306,9 @@ ipcMain.handle('get-active-browsers', async () => {
 });
 
 // Handler para obter navegadores ativos com dados de perfil
-ipcMain.handle('get-active-browsers-with-profiles', async () => {
+ipcMain.handle('get-active-browsers-with-profiles', async (event, syncStates = null) => {
   try {
-    const activeBrowsersWithProfiles = getActiveBrowsersWithProfiles();
+    const activeBrowsersWithProfiles = getActiveBrowsersWithProfiles(syncStates);
     return {
       success: true,
       browsers: activeBrowsersWithProfiles
@@ -323,10 +323,10 @@ ipcMain.handle('get-active-browsers-with-profiles', async () => {
 });
 
 // Handler para injetar script por nome em todos os navegadores
-ipcMain.handle('inject-script', async (event, scriptName) => {
+ipcMain.handle('inject-script', async (event, scriptName, syncStates = null) => {
   try {
     console.log(`Injetando script '${scriptName}' em todos os navegadores`);
-    const result = await scriptInjector.injectScript(scriptName);
+    const result = await scriptInjector.injectScript(scriptName, syncStates);
     return result;
   } catch (error) {
     console.error('Erro ao injetar script:', error);
@@ -339,10 +339,10 @@ ipcMain.handle('inject-script', async (event, scriptName) => {
 });
 
 // Handler para injetar script por nome em todos os navegadores após navegação
-ipcMain.handle('inject-script-post-navigation', async (event, scriptName) => {
+ipcMain.handle('inject-script-post-navigation', async (event, scriptName, syncStates = null) => {
   try {
     console.log(`Injetando script '${scriptName}' em todos os navegadores (pós-navegação)`);
-    const result = await scriptInjector.injectScriptPostNavigation(scriptName);
+    const result = await scriptInjector.injectScriptPostNavigation(scriptName, syncStates);
     return result;
   } catch (error) {
     console.error('Erro ao injetar script pós-navegação:', error);
@@ -355,10 +355,10 @@ ipcMain.handle('inject-script-post-navigation', async (event, scriptName) => {
 });
 
 // Handler para injetar script customizado em todos os navegadores
-ipcMain.handle('inject-custom-script', async (event, scriptCode) => {
+ipcMain.handle('inject-custom-script', async (event, scriptCode, syncStates = null) => {
   try {
     console.log('Injetando script customizado em todos os navegadores');
-    const result = await scriptInjector.injectCustomScript(scriptCode);
+    const result = await scriptInjector.injectCustomScript(scriptCode, syncStates);
     return result;
   } catch (error) {
     console.error('Erro ao injetar script customizado:', error);

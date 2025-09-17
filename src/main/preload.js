@@ -91,9 +91,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
 
   // Função para navegar URL em todos os navegadores ativos
-  navigateAllBrowsers: async (url) => {
+  navigateAllBrowsers: async (url, syncStates = null) => {
     try {
-      const result = await ipcRenderer.invoke('navigate-all-browsers', url);
+      const result = await ipcRenderer.invoke('navigate-all-browsers', url, syncStates);
       return result;
     } catch (error) {
       console.error('Erro ao navegar todos os navegadores via IPC:', error);
@@ -102,9 +102,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
 
   // Função para obter lista de navegadores ativos
-  getActiveBrowsers: async () => {
+  getActiveBrowsers: async (syncStates = null) => {
     try {
-      const result = await ipcRenderer.invoke('get-active-browsers');
+      const result = await ipcRenderer.invoke('get-active-browsers', syncStates);
       return result;
     } catch (error) {
       console.error('Erro ao obter navegadores ativos via IPC:', error);
@@ -113,9 +113,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
 
   // Função para obter lista de navegadores ativos com perfis
-  getActiveBrowsersWithProfiles: async () => {
+  getActiveBrowsersWithProfiles: async (syncStates = null) => {
     try {
-      const result = await ipcRenderer.invoke('get-active-browsers-with-profiles');
+      const result = await ipcRenderer.invoke('get-active-browsers-with-profiles', syncStates);
       return result;
     } catch (error) {
       console.error('Erro ao obter navegadores ativos com perfis via IPC:', error);
@@ -141,9 +141,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
 
   // Função para injetar script por nome em todos os navegadores
-  injectScript: async (scriptName) => {
+  injectScript: async (scriptName, syncStates = null) => {
     try {
-      const result = await ipcRenderer.invoke('inject-script', scriptName);
+      const result = await ipcRenderer.invoke('inject-script', scriptName, syncStates);
       return result;
     } catch (error) {
       console.error('Erro ao injetar script via IPC:', error);
@@ -152,9 +152,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
 
   // Função para injetar script por nome em todos os navegadores após navegação
-  injectScriptPostNavigation: async (scriptName) => {
+  injectScriptPostNavigation: async (scriptName, syncStates = null) => {
     try {
-      const result = await ipcRenderer.invoke('inject-script-post-navigation', scriptName);
+      const result = await ipcRenderer.invoke('inject-script-post-navigation', scriptName, syncStates);
       return result;
     } catch (error) {
       console.error('Erro ao injetar script pós-navegação via IPC:', error);
@@ -163,9 +163,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
 
   // Função para injetar script customizado em todos os navegadores
-  injectCustomScript: async (scriptCode) => {
+  injectCustomScript: async (scriptCode, syncStates = null) => {
     try {
-      const result = await ipcRenderer.invoke('inject-custom-script', scriptCode);
+      const result = await ipcRenderer.invoke('inject-custom-script', scriptCode, syncStates);
       return result;
     } catch (error) {
       console.error('Erro ao injetar script customizado via IPC:', error);

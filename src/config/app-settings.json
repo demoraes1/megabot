@@ -1,58 +1,27 @@
 {
   "links": [
-    "https://fffalfa.com",
-    "https://dddalfa.bet",
-    "https://hhhalfa.bet",
+    "https://fffalfa.bet",
     "https://gggalfa.bet"
   ],
-  "proxies": [
-    "proxy.tourosnet.com.br:6177",
-    "proxy.tourosnet.com.br:6178",
-    "proxy.tourosnet.com.br:6179",
-    "proxy.tourosnet.com.br:6180",
-    "proxy.tourosnet.com.br:6181",
-    "proxy.tourosnet.com.br:6182",
-    "proxy.tourosnet.com.br:6183",
-    "proxy.tourosnet.com.br:6184",
-    "proxy.tourosnet.com.br:6185",
-    "proxy.tourosnet.com.br:6186",
-    "proxy.tourosnet.com.br:6187",
-    "proxy.tourosnet.com.br:6188",
-    "proxy.tourosnet.com.br:6189",
-    "proxy.tourosnet.com.br:6190",
-    "proxy.tourosnet.com.br:6191",
-    "proxy.tourosnet.com.br:6192",
-    "proxy.tourosnet.com.br:6193",
-    "proxy.tourosnet.com.br:6194",
-    "proxy.tourosnet.com.br:6195",
-    "proxy.tourosnet.com.br:6196",
-    "proxy.tourosnet.com.br:6197",
-    "proxy.tourosnet.com.br:6198",
-    "proxy.tourosnet.com.br:6199"
-  ],
+  "proxies": [],
   "rotatingProxies": [
     "proxy.tourosnet.com.br:5900"
   ],
-  "pixKeys": [
-    "21995944781",
-    "150.307.237.14",
-    "17457edc-8d7f-47c2-b75e-48b9ebadae36"
-  ],
+  "pixKeys": [],
   "extensions": [],
   "settings": {
-    "delay": 10,
-    "openings": 2,
+    "delay": 5,
+    "openings": 3,
     "toggles": {
       "proxy-mode-list": false,
       "proxy-mode-rotating": false,
       "proxy-mode-none": true,
       "default-resolution-checkbox": true,
-      "random-passwords-toggle": true,
+      "random-passwords-toggle": false,
       "delay-toggle": false,
-      "mute-audio-toggle": true,
-      "select-all-browsers": true
+      "mute-audio-toggle": false
     },
-    "lastSaved": "2025-09-16T13:01:38.164Z"
+    "lastSaved": "2025-09-16T19:55:20.452Z"
   },
   "resolution": {
     "useDefault": true,
@@ -60,16 +29,16 @@
     "height": 800
   },
   "automation": {
-    "muteAudio": true,
-    "depositMin": 10,
-    "depositMax": 15,
+    "muteAudio": false,
+    "depositMin": 0,
+    "depositMax": 0,
     "delayEnabled": false,
-    "delaySeconds": 10,
+    "delaySeconds": 5,
     "password": "",
     "withdrawPassword": "",
-    "randomPasswords": true,
-    "categoria": "blockchain",
-    "jogo": "aviator",
-    "pixKeyType": "cnpj"
+    "randomPasswords": false,
+    "categoria": "slots",
+    "jogo": "",
+    "pixKeyType": "cpf"
   }
 }
