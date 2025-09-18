@@ -1,22 +1,24 @@
 {
-  "links": [],
+  "links": [
+    "https://fffalfa.bet"
+  ],
   "proxies": [],
   "rotatingProxies": [],
   "pixKeys": [],
   "extensions": [],
   "settings": {
     "delay": 5,
-    "openings": 1,
+    "openings": 3,
     "toggles": {
-      "proxy-mode-list": true,
+      "proxy-mode-list": false,
       "proxy-mode-rotating": false,
-      "proxy-mode-none": false,
+      "proxy-mode-none": true,
       "default-resolution-checkbox": true,
       "random-passwords-toggle": false,
       "delay-toggle": false,
       "mute-audio-toggle": false
     },
-    "lastSaved": "2025-09-18T07:54:18.067Z"
+    "lastSaved": "2025-09-18T09:07:05.635Z"
   },
   "resolution": {
     "useDefault": true,

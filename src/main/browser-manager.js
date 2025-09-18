@@ -217,7 +217,7 @@ async function launchInstances(options) {
                 
                 logger.info(`Geradas ${posicoesDisponiveis.length} posições sequenciais para todos os monitores`);
             }
-        } else if (options.selectedMonitor) {
+        } else if (options.selectedMonitor && options.selectedMonitor.id) {
             // Usar apenas o monitor selecionado
             const monitorId = options.selectedMonitor.id.toString();
             logger.info(`Usando apenas o monitor selecionado: ${options.selectedMonitor.nome} (ID: ${monitorId})`);
