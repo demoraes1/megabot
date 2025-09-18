@@ -224,7 +224,8 @@ function saveSettings() {
             categoria: document.getElementById('categoria-field')?.value || 'slots',
             jogo: document.getElementById('jogo-field')?.value || '',
             pixKeyType: document.getElementById('pix-key-type')?.value || 'CPF'
-        }
+        },
+        selectedMonitor: monitorSelecionado ? monitoresDetectados.indexOf(monitorSelecionado).toString() : 'todos'
     };
     
     // Salvar no arquivo usando Electron IPC
@@ -375,6 +376,42 @@ function applyLoadedSettings(settings) {
             
             // NÃO sobrescrever os valores carregados do arquivo
             // Os valores já foram definidos acima com base no settings.resolution
+        }        
+    }
+    
+    // Carregar monitor selecionado
+    if (settings.selectedMonitor !== undefined) {
+        const monitorSelect = document.getElementById('monitor-select');
+        if (monitorSelect) {
+            let selectedValue;
+            
+            // Verificar se é o formato antigo (objeto) ou novo (string)
+            if (typeof settings.selectedMonitor === 'object' && settings.selectedMonitor !== null) {
+                // Formato antigo - converter para string
+                selectedValue = settings.selectedMonitor.index !== undefined ? settings.selectedMonitor.index.toString() : 'todos';
+            } else {
+                // Formato novo - usar diretamente
+                selectedValue = settings.selectedMonitor;
+            }
+            
+            // Se o valor existe no select, seleciona ele
+            const optionExists = Array.from(monitorSelect.options).some(option => option.value === selectedValue);
+            if (optionExists) {
+                monitorSelect.value = selectedValue;
+                // Atualizar o monitor selecionado globalmente
+                if (selectedValue === 'todos') {
+                    monitorSelecionado = null;
+                } else {
+                    const indice = parseInt(selectedValue);
+                    if (!isNaN(indice) && monitoresDetectados[indice]) {
+                        monitorSelecionado = monitoresDetectados[indice];
+                    }
+                }
+                // Recalcular capacidade após carregar o monitor
+                if (typeof calcularCapacidadeMonitor === 'function') {
+                    calcularCapacidadeMonitor(monitorSelecionado);
+                }
+            }
         }
     }
     
@@ -2139,35 +2176,56 @@ async function detectarEAtualizarMonitores() {
             // Atualizar o select de monitores
             atualizarSelectMonitores(monitoresDetectados);
             
-            // Selecionar o monitor primário por padrão
-            const indiceMonitorPrimario = monitoresDetectados.findIndex(m => m.ehPrimario);
-            if (indiceMonitorPrimario >= 0) {
-                // Atualizar o select para mostrar o monitor selecionado
-                const monitorSelect = document.getElementById('monitor-select');
-                if (monitorSelect) {
-                    monitorSelect.value = indiceMonitorPrimario;
+            // Verificar se há uma configuração salva antes de selecionar automaticamente
+            const settings = await loadSettingsAsync();
+            let monitorParaSelecionar = null;
+            
+            if (settings && settings.selectedMonitor) {
+                // Se há configuração salva, usar ela
+                if (settings.selectedMonitor === 'todos') {
+                    monitorParaSelecionar = 'todos';
+                } else {
+                    const indiceConfigurado = parseInt(settings.selectedMonitor);
+                    if (indiceConfigurado >= 0 && indiceConfigurado < monitoresDetectados.length) {
+                        monitorParaSelecionar = indiceConfigurado;
+                    }
                 }
-                selecionarMonitor(indiceMonitorPrimario);
-            } else if (monitoresDetectados.length > 0) {
-                // Atualizar o select para mostrar o primeiro monitor
-                const monitorSelect = document.getElementById('monitor-select');
-                if (monitorSelect) {
-                    monitorSelect.value = 0;
+            }
+            
+            // Se não há configuração válida, usar o monitor primário ou primeiro
+            if (monitorParaSelecionar === null) {
+                const indiceMonitorPrimario = monitoresDetectados.findIndex(m => m.ehPrimario);
+                if (indiceMonitorPrimario >= 0) {
+                    monitorParaSelecionar = indiceMonitorPrimario;
+                } else if (monitoresDetectados.length > 0) {
+                    monitorParaSelecionar = 0;
                 }
-                selecionarMonitor(0);
+            }
+            
+            // Aplicar a seleção apenas se não há um monitor já selecionado
+            const monitorSelect = document.getElementById('monitor-select');
+            const jaTemSelecao = monitorSelect && monitorSelect.value && monitorSelect.value !== '';
+            
+            if (monitorParaSelecionar !== null && !jaTemSelecao) {
+                if (monitorSelect) {
+                    monitorSelect.value = monitorParaSelecionar;
+                }
+                if (monitorParaSelecionar === 'todos') {
+                    selecionarMonitor('todos');
+                } else {
+                    selecionarMonitor(monitorParaSelecionar);
+                }
+                console.log('Monitor selecionado automaticamente:', monitorParaSelecionar);
+            } else if (jaTemSelecao) {
+                console.log('Monitor já estava selecionado, mantendo configuração:', monitorSelect.value);
             }
         } else {
             console.error('Erro na detecção de monitores:', result.error);
-            // Manter o monitor padrão
-            atualizarSelectMonitores([{
-                id: 1,
-                nome: 'Monitor 1 (Padrão)',
-                resolucao: '1920x1080',
-                ehPrimario: true
-            }]);
+            console.warn('Sistema não conseguiu detectar monitores. Verifique as permissões do sistema.');
         }
     } catch (error) {
         console.error('Erro ao detectar monitores:', error);
+        console.warn('Sistema não conseguiu detectar monitores. Verifique as permissões do sistema.');
     }
 }
 
@@ -2185,7 +2243,7 @@ function atualizarSelectMonitores(monitores) {
     monitores.forEach((monitor, index) => {
         const option = document.createElement('option');
         option.value = index;
-        option.textContent = `${monitor.nome} ${monitor.ehPrimario ? '(Primário)' : ''} - ${monitor.resolucao}`;
+        option.textContent = `${monitor.nome} - ${monitor.resolucao}`;
         monitorSelect.appendChild(option);
     });
     
@@ -2227,6 +2285,9 @@ async function selecionarMonitor(indice) {
         // Calcular capacidade do monitor
         await calcularCapacidadeMonitor(monitorSelecionado);
     }
+    
+    // Salvar configurações automaticamente quando o monitor for selecionado
+    saveSettings();
 }
 
 /**
@@ -2968,7 +3029,7 @@ async function abrirNavegadores() {
             },
             blockedDomains: ['gcaptcha4-hrc.gsensebot.com', 'gcaptcha4-hrc.geetest.com'],
             // Incluir informações do monitor selecionado
-            selectedMonitor: monitorSelecionado,
+            selectedMonitor: monitorSelecionado ? monitoresDetectados.indexOf(monitorSelecionado).toString() : 'todos',
             useAllMonitors: monitorSelecionado === null,
             // Incluir configuração de resolução da interface
             resolution: {

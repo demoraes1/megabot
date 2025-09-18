@@ -1,27 +1,22 @@
 {
-  "links": [
-    "https://fffalfa.bet",
-    "https://gggalfa.bet"
-  ],
+  "links": [],
   "proxies": [],
-  "rotatingProxies": [
-    "proxy.tourosnet.com.br:5900"
-  ],
+  "rotatingProxies": [],
   "pixKeys": [],
   "extensions": [],
   "settings": {
     "delay": 5,
-    "openings": 10,
+    "openings": 1,
     "toggles": {
-      "proxy-mode-list": false,
+      "proxy-mode-list": true,
       "proxy-mode-rotating": false,
-      "proxy-mode-none": true,
+      "proxy-mode-none": false,
       "default-resolution-checkbox": true,
       "random-passwords-toggle": false,
       "delay-toggle": false,
       "mute-audio-toggle": false
     },
-    "lastSaved": "2025-09-18T06:29:31.943Z"
+    "lastSaved": "2025-09-18T07:54:18.067Z"
   },
   "resolution": {
     "useDefault": true,
@@ -38,7 +33,8 @@
     "withdrawPassword": "",
     "randomPasswords": false,
     "categoria": "slots",
-    "jogo": "fortune rabbit",
+    "jogo": "",
     "pixKeyType": "cpf"
-  }
+  },
+  "selectedMonitor": "1"
 }
