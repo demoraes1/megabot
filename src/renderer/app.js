@@ -843,7 +843,8 @@ function initializeScriptInjectionButtons() {
                 }
                 
                 // Obter syncStates do localStorage para respeitar o filtro
-                const syncStates = JSON.parse(localStorage.getItem('syncStates') || '{}');
+                const syncStates = JSON.parse(localStorage.getItem('syncPopupCheckboxStates') || '{}');
+                console.log(`[${scriptName}] syncStates obtidos:`, syncStates);
                 
                 // Executa a injeção do script
                 await window.electronAPI.injectScript(scriptName, syncStates);
@@ -863,7 +864,7 @@ function initializeScriptInjectionButtons() {
 // Função para injetar script customizado
 async function injectCustomScript(scriptCode, notificationMessage = 'Script customizado executado') {
     try {
-        const syncStates = JSON.parse(localStorage.getItem('syncStates') || 'null');
+        const syncStates = JSON.parse(localStorage.getItem('syncPopupCheckboxStates') || 'null');
         await window.electronAPI.injectCustomScript(scriptCode, syncStates);
         showNotification(notificationMessage, 'success');
         console.log('Script customizado injetado com sucesso');
@@ -3230,7 +3231,7 @@ async function atualizarPaginas() {
         showNotification('Atualizando páginas dos navegadores...', 'info');
         
         // Obter syncStates do localStorage para respeitar o filtro
-        const syncStates = JSON.parse(localStorage.getItem('syncStates') || '{}');
+        const syncStates = JSON.parse(localStorage.getItem('syncPopupCheckboxStates') || '{}');
         
         // Usar o módulo de injeção para carregar o script reload.js
         const result = await window.electronAPI.injectScript('reload', syncStates);
@@ -3290,7 +3291,8 @@ async function createProfileCard(profile) {
     let isActive = false;
     try {
         // Obter syncStates do localStorage para respeitar o filtro
-        const syncStates = JSON.parse(localStorage.getItem('syncStates') || 'null');
+                const syncStates = JSON.parse(localStorage.getItem('syncPopupCheckboxStates') || 'null');
+                console.log(`[${scriptName}] syncStates obtidos:`, syncStates);
         const activeBrowsersResult = await window.electronAPI.getActiveBrowsersWithProfiles(syncStates);
         if (activeBrowsersResult.success) {
             const activeBrowsers = activeBrowsersResult.browsers;

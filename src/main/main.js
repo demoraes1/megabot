@@ -15,8 +15,8 @@ const INTERFACE_ZOOM_FACTOR = 0.1;
 function createWindow() {
   // Criar a janela do navegador
   const mainWindow = new BrowserWindow({
-    width: 1000,
-    height: 620,
+    width: 1200,
+    height: 750,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -326,6 +326,7 @@ ipcMain.handle('get-active-browsers-with-profiles', async (event, syncStates = n
 ipcMain.handle('inject-script', async (event, scriptName, syncStates = null) => {
   try {
     console.log(`Injetando script '${scriptName}' em todos os navegadores`);
+    console.log('[main.js] syncStates recebido no IPC:', syncStates);
     const result = await scriptInjector.injectScript(scriptName, syncStates);
     return result;
   } catch (error) {

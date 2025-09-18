@@ -301,7 +301,7 @@ class ScriptInjector {
             const finalScriptContent = this.injectScriptConfiguration(scriptName, scriptContent);
             
             // Usar a função do browser-manager para injetar em todos os navegadores
-            const result = await injectScriptInAllBrowsers(finalScriptContent, syncStates);
+            const result = await injectScriptInAllBrowsers(finalScriptContent, false, scriptName, syncStates);
             
             return result;
 
@@ -436,13 +436,13 @@ const scriptInjector = new ScriptInjector();
 // Exportar métodos estáticos
 module.exports = {
     // Injetar script por nome
-    injectScript: (scriptName) => scriptInjector.injectScriptInAllBrowsers(scriptName),
+    injectScript: (scriptName, syncStates = null) => scriptInjector.injectScriptInAllBrowsers(scriptName, syncStates),
     
     // Injetar script por nome após navegação (aguarda carregamento)
-    injectScriptPostNavigation: (scriptName) => scriptInjector.injectScriptPostNavigation(scriptName),
+    injectScriptPostNavigation: (scriptName, syncStates = null) => scriptInjector.injectScriptPostNavigation(scriptName, syncStates),
     
     // Injetar script customizado
-    injectCustomScript: (scriptCode) => scriptInjector.injectCustomScript(scriptCode),
+    injectCustomScript: (scriptCode, syncStates = null) => scriptInjector.injectCustomScript(scriptCode, syncStates),
     
     // Listar scripts disponíveis
     getAvailableScripts: () => scriptInjector.getAvailableScripts(),

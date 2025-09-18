@@ -11,7 +11,7 @@
   "extensions": [],
   "settings": {
     "delay": 5,
-    "openings": 3,
+    "openings": 10,
     "toggles": {
       "proxy-mode-list": false,
       "proxy-mode-rotating": false,
@@ -21,7 +21,7 @@
       "delay-toggle": false,
       "mute-audio-toggle": false
     },
-    "lastSaved": "2025-09-16T19:55:20.452Z"
+    "lastSaved": "2025-09-18T06:29:31.943Z"
   },
   "resolution": {
     "useDefault": true,
@@ -38,7 +38,7 @@
     "withdrawPassword": "",
     "randomPasswords": false,
     "categoria": "slots",
-    "jogo": "",
+    "jogo": "fortune rabbit",
     "pixKeyType": "cpf"
   }
 }

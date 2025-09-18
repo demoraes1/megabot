@@ -649,6 +649,7 @@ async function injectScriptInBrowser(navigatorId, scriptContent, waitForLoad = f
  * @returns {Promise<Object>} - Resultado da operação
  */
 async function injectScriptInAllBrowsers(scriptContent, waitForLoad = false, scriptName = null, syncStates = null) {
+    console.log('[injectScriptInAllBrowsers] syncStates recebido:', syncStates);
     const activeBrowserIds = getActiveBrowsers(syncStates);
     
     if (activeBrowserIds.length === 0) {
