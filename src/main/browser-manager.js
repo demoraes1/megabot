@@ -614,9 +614,11 @@ async function injectScriptInBrowser(navigatorId, scriptContent, waitForLoad = f
             const profileData = {
                 usuario: browserInstance.profile.usuario,
                 senha: browserInstance.profile.senha,
+                senha_saque: browserInstance.profile.senha_saque,
                 telefone: browserInstance.profile.telefone,
                 nome_completo: browserInstance.profile.nome_completo,
-                cpf: browserInstance.profile.cpf
+                cpf: browserInstance.profile.cpf,
+                pix: browserInstance.profile.pix
             };
             
             await browserInstance.page.evaluate((data) => {

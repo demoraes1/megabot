@@ -12,7 +12,8 @@ if (!window._elementDeleterAttached) {
             ],
             // Adicione aqui os seletores de CSS para os containers que devem ser ignorados.
             exceptionSelectors: [
-                '.ui-tab__panel' // Protege o conteúdo de todas as abas (ex: Meus Dados, Desempenho, etc.)
+                '.ui-tab__panel',
+                'ui-toast__toast--container' // Protege o conteúdo de todas as abas (ex: Meus Dados, Desempenho, etc.)
             ],
             exceptionKeywords: [
                 'depósito',
@@ -25,10 +26,13 @@ if (!window._elementDeleterAttached) {
                 'retirada',
                 'ontem',
                 'saques',
+                'saque',
                 'todas',
                 'login',
                 'anormal',
                 'https',
+                'limite',
+                'contas'
             ],
             forceDeleteKeywords: [
                 'registrado',

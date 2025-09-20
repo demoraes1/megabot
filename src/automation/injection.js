@@ -137,6 +137,20 @@ class ScriptInjector {
             finalScriptContent = configScript + '\n' + scriptContent;
         }
         
+        if (scriptName === 'saque') {
+            const settings = loadAppSettings();
+            const pixKeys = settings.pixKeys || [];
+            const configScript = `
+                // Injetar configurações do MegaBot para saque
+                window.megabotConfig = {
+                    pixKeyType: '${settings.automation?.pixKeyType || 'PHONE'}',
+                    pixKeys: ${JSON.stringify(pixKeys)}
+                };
+                console.log('Configurações MegaBot injetadas para saque:', window.megabotConfig);
+            `;
+            finalScriptContent = configScript + '\n' + scriptContent;
+        }
+        
         return finalScriptContent;
     }
 

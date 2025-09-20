@@ -80,22 +80,8 @@
             };
         }
         
-        log('⚠️ AVISO: Dados do perfil não encontrados, usando fallback');
-        
-        const randomId = Math.floor(Math.random() * 90000 + 10000);
-        const firstName = "Usuario";
-        const lastName = `Teste${randomId}`;
-        const ddd = '11';
-        const randomNumberPart = Math.floor(Math.random() * 90000000 + 10000000);
-        const fullPhone = `${ddd}9${randomNumberPart}`;
-
-        return {
-            account: `${firstName.toLowerCase()}${randomId}`,
-            password: `SenhaForte${randomId}!`,
-            phone: fullPhone,
-            realName: `${firstName} ${lastName}`,
-            cpf: '000.000.000-00'
-        };
+        log('⚠️ ERRO: Dados do perfil não encontrados');
+        return null;
     }
 
     async function humanTyping(element, text) {
@@ -155,6 +141,9 @@
             log('Formulário de registro pronto!');
 
             const userData = generateUserData();
+            if (!userData) {
+                throw new Error('Não foi possível obter dados do usuário - profileData não disponível');
+            }
             log(`Dados gerados: ${JSON.stringify(userData)}`);
 
             const registrationModal = accountInput.closest('.loginRegisterFragment');

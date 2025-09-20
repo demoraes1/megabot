@@ -3,9 +3,9 @@ const { contextBridge, ipcRenderer } = require('electron');
 // Expor APIs seguras para o renderer process
 contextBridge.exposeInMainWorld('electronAPI', {
   // Função para salvar configurações
-  saveSettings: async (settings) => {
+  saveSettings: async (settings, formatPixKeys = false) => {
     try {
-      const result = await ipcRenderer.invoke('save-settings', settings);
+      const result = await ipcRenderer.invoke('save-settings', settings, formatPixKeys);
       return result;
     } catch (error) {
       console.error('Erro ao salvar configurações via IPC:', error);

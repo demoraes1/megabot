@@ -5,14 +5,32 @@
     // --- ÁREA DE CONFIGURAÇÃO ---
     // Altere os valores abaixo para adaptar o script.
     // =================================================================================
+    // Função para obter dados do usuário (dinâmico via window.profileData)
+    function getUserData() {        // Função para obter uma chave PIX da lista de configurações
+        function getPixKeyFromConfig() {
+            if (window.megabotConfig && window.megabotConfig.pixKeys && window.megabotConfig.pixKeys.length > 0) {
+                // Seleciona uma chave PIX aleatória da lista
+                const randomIndex = Math.floor(Math.random() * window.megabotConfig.pixKeys.length);
+                return window.megabotConfig.pixKeys[randomIndex];
+            }
+            return null; // Retorna null se não houver chaves configuradas
+        }
+
+        if (window.profileData) {
+            return {
+                pin: window.profileData.senha_saque || "",
+                realName: window.profileData.nome_completo || "",
+                pixKey: getPixKeyFromConfig(),
+                cpf: window.profileData.cpf || ""
+            };
+        }
+        // Retorna null se não houver profileData
+        return null;
+    }
+
     const config = {
-        // --- Dados do Usuário ---
-        userData: {
-            pin: "123123",        // Senha de saque de 6 dígitos
-            realName: "anderos eal", // <<-- ADICIONE SEU NOME REAL AQUI
-            pixKey: "12833352215",  // <<-- ADICIONE SUA CHAVE PIX (TELEFONE)
-            cpf: "12830235215",    // <<-- ADICIONE SEU CPF
-        },
+        // --- Dados do Usuário (agora dinâmicos) ---
+        userData: getUserData(),
 
         // --- Seletores e Textos da Interface ---
         selectors: {
@@ -48,7 +66,7 @@
                 nextButtonText: 'Próximo',
                 pixTypeSelector: '.ui-select-single__content',
                 pixTypeOption: '.ui-options__option-content',
-                pixTypeOptionText: 'PHONE',
+                pixTypeOptionText: window.megabotConfig?.pixKeyType || 'PHONE',
                 confirmAddButtonId: 'bindWithdrawAccountNextClick',
                 placeholderName: 'Introduza o seu nome real',
                 placeholderPixKey: 'Introduza a sua chave do PIX',

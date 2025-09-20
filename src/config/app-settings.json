@@ -2,9 +2,31 @@
   "links": [
     "https://fffalfa.bet"
   ],
-  "proxies": [],
+  "proxies": [
+    "proxy.tourosnet.com.br:6020",
+    "proxy.tourosnet.com.br:6021",
+    "proxy.tourosnet.com.br:6022",
+    "proxy.tourosnet.com.br:6023",
+    "proxy.tourosnet.com.br:6024",
+    "proxy.tourosnet.com.br:6025",
+    "proxy.tourosnet.com.br:6026",
+    "proxy.tourosnet.com.br:6027",
+    "proxy.tourosnet.com.br:6028",
+    "proxy.tourosnet.com.br:6029",
+    "proxy.tourosnet.com.br:6030",
+    "proxy.tourosnet.com.br:6031",
+    "proxy.tourosnet.com.br:6032",
+    "proxy.tourosnet.com.br:6033",
+    "proxy.tourosnet.com.br:6034",
+    "proxy.tourosnet.com.br:6035",
+    "proxy.tourosnet.com.br:6036"
+  ],
   "rotatingProxies": [],
-  "pixKeys": [],
+  "pixKeys": [
+    { "id": 1, "tipo": "Telefone", "chave": "21995904345" },
+    { "id": 2, "tipo": "Telefone", "chave": "99594478312" },
+    { "id": 3, "tipo": "Telefone", "chave": "33241231245" }
+  ],
   "extensions": [],
   "settings": {
     "delay": 5,
@@ -18,7 +40,7 @@
       "delay-toggle": false,
       "mute-audio-toggle": false
     },
-    "lastSaved": "2025-09-18T09:07:05.635Z"
+    "lastSaved": "2025-09-19T21:44:01.820Z"
   },
   "resolution": {
     "useDefault": true,
@@ -35,8 +57,8 @@
     "withdrawPassword": "",
     "randomPasswords": false,
     "categoria": "slots",
-    "jogo": "",
-    "pixKeyType": "cpf"
+    "jogo": "golden land",
+    "pixKeyType": "PHONE"
   },
   "selectedMonitor": "1"
 }

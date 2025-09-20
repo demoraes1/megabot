@@ -188,6 +188,29 @@ document.addEventListener('DOMContentLoaded', initializeApplication);
 let saveTimeout = null;
 const SAVE_DELAY = 100; // 300ms de delay para evitar salvamentos excessivos
 
+// Mapeamento de tipos de chave PIX entre interface e arquivo
+function mapPixKeyTypeToFile(interfaceValue) {
+    const mapping = {
+        'telefone': 'PHONE',
+        'aleatoria': 'EVP',
+        'cpf': 'CPF',
+        'cnpj': 'CNPJ',
+        'email': 'EMAIL'
+    };
+    return mapping[interfaceValue] || interfaceValue.toUpperCase();
+}
+
+function mapPixKeyTypeFromFile(fileValue) {
+    const mapping = {
+        'PHONE': 'telefone',
+        'EVP': 'aleatoria',
+        'CPF': 'cpf',
+        'CNPJ': 'cnpj',
+        'EMAIL': 'email'
+    };
+    return mapping[fileValue] || fileValue.toLowerCase();
+}
+
 // Função para salvar configurações
 function saveSettings() {
     // Obter configuração de resolução da interface
@@ -223,7 +246,7 @@ function saveSettings() {
             randomPasswords: document.getElementById('random-passwords-toggle')?.checked || false,
             categoria: document.getElementById('categoria-field')?.value || 'slots',
             jogo: document.getElementById('jogo-field')?.value || '',
-            pixKeyType: document.getElementById('pix-key-type')?.value || 'CPF'
+            pixKeyType: mapPixKeyTypeToFile(document.getElementById('pix-key-type')?.value || 'CPF')
         },
         selectedMonitor: monitorSelecionado ? monitoresDetectados.indexOf(monitorSelecionado).toString() : 'todos'
     };
@@ -231,7 +254,8 @@ function saveSettings() {
     // Salvar no arquivo usando Electron IPC
     try {
         if (window.electronAPI && window.electronAPI.saveSettings) {
-            window.electronAPI.saveSettings(settings);
+            // Enviar configurações com formatação especial para pixKeys
+            window.electronAPI.saveSettings(settings, true); // true indica formatação especial
             console.log('Configurações salvas automaticamente:', settings);
         } else {
             // Fallback para localStorage durante desenvolvimento
@@ -484,7 +508,7 @@ function applyLoadedSettings(settings) {
         // Carregar tipo de chave PIX
         const pixKeyTypeField = document.getElementById('pix-key-type');
         if (pixKeyTypeField && settings.automation.pixKeyType !== undefined) {
-            pixKeyTypeField.value = settings.automation.pixKeyType;
+            pixKeyTypeField.value = mapPixKeyTypeFromFile(settings.automation.pixKeyType);
         }
     }
     
@@ -863,6 +887,37 @@ function initializeButtons() {
 }
 
 // Sistema padronizado de injeção de scripts
+// Função para verificar se há chaves PIX do tipo selecionado
+function hasPixKeysOfSelectedType() {
+    const selectedType = document.getElementById('pix-key-type')?.value || 'cpf';
+    const mappedType = mapPixKeyTypeToFile(selectedType);
+    
+    // Obter chaves PIX atuais
+    const pixKeys = getAddedPixKeys();
+    
+    // Verificar se há chaves do tipo selecionado
+    const keysOfSelectedType = pixKeys.filter(key => {
+        if (typeof PixValidator !== 'undefined') {
+            const validator = new PixValidator();
+            const identifiedType = validator.identifyPixKeyType(key.chave);
+            
+            // Mapear tipos do PixValidator para os tipos do arquivo
+            const typeMapping = {
+                'CPF': 'CPF',
+                'CNPJ': 'CNPJ',
+                'E-mail': 'EMAIL',
+                'Telefone': 'PHONE',
+                'Chave Aleatória': 'EVP'
+            };
+            
+            return typeMapping[identifiedType] === mappedType;
+        }
+        return false;
+    });
+    
+    return keysOfSelectedType.length > 0;
+}
+
 function initializeScriptInjectionButtons() {
     // Busca todos os botões com data-inject-script
     const scriptButtons = document.querySelectorAll('[data-inject-script]');
@@ -874,6 +929,16 @@ function initializeScriptInjectionButtons() {
         
         button.addEventListener('click', async () => {
             try {
+                // Validação específica para o script de saque
+                if (scriptName === 'saque') {
+                    if (!hasPixKeysOfSelectedType()) {
+                        const selectedTypeElement = document.getElementById('pix-key-type');
+                        const selectedTypeText = selectedTypeElement?.options[selectedTypeElement.selectedIndex]?.text || 'selecionado';
+                        showNotification(`Erro: Não há chaves PIX do tipo "${selectedTypeText}" disponíveis. Adicione chaves deste tipo antes de executar a automação.`, 'error');
+                        return;
+                    }
+                }
+                
                 // Verifica se precisa de confirmação
                 if (confirmMessage && !(await showCustomConfirm(confirmMessage))) {
                     return;
@@ -1261,10 +1326,27 @@ function getAddedPixKeys() {
     const pixListPopup = document.getElementById('pix-list-popup');
     if (pixListPopup && pixListPopup.value) {
         const lines = pixListPopup.value.split('\n');
+        let id = 1;
+        
         lines.forEach(line => {
             const pixKey = line.trim();
             if (pixKey !== '') {
-                pixKeys.push(pixKey);
+                // Identificar automaticamente o tipo da chave PIX
+                let tipo = 'Inválida';
+                if (typeof PixValidator !== 'undefined') {
+                    const validator = new PixValidator();
+                    const identifiedType = validator.identifyPixKeyType(pixKey);
+                    if (identifiedType) {
+                        tipo = identifiedType;
+                    }
+                }
+                
+                // Adicionar no formato { id, tipo, chave }
+                pixKeys.push({
+                    id: id++,
+                    tipo: tipo,
+                    chave: pixKey
+                });
             }
         });
     }
@@ -1380,7 +1462,14 @@ function loadPixKeys(pixKeys) {
     
     // Carregar chaves PIX no textarea
     if (pixKeys && pixKeys.length > 0) {
-        pixListPopup.value = pixKeys.join('\n');
+        // Se as chaves são objetos com formato {id, tipo, chave}, extrair apenas a chave
+        const keysToDisplay = pixKeys.map(key => {
+            if (typeof key === 'object' && key.chave) {
+                return key.chave;
+            }
+            return key; // Manter compatibilidade com formato antigo (string)
+        });
+        pixListPopup.value = keysToDisplay.join('\n');
     } else {
         pixListPopup.value = '';
     }
@@ -2029,6 +2118,26 @@ function initializePixManagement() {
         pixListPopup.addEventListener('input', () => {
             updatePixCount();
             debouncedSave();
+        });
+        
+        // Event listener para interceptar Enter e validar linha atual
+        pixListPopup.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const textarea = e.target;
+                const cursorPosition = textarea.selectionStart;
+                const textBeforeCursor = textarea.value.substring(0, cursorPosition);
+                
+                // Encontrar o início da linha atual
+                const lastNewlineIndex = textBeforeCursor.lastIndexOf('\n');
+                const currentLineStart = lastNewlineIndex === -1 ? 0 : lastNewlineIndex + 1;
+                const currentLine = textBeforeCursor.substring(currentLineStart);
+                
+                // Verificar se a linha atual está vazia ou contém apenas espaços
+                if (currentLine.trim() === '') {
+                    e.preventDefault(); // Impedir a quebra de linha
+                    return false;
+                }
+            }
         });
     }
     

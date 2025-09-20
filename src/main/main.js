@@ -120,13 +120,39 @@ app.on('window-all-closed', () => {
 const settingsPath = path.join(__dirname, '../config/app-settings.json');
 
 // IPC Handlers para salvamento e carregamento de configurações
-ipcMain.handle('save-settings', async (event, settings) => {
+ipcMain.handle('save-settings', async (event, settings, formatPixKeys = false) => {
   try {
     // Garantir que a pasta config existe
     const configDir = path.dirname(settingsPath);
     await fs.mkdir(configDir, { recursive: true });
     
-    await fs.writeFile(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
+    let jsonString;
+    if (formatPixKeys && settings.pixKeys && Array.isArray(settings.pixKeys)) {
+      // Formatação especial para pixKeys - uma por linha
+      jsonString = JSON.stringify(settings, null, 2);
+      
+      // Encontrar e substituir a formatação do array pixKeys
+      const pixKeysMatch = jsonString.match(/"pixKeys": \[([\s\S]*?)\]/);
+      if (pixKeysMatch) {
+        const pixKeysArray = settings.pixKeys;
+        let compactPixKeys = '[\n';
+        pixKeysArray.forEach((key, index) => {
+          const compactKey = `    { "id": ${key.id}, "tipo": "${key.tipo}", "chave": "${key.chave}" }`;
+          compactPixKeys += compactKey;
+          if (index < pixKeysArray.length - 1) {
+            compactPixKeys += ',';
+          }
+          compactPixKeys += '\n';
+        });
+        compactPixKeys += '  ]';
+        
+        jsonString = jsonString.replace(/"pixKeys": \[([\s\S]*?)\]/, `"pixKeys": ${compactPixKeys}`);
+      }
+    } else {
+      jsonString = JSON.stringify(settings, null, 2);
+    }
+    
+    await fs.writeFile(settingsPath, jsonString, 'utf8');
     console.log('Configurações salvas em:', settingsPath);
     return { success: true };
   } catch (error) {
