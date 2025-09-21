@@ -238,6 +238,11 @@ function saveSettings() {
     const widthInput = document.getElementById('width-input');
     const heightInput = document.getElementById('height-input');
     
+    const monitorIndex = monitorSelecionado && Array.isArray(monitoresDetectados)
+        ? monitoresDetectados.findIndex(monitor => monitor && monitor.id === monitorSelecionado.id)
+        : -1;
+    const selectedMonitorSetting = monitorIndex >= 0 ? monitorIndex.toString() : 'todos';
+    
     const settings = {
         links: getAddedLinks(),
         proxies: getAddedProxies(),
@@ -268,7 +273,7 @@ function saveSettings() {
             jogo: document.getElementById('jogo-field')?.value || '',
             pixKeyType: mapPixKeyTypeToFile(document.getElementById('pix-key-type')?.value || 'CPF')
         },
-        selectedMonitor: monitorSelecionado ? monitoresDetectados.indexOf(monitorSelecionado).toString() : 'todos'
+        selectedMonitor: selectedMonitorSetting
     };
     
     // Salvar no arquivo usando Electron IPC
@@ -3191,6 +3196,17 @@ async function abrirNavegadores() {
         }
         
         // Preparar opções para os navegadores
+        const monitorIndex = monitorSelecionado && Array.isArray(monitoresDetectados)
+            ? monitoresDetectados.findIndex(monitor => monitor && monitor.id === monitorSelecionado.id)
+            : -1;
+        const useAllMonitors = monitorIndex < 0;
+        const selectedMonitorOption = useAllMonitors ? 'todos' : {
+            id: monitorSelecionado.id,
+            nome: monitorSelecionado.nome,
+            bounds: monitorSelecionado.bounds || null,
+            index: monitorIndex
+        };
+
         const options = {
             simultaneousOpenings: simultaneousOpenings,
             urls: links,
@@ -3204,8 +3220,8 @@ async function abrirNavegadores() {
             },
             blockedDomains: ['gcaptcha4-hrc.gsensebot.com', 'gcaptcha4-hrc.geetest.com'],
             // Incluir informações do monitor selecionado
-            selectedMonitor: monitorSelecionado ? monitoresDetectados.indexOf(monitorSelecionado).toString() : 'todos',
-            useAllMonitors: monitorSelecionado === null,
+            selectedMonitor: selectedMonitorOption,
+            useAllMonitors,
             // Incluir configuração de resolução da interface
             resolution: {
                 larguraLogica: larguraLogica,

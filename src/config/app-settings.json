@@ -1,0 +1,43 @@
+{
+  "links": [
+    "https://hhhalfa.bet"
+  ],
+  "proxies": [],
+  "rotatingProxies": [],
+  "pixKeys": [
+  ],
+  "extensions": [],
+  "settings": {
+    "delay": 5,
+    "openings": 3,
+    "toggles": {
+      "proxy-mode-list": false,
+      "proxy-mode-rotating": false,
+      "proxy-mode-none": true,
+      "default-resolution-checkbox": true,
+      "random-passwords-toggle": false,
+      "delay-toggle": false,
+      "mute-audio-toggle": false
+    },
+    "lastSaved": "2025-09-21T23:53:40.417Z"
+  },
+  "resolution": {
+    "useDefault": true,
+    "width": 502,
+    "height": 800
+  },
+  "automation": {
+    "muteAudio": false,
+    "depositMin": 0,
+    "depositMax": 0,
+    "delayEnabled": false,
+    "delaySeconds": 5,
+    "password": "",
+    "withdrawPassword": "",
+    "randomPasswords": false,
+    "categoria": "slots",
+    "jogo": "",
+    "pixKeyType": "CPF"
+  },
+  "selectedMonitor": "0"
+}

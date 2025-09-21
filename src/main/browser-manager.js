@@ -152,6 +152,90 @@ async function launchInstances(options) {
     
     const dadosMonitores = resultadoCarregamento.dados;
     
+    const detalhesMonitores = (() => {
+        if (!dadosMonitores) {
+            return [];
+        }
+
+        if (Array.isArray(dadosMonitores.monitores) && dadosMonitores.monitores.length > 0) {
+            return dadosMonitores.monitores;
+        }
+
+        if (dadosMonitores.monitores && Array.isArray(dadosMonitores.monitores.detalhes)) {
+            return dadosMonitores.monitores.detalhes;
+        }
+
+        if (dadosMonitores.posicionamento) {
+            const posicionamentoArray = Array.isArray(dadosMonitores.posicionamento)
+                ? dadosMonitores.posicionamento
+                : Object.values(dadosMonitores.posicionamento);
+
+            return posicionamentoArray
+                .map(item => item && item.monitor)
+                .filter(Boolean);
+        }
+
+        return [];
+    })();
+
+    if (options.selectedMonitor && typeof options.selectedMonitor === 'string') {
+        options.selectedMonitor = options.selectedMonitor.trim();
+    }
+
+    if (options.selectedMonitor === 'todos') {
+        options.useAllMonitors = true;
+        options.selectedMonitor = null;
+    } else if (options.selectedMonitor && !options.useAllMonitors) {
+        let monitorResolve = null;
+
+        if (typeof options.selectedMonitor === 'number' || (typeof options.selectedMonitor === 'string' && options.selectedMonitor !== '')) {
+            const monitorIndex = parseInt(options.selectedMonitor, 10);
+
+            if (!Number.isNaN(monitorIndex) && detalhesMonitores[monitorIndex]) {
+                const detalhes = detalhesMonitores[monitorIndex];
+                monitorResolve = {
+                    id: detalhes.id,
+                    nome: detalhes.nome,
+                    bounds: detalhes.bounds || null,
+                    index: monitorIndex
+                };
+            } else {
+                logger.warn('Indice de monitor invalido recebido: ' + options.selectedMonitor + '. Usando todos os monitores.');
+            }
+        } else if (typeof options.selectedMonitor === 'object') {
+            const monitorId = options.selectedMonitor.id || (typeof options.selectedMonitor.index === 'number' && detalhesMonitores[options.selectedMonitor.index] ? detalhesMonitores[options.selectedMonitor.index].id : null);
+
+            if (monitorId) {
+                const detalhes = detalhesMonitores.find(det => det.id === monitorId) || null;
+
+                if (detalhes) {
+                    const resolvedIndex = typeof options.selectedMonitor.index === 'number' && options.selectedMonitor.index >= 0
+                        ? options.selectedMonitor.index
+                        : detalhesMonitores.findIndex(det => det.id === monitorId);
+
+                    monitorResolve = {
+                        id: detalhes.id,
+                        nome: detalhes.nome,
+                        bounds: detalhes.bounds || null,
+                        index: resolvedIndex
+                    };
+                } else {
+                    logger.warn('Monitor com ID ' + monitorId + ' nao encontrado. Usando todos os monitores.');
+                }
+            } else {
+                logger.warn('Selecao de monitor invalida (sem ID). Usando todos os monitores.');
+            }
+        }
+
+        if (monitorResolve) {
+            options.selectedMonitor = monitorResolve;
+            options.useAllMonitors = false;
+        } else {
+            options.useAllMonitors = true;
+            options.selectedMonitor = null;
+        }
+    }
+
     // Função auxiliar para processar posições de monitores
     const processarPosicoesMonitor = (monitorData, monitorId = null) => {
         const posicoes = [];
