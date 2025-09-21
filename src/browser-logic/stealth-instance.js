@@ -665,17 +665,34 @@ async function startBrowser(options) {
             
             if (fs.existsSync(ipviewScriptPath)) {
                 const ipviewScriptContent = fs.readFileSync(ipviewScriptPath, 'utf8');
-                
-                // Injetar configuração do browserIndex antes do script
+
+                const proxyInfoForInjection = proxyConfig ? {
+                    host: proxyConfig.host,
+                    port: proxyConfig.port,
+                    protocol: proxyConfig.protocol || null
+                } : null;
+
+                const configData = {
+                    browserIndex: navigatorId,
+                    proxyEnabled: Boolean(proxyConfig),
+                    proxyInfo: proxyInfoForInjection
+                };
+
                 const configScript = `
-                    // Injetar configuração do navegador para ipview.js
-                    window.megabotConfig = window.megabotConfig || {};
-                    window.megabotConfig.browserIndex = ${navigatorId};
-                    console.log('Configuração MegaBot injetada para ipview.js:', window.megabotConfig);
+                    (function() {
+                        window.megabotConfig = window.megabotConfig || {};
+                        Object.assign(window.megabotConfig, ${JSON.stringify(configData)});
+                        window.dispatchEvent(new CustomEvent('megabot-config-ready', { detail: window.megabotConfig }));
+                        console.log('Configuracao MegaBot injetada para ipview.js:', window.megabotConfig);
+                    })();
                 `;
-                
-                // ETAPA 1: Injeção permanente para garantir que o script exista desde o início e em reloads
+
                 await page.evaluateOnNewDocument(configScript + '\n' + ipviewScriptContent);
+                await page.evaluate((payload) => {
+                    window.megabotConfig = window.megabotConfig || {};
+                    Object.assign(window.megabotConfig, payload);
+                    window.dispatchEvent(new CustomEvent('megabot-config-ready', { detail: window.megabotConfig }));
+                }, configData);
                 console.log(`[Navegador ${navigatorId}] Script ipview.js injetado permanentemente via evaluateOnNewDocument com browserIndex ${navigatorId}`);
             } else {
                 console.warn(`[Navegador ${navigatorId}] Arquivo ipview.js não encontrado em: ${ipviewScriptPath}`);
