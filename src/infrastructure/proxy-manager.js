@@ -31,19 +31,13 @@ class ProxyManager {
                 hasAuth: !!(proxyConfig.username && proxyConfig.password)
             });
 
-            // Configurar autenticação APENAS se credenciais foram fornecidas no formato original
             if (proxyConfig.username && proxyConfig.password) {
-                await page.authenticate({
-                    username: proxyConfig.username,
-                    password: proxyConfig.password
-                });
-                console.log('Autenticação de proxy configurada');
+                await ProxyManager.setupAuthentication(page, proxyConfig);
             } else {
-                console.log('Proxy sem credenciais - tratando como proxy público/aberto');
+                console.log('Proxy sem credenciais - tratando como proxy publico/aberto');
             }
 
-            // Proxy já está configurado via Chrome args, apenas configuramos autenticação
-            console.log('ProxyManager: Proxy configurado via Chrome args, apenas autenticação necessária');
+            console.log('ProxyManager: Proxy configurado via Chrome args, apenas autenticacao necessaria');
 
             this.isConnected = true;
             console.log('Proxy configurado com sucesso');
@@ -56,6 +50,31 @@ class ProxyManager {
         }
     }
 
+
+    static async setupAuthentication(page, proxyConfig) {
+        if (!proxyConfig || !proxyConfig.username || !proxyConfig.password) {
+            console.log('ProxyManager: nenhuma credencial fornecida, pulando autenticacao');
+            return false;
+        }
+
+        if (!page || typeof page.authenticate !== 'function') {
+            throw new Error('ProxyManager: pagina invalida para configurar autenticacao de proxy');
+        }
+
+        try {
+            const credentials = {
+                username: String(proxyConfig.username),
+                password: String(proxyConfig.password)
+            };
+
+            await page.authenticate(credentials);
+            console.log('ProxyManager: autenticacao de proxy configurada');
+            return true;
+        } catch (error) {
+            console.error('ProxyManager: erro ao configurar autenticacao de proxy', error);
+            throw error;
+        }
+    }
 
 
     /**
@@ -174,45 +193,82 @@ class ProxyManager {
      */
     static parseProxyString(proxyStr) {
         if (!proxyStr || typeof proxyStr !== 'string') {
-            throw new Error('String de proxy inválida');
+            throw new Error('String de proxy invalida');
         }
 
-        // Remove protocolos comuns se presentes
-        let cleanProxy = proxyStr.replace(/^(https?|socks[45]?):\/\//, '');
-        
-        // Extrair protocolo se presente
-        const protocolMatch = proxyStr.match(/^(https?|socks[45]?):/);
-        const protocol = protocolMatch ? protocolMatch[1] : 'http';
-        
-        // Formato com autenticação: usuario:senha@host:porta
-        let match = cleanProxy.match(/^([^:@]+):([^@]+)@([^:]+):(\d+)$/);
-        
-        if (match) {
-            const [, username, password, host, port] = match;
-            return {
-                host: host.trim(),
-                port: parseInt(port),
-                username: username.trim(),
-                password: password.trim(),
-                protocol: protocol
-            };
+        let protocol = 'http';
+        let cleanProxy = proxyStr.trim();
+
+        const protocolMatch = cleanProxy.match(/^(https?|socks[45]?):\/\//i);
+        if (protocolMatch) {
+            protocol = protocolMatch[1].toLowerCase();
+            cleanProxy = cleanProxy.slice(protocolMatch[0].length);
         }
-        
-        // Formato simples: host:porta
-        match = cleanProxy.match(/^([^:]+):(\d+)$/);
-        
-        if (match) {
-            const [, host, port] = match;
+
+        cleanProxy = cleanProxy.trim();
+
+        const normalize = (value) => value ? value.trim() : '';
+
+        const buildResult = (host, port, username = '', password = '') => {
+            const parsedPort = parseInt(port, 10);
+            if (!host || Number.isNaN(parsedPort)) {
+                throw new Error('Formato de proxy invalido: "' + proxyStr + '"');
+            }
+
             return {
-                host: host.trim(),
-                port: parseInt(port),
-                username: '',
-                password: '',
-                protocol: protocol
+                host: normalize(host),
+                port: parsedPort,
+                username: normalize(username),
+                password: normalize(password),
+                protocol
             };
+        };
+
+        const hostPortRegex = /^([^:]+):(\d+)$/;
+        const credentialsRegex = /^([^:]+):([^:]+)$/;
+
+        const atIndex = cleanProxy.indexOf('@');
+        if (atIndex >= 0) {
+            const part1 = cleanProxy.slice(0, atIndex);
+            const part2 = cleanProxy.slice(atIndex + 1);
+
+            let hostMatch = part2.match(hostPortRegex);
+            let credMatch = part1.match(credentialsRegex);
+            if (hostMatch && credMatch) {
+                return buildResult(hostMatch[1], hostMatch[2], credMatch[1], credMatch[2]);
+            }
+
+            hostMatch = part1.match(hostPortRegex);
+            credMatch = part2.match(credentialsRegex);
+            if (hostMatch && credMatch) {
+                return buildResult(hostMatch[1], hostMatch[2], credMatch[1], credMatch[2]);
+            }
+
+            throw new Error('Formato de proxy invalido: "' + proxyStr + '"');
         }
-        
-        throw new Error(`Formato de proxy inválido: "${proxyStr}"`);
+
+        const parts = cleanProxy.split(':');
+
+        if (parts.length === 2) {
+            const hostMatch = cleanProxy.match(hostPortRegex);
+            if (hostMatch) {
+                return buildResult(hostMatch[1], hostMatch[2]);
+            }
+        }
+
+        if (parts.length === 4) {
+            const [p1, p2, p3, p4] = parts;
+
+            if (/^\d+$/.test(p2)) {
+                return buildResult(p1, p2, p3, p4);
+            }
+
+            if (/^\d+$/.test(p4)) {
+                return buildResult(p3, p4, p1, p2);
+            }
+        }
+
+        throw new Error('Formato de proxy invalido: "' + proxyStr + '"');
     }
 
     /**
@@ -230,3 +286,10 @@ class ProxyManager {
 }
 
 module.exports = ProxyManager; 
+
+
+
+
+
+
+

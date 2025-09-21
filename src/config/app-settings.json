@@ -21,7 +21,9 @@
     "proxy.tourosnet.com.br:6035",
     "proxy.tourosnet.com.br:6036"
   ],
-  "rotatingProxies": [],
+  "rotatingProxies": [
+    "gw.dataimpulse.com:823@0d27ebbd6013c62757e1__cr.br:2083cc334e54f30d"
+  ],
   "pixKeys": [
     { "id": 1, "tipo": "Telefone", "chave": "92920016871" },
     { "id": 2, "tipo": "Telefone", "chave": "91920019773" },
@@ -37,14 +39,14 @@
     "openings": 1,
     "toggles": {
       "proxy-mode-list": false,
-      "proxy-mode-rotating": false,
-      "proxy-mode-none": true,
+      "proxy-mode-rotating": true,
+      "proxy-mode-none": false,
       "default-resolution-checkbox": true,
       "random-passwords-toggle": false,
       "delay-toggle": false,
       "mute-audio-toggle": false
     },
-    "lastSaved": "2025-09-21T06:18:59.648Z"
+    "lastSaved": "2025-09-21T07:05:03.852Z"
   },
   "resolution": {
     "useDefault": true,
