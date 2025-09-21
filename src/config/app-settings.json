@@ -23,6 +23,7 @@
   ],
   "rotatingProxies": [],
   "pixKeys": [
+    { "id": 1, "tipo": "Telefone", "chave": "98475023782" }
   ],
   "extensions": [],
   "settings": {
@@ -37,7 +38,7 @@
       "delay-toggle": false,
       "mute-audio-toggle": false
     },
-    "lastSaved": "2025-09-21T02:19:18.158Z"
+    "lastSaved": "2025-09-21T03:00:51.968Z"
   },
   "resolution": {
     "useDefault": true,

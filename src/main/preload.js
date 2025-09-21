@@ -173,6 +173,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
     }
   },
 
+  checkPixAssignments: async (pixType, syncStates = null) => {
+    try {
+      const result = await ipcRenderer.invoke('check-pix-assignments', pixType, syncStates);
+      return result;
+    } catch (error) {
+      console.error('Erro ao validar chaves PIX via IPC:', error);
+      throw error;
+    }
+  },
+
   // Função para injetar script customizado em todos os navegadores
   injectCustomScript: async (scriptCode, syncStates = null) => {
     try {

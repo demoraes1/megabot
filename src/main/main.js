@@ -349,6 +349,59 @@ ipcMain.handle('get-active-browsers-with-profiles', async (event, syncStates = n
   }
 });
 
+ipcMain.handle('check-pix-assignments', async (event, pixType, syncStates = null) => {
+  try {
+    const normalizedType = normalizePixKeyType(pixType);
+    if (!normalizedType) {
+      return { success: false, error: 'Tipo de chave PIX invalido.' };
+    }
+
+    const activeBrowsers = getActiveBrowsersWithProfiles(syncStates);
+    if (!Array.isArray(activeBrowsers) || activeBrowsers.length === 0) {
+      return { success: true, allProfilesHavePix: true, profilesWithoutPix: [], normalizedType };
+    }
+
+    const profilesWithoutPix = [];
+
+    activeBrowsers.forEach(browser => {
+      const profileFromConfig = getProfileById(browser.profileId) || {};
+      const currentPix = profileFromConfig.pix || (browser.profile ? browser.profile.pix : null);
+
+      if (!(currentPix && typeof currentPix === 'object' && currentPix.chave)) {
+        profilesWithoutPix.push({
+          profileId: browser.profileId,
+          navigatorId: browser.navigatorId,
+          hasPix: false
+        });
+        return;
+      }
+
+      const currentType = normalizePixKeyType(currentPix.type || currentPix.tipo);
+      if (currentType !== normalizedType) {
+        profilesWithoutPix.push({
+          profileId: browser.profileId,
+          navigatorId: browser.navigatorId,
+          hasPix: true,
+          currentPixType: currentType
+        });
+      }
+    });
+
+    return {
+      success: true,
+      allProfilesHavePix: profilesWithoutPix.length === 0,
+      profilesWithoutPix,
+      normalizedType
+    };
+  } catch (error) {
+    console.error('Erro ao validar chaves PIX para saque:', error);
+    return {
+      success: false,
+      error: 'Erro inesperado ao validar chaves PIX.'
+    };
+  }
+});
+
 ipcMain.handle('reserve-pix-keys-for-withdraw', async (event, pixType, syncStates = null) => {
   try {
     const normalizedType = normalizePixKeyType(pixType);
@@ -363,13 +416,15 @@ ipcMain.handle('reserve-pix-keys-for-withdraw', async (event, pixType, syncState
     if (browsersWithoutProfile.length > 0) {
       return { success: false, error: 'Existe navegador ativo sem perfil salvo. Abra apenas navegadores com perfis registrados antes de iniciar o saque.' };
     }
-    const profilesNeedingKey = [];
-    const alreadyConfigured = [];
+    const profilesNeedingKey = []
+    const alreadyConfigured = []
     activeBrowsers.forEach(browser => {
-      const currentPix = browser.profile ? browser.profile.pix : null;
-      if (currentPix && typeof currentPix === 'object') {
+      const profileFromConfig = getProfileById(browser.profileId) || {};
+      const currentPix = profileFromConfig.pix || (browser.profile ? browser.profile.pix : null);
+
+      if (currentPix && typeof currentPix === 'object' && currentPix.chave) {
         const currentType = normalizePixKeyType(currentPix.type || currentPix.tipo);
-        if (currentPix.chave && currentType === normalizedType) {
+        if (currentType === normalizedType) {
           const normalizedPix = {
             id: currentPix.id,
             type: currentType,
@@ -385,12 +440,14 @@ ipcMain.handle('reserve-pix-keys-for-withdraw', async (event, pixType, syncState
           return;
         }
       }
+
       profilesNeedingKey.push({
         profileId: browser.profileId,
         navigatorId: browser.navigatorId,
-        previousPix: browser.profile ? browser.profile.pix : null
+        previousPix: currentPix
       });
     });
+
     let reservationResult = { success: true, assignments: [], consumedKeys: [] };
     if (profilesNeedingKey.length > 0) {
       reservationResult = await reserveAndAssignPixKeys(normalizedType, profilesNeedingKey);

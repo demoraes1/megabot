@@ -929,15 +929,6 @@ function initializeScriptInjectionButtons() {
         
         button.addEventListener('click', async () => {
             try {
-                if (scriptName === 'saque') {
-                    if (!hasPixKeysOfSelectedType()) {
-                        const selectedTypeElement = document.getElementById('pix-key-type');
-                        const selectedTypeText = selectedTypeElement?.options[selectedTypeElement.selectedIndex]?.text || 'selecionado';
-                        showNotification(`Erro: Não há chaves PIX do tipo "${selectedTypeText}" disponíveis. Adicione chaves deste tipo antes de executar a automação.`, 'error');
-                        return;
-                    }
-                }
-
                 if (confirmMessage && !(await showCustomConfirm(confirmMessage))) {
                     return;
                 }
@@ -946,8 +937,28 @@ function initializeScriptInjectionButtons() {
                 console.log(`[${scriptName}] syncStates obtidos:`, syncStates);
 
                 if (scriptName === 'saque') {
-                    const selectedTypeValue = document.getElementById('pix-key-type')?.value || 'cpf';
+                    const selectedTypeElement = document.getElementById('pix-key-type');
+                    const selectedTypeValue = selectedTypeElement?.value || 'cpf';
+                    const selectedTypeText = selectedTypeElement?.options[selectedTypeElement.selectedIndex]?.text || 'selecionado';
                     const mappedType = mapPixKeyTypeToFile(selectedTypeValue);
+
+                    const assignmentStatus = await window.electronAPI.checkPixAssignments(mappedType, syncStates);
+                    if (assignmentStatus?.success === false) {
+                        showNotification(assignmentStatus.error || 'Erro ao validar chaves PIX.', 'error');
+                        return;
+                    }
+
+                    if (!assignmentStatus?.allProfilesHavePix && !hasPixKeysOfSelectedType()) {
+                        const missingProfiles = (assignmentStatus?.profilesWithoutPix || [])
+                            .map(profile => profile.profileId || profile.navigatorId)
+                            .filter(Boolean);
+                        const missingInfo = missingProfiles.length > 0
+                            ? ` Perfis sem chave: ${missingProfiles.join(', ')}`
+                            : '';
+                        showNotification(`Erro: Nao ha chaves PIX do tipo "${selectedTypeText}" disponíveis.` + missingInfo, 'error');
+                        return;
+                    }
+
                     const reservationResult = await window.electronAPI.reservePixKeysForWithdraw(mappedType, syncStates);
                     if (!reservationResult?.success) {
                         const errorMessage = reservationResult?.error || 'Erro ao reservar chaves PIX para saque.';
@@ -958,7 +969,6 @@ function initializeScriptInjectionButtons() {
                     if (Array.isArray(reservationResult?.consumedKeys) && reservationResult.consumedKeys.length > 0) {
                         removeConsumedPixKeys(reservationResult.consumedKeys);
                     }
-
                 }
 
                 await window.electronAPI.injectScript(scriptName, syncStates);
