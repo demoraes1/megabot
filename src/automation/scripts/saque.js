@@ -6,31 +6,73 @@
     // Altere os valores abaixo para adaptar o script.
     // =================================================================================
     // Função para obter dados do usuário (dinâmico via window.profileData)
-    function getUserData() {        // Função para obter uma chave PIX da lista de configurações
+    function getUserData() {
         function getPixKeyFromConfig() {
-            if (window.megabotConfig && window.megabotConfig.pixKeys && window.megabotConfig.pixKeys.length > 0) {
-                // Seleciona uma chave PIX aleatória da lista
-                const randomIndex = Math.floor(Math.random() * window.megabotConfig.pixKeys.length);
-                return window.megabotConfig.pixKeys[randomIndex];
+            const pixConfig = window.megabotConfig?.pixKeys;
+            if (Array.isArray(pixConfig) && pixConfig.length > 0) {
+                const randomEntry = pixConfig[Math.floor(Math.random() * pixConfig.length)];
+                if (typeof randomEntry === 'string') {
+                    return randomEntry;
+                }
+                if (randomEntry && typeof randomEntry === 'object') {
+                    return randomEntry.chave || null;
+                }
             }
-            return null; // Retorna null se não houver chaves configuradas
+            return null;
         }
 
         if (window.profileData) {
+            const assignedPix = window.profileData.pix;
+            const assignedPixValue = typeof assignedPix === 'object' ? assignedPix.chave : assignedPix;
+            const assignedPixType = typeof assignedPix === 'object' ? (assignedPix.type || assignedPix.tipo) : null;
+
             return {
                 pin: window.profileData.senha_saque || "",
                 realName: window.profileData.nome_completo || "",
-                pixKey: getPixKeyFromConfig(),
+                pixKey: assignedPixValue || getPixKeyFromConfig(),
+                pixType: assignedPixType || window.megabotConfig?.pixKeyType || 'PHONE',
                 cpf: window.profileData.cpf || ""
             };
         }
-        // Retorna null se não houver profileData
-        return null;
+
+        return {
+            pin: "",
+            realName: "",
+            pixKey: getPixKeyFromConfig(),
+            pixType: window.megabotConfig?.pixKeyType || 'PHONE',
+            cpf: ""
+        };
     }
+
+
+    function getPixTypeOptionText(type) {
+        const mapping = {
+            PHONE: 'Telefone',
+            CPF: 'CPF',
+            CNPJ: 'CNPJ',
+            EMAIL: 'E-mail',
+            EVP: 'Chave Aleatoria'
+        };
+        return mapping[type] || type;
+    }
+    function normalizePixText(value) {
+        if (!value) {
+            return '';
+        }
+        return value
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toUpperCase()
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+
+    const userData = getUserData();
 
     const config = {
         // --- Dados do Usuário (agora dinâmicos) ---
-        userData: getUserData(),
+        userData: userData,
 
         // --- Seletores e Textos da Interface ---
         selectors: {
@@ -66,7 +108,7 @@
                 nextButtonText: 'Próximo',
                 pixTypeSelector: '.ui-select-single__content',
                 pixTypeOption: '.ui-options__option-content',
-                pixTypeOptionText: window.megabotConfig?.pixKeyType || 'PHONE',
+                pixTypeOptionText: getPixTypeOptionText(userData?.pixType || window.megabotConfig?.pixKeyType || 'PHONE'),
                 confirmAddButtonId: 'bindWithdrawAccountNextClick',
                 placeholderName: 'Introduza o seu nome real',
                 placeholderPixKey: 'Introduza a sua chave do PIX',
@@ -227,6 +269,10 @@
     
     async function addPixAccount() {
         log('Iniciando processo de adição de conta...');
+        if (!config.userData.pixKey) {
+            log('ERRO: Nenhuma chave PIX disponível para preencher o cadastro.');
+            return false;
+        }
         const addButton = document.getElementById(config.selectors.addPixScreen.addAccountButtonId);
         if (!await robustClick(addButton)) return false;
 
@@ -252,9 +298,20 @@
             if (!await robustClick(typeSelector)) return false;
             await sleep(500);
 
-            const phoneOption = Array.from(document.querySelectorAll(config.selectors.addPixScreen.pixTypeOption))
-                .find(opt => opt.textContent.trim() === config.selectors.addPixScreen.pixTypeOptionText);
-            if (!phoneOption || !await robustClick(phoneOption.parentElement)) return false;
+            const expectedPixTypeText = getPixTypeOptionText(userData?.pixType || window.megabotConfig?.pixKeyType || 'PHONE');
+            const expectedNormalized = normalizePixText(expectedPixTypeText);
+            log(`Selecionando o tipo PIX "${expectedPixTypeText}".`);
+            const userTypeNormalized = normalizePixText(userData?.pixType || '');
+            const pixOptions = Array.from(document.querySelectorAll(config.selectors.addPixScreen.pixTypeOption));
+            const targetOption = pixOptions.find(opt => normalizePixText(opt.textContent) === expectedNormalized)
+                || pixOptions.find(opt => normalizePixText(opt.textContent).includes(expectedNormalized))
+                || (userTypeNormalized ? pixOptions.find(opt => normalizePixText(opt.textContent).includes(userTypeNormalized)) : null);
+
+            if (!targetOption || !await robustClick(targetOption.parentElement || targetOption)) {
+                log(`ERRO: Opção de tipo PIX correspondente a "${expectedPixTypeText}" não foi encontrada.`);
+                return false;
+            }
+            log(`Tipo PIX "${expectedPixTypeText}" selecionado.`);
             await sleep(config.delays.betweenActions);
 
             if (!await fillInput(config.selectors.addPixScreen.placeholderName, config.userData.realName)) return false;

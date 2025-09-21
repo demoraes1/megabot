@@ -162,6 +162,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
     }
   },
 
+  // Funcao para reservar chaves PIX para saque
+  reservePixKeysForWithdraw: async (pixType, syncStates = null) => {
+    try {
+      const result = await ipcRenderer.invoke('reserve-pix-keys-for-withdraw', pixType, syncStates);
+      return result;
+    } catch (error) {
+      console.error('Erro ao reservar chaves PIX via IPC:', error);
+      throw error;
+    }
+  },
+
   // Função para injetar script customizado em todos os navegadores
   injectCustomScript: async (scriptCode, syncStates = null) => {
     try {

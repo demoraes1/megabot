@@ -929,7 +929,6 @@ function initializeScriptInjectionButtons() {
         
         button.addEventListener('click', async () => {
             try {
-                // Validação específica para o script de saque
                 if (scriptName === 'saque') {
                     if (!hasPixKeysOfSelectedType()) {
                         const selectedTypeElement = document.getElementById('pix-key-type');
@@ -938,19 +937,32 @@ function initializeScriptInjectionButtons() {
                         return;
                     }
                 }
-                
-                // Verifica se precisa de confirmação
+
                 if (confirmMessage && !(await showCustomConfirm(confirmMessage))) {
                     return;
                 }
-                
-                // Obter syncStates do localStorage para respeitar o filtro
+
                 const syncStates = JSON.parse(localStorage.getItem('syncPopupCheckboxStates') || '{}');
                 console.log(`[${scriptName}] syncStates obtidos:`, syncStates);
-                
-                // Executa a injeção do script
+
+                if (scriptName === 'saque') {
+                    const selectedTypeValue = document.getElementById('pix-key-type')?.value || 'cpf';
+                    const mappedType = mapPixKeyTypeToFile(selectedTypeValue);
+                    const reservationResult = await window.electronAPI.reservePixKeysForWithdraw(mappedType, syncStates);
+                    if (!reservationResult?.success) {
+                        const errorMessage = reservationResult?.error || 'Erro ao reservar chaves PIX para saque.';
+                        showNotification(errorMessage, 'error');
+                        return;
+                    }
+
+                    if (Array.isArray(reservationResult?.consumedKeys) && reservationResult.consumedKeys.length > 0) {
+                        removeConsumedPixKeys(reservationResult.consumedKeys);
+                    }
+
+                }
+
                 await window.electronAPI.injectScript(scriptName, syncStates);
-                
+
                 // Mostra notificação de sucesso
                 showNotification(notificationMessage, 'success');
                 
@@ -1476,6 +1488,34 @@ function loadPixKeys(pixKeys) {
     
     // Atualizar contador
     updatePixCount();
+}
+
+function removeConsumedPixKeys(consumedKeys = []) {
+    if (!Array.isArray(consumedKeys) || consumedKeys.length === 0) {
+        return;
+    }
+
+    const pixListPopup = document.getElementById('pix-list-popup');
+    if (!pixListPopup) {
+        return;
+    }
+
+    const keysToRemove = new Set(consumedKeys
+        .map(key => (typeof key === 'object' && key !== null) ? key.chave : key)
+        .filter(key => typeof key === 'string' && key.trim() !== ''));
+
+    if (keysToRemove.size === 0) {
+        return;
+    }
+
+    const remaining = pixListPopup.value
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line !== '' && !keysToRemove.has(line));
+
+    pixListPopup.value = remaining.join('\n');
+    updatePixCount();
+    saveSettings();
 }
 
 // Função para carregar extensões

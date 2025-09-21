@@ -2,9 +2,10 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs').promises;
 const { detectarMonitores, calcularCapacidadeMonitor, salvarDadosMonitores, carregarDadosMonitores, configurarListenerMonitores } = require('./monitor-detector');
-const { launchInstances, navigateToUrl, navigateAllBrowsers, getActiveBrowsers, getActiveBrowsersWithProfiles, injectScriptInBrowser, injectScriptInAllBrowsers, saveLastBrowserId } = require('./browser-manager');
+const { launchInstances, navigateToUrl, navigateAllBrowsers, getActiveBrowsers, getActiveBrowsersWithProfiles, updateActiveBrowserProfile, injectScriptInBrowser, injectScriptInAllBrowsers, saveLastBrowserId } = require('./browser-manager');
 const ChromiumDownloader = require('../infrastructure/chromium-downloader');
 const scriptInjector = require('../automation/injection');
+const { reserveAndAssignPixKeys, normalizePixKeyType, getDefaultLabel } = require('../automation/pix-key-manager');
 const { getAllProfiles, getProfileById, removeProfile, generateProfile, addProfile, updateProfile, loadConfig, saveConfig, PROFILES_DIR } = require('../automation/profile-manager');
 
 // Configuração de zoom da interface
@@ -344,6 +345,77 @@ ipcMain.handle('get-active-browsers-with-profiles', async (event, syncStates = n
     return {
       success: false,
       error: error.message
+    };
+  }
+});
+
+ipcMain.handle('reserve-pix-keys-for-withdraw', async (event, pixType, syncStates = null) => {
+  try {
+    const normalizedType = normalizePixKeyType(pixType);
+    if (!normalizedType) {
+      return { success: false, error: 'Tipo de chave PIX invalido.' };
+    }
+    const activeBrowsers = getActiveBrowsersWithProfiles(syncStates);
+    if (!Array.isArray(activeBrowsers) || activeBrowsers.length === 0) {
+      return { success: false, error: 'Nenhum navegador ativo encontrado para executar o saque.' };
+    }
+    const browsersWithoutProfile = activeBrowsers.filter(browser => !browser.profileId);
+    if (browsersWithoutProfile.length > 0) {
+      return { success: false, error: 'Existe navegador ativo sem perfil salvo. Abra apenas navegadores com perfis registrados antes de iniciar o saque.' };
+    }
+    const profilesNeedingKey = [];
+    const alreadyConfigured = [];
+    activeBrowsers.forEach(browser => {
+      const currentPix = browser.profile ? browser.profile.pix : null;
+      if (currentPix && typeof currentPix === 'object') {
+        const currentType = normalizePixKeyType(currentPix.type || currentPix.tipo);
+        if (currentPix.chave && currentType === normalizedType) {
+          const normalizedPix = {
+            id: currentPix.id,
+            type: currentType,
+            tipo: currentPix.tipo || getDefaultLabel(currentType),
+            chave: currentPix.chave
+          };
+          alreadyConfigured.push({
+            profileId: browser.profileId,
+            navigatorId: browser.navigatorId,
+            assignedKey: normalizedPix
+          });
+          updateActiveBrowserProfile(browser.navigatorId, { pix: normalizedPix });
+          return;
+        }
+      }
+      profilesNeedingKey.push({
+        profileId: browser.profileId,
+        navigatorId: browser.navigatorId,
+        previousPix: browser.profile ? browser.profile.pix : null
+      });
+    });
+    let reservationResult = { success: true, assignments: [], consumedKeys: [] };
+    if (profilesNeedingKey.length > 0) {
+      reservationResult = await reserveAndAssignPixKeys(normalizedType, profilesNeedingKey);
+      if (!reservationResult.success) {
+        return reservationResult;
+      }
+      reservationResult.assignments.forEach(assignment => {
+        updateActiveBrowserProfile(assignment.navigatorId, { pix: assignment.assignedKey });
+      });
+    }
+    const combinedAssignments = [
+      ...alreadyConfigured,
+      ...(reservationResult.assignments || [])
+    ];
+    return {
+      success: true,
+      assignments: combinedAssignments,
+      consumedKeys: reservationResult.consumedKeys || [],
+      normalizedType
+    };
+  } catch (error) {
+    console.error('Erro ao reservar chaves PIX para saque:', error);
+    return {
+      success: false,
+      error: 'Erro inesperado ao reservar chaves PIX.'
     };
   }
 });

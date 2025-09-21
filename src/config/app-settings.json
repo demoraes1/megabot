@@ -23,14 +23,11 @@
   ],
   "rotatingProxies": [],
   "pixKeys": [
-    { "id": 1, "tipo": "Telefone", "chave": "21995904345" },
-    { "id": 2, "tipo": "Telefone", "chave": "99594478312" },
-    { "id": 3, "tipo": "Telefone", "chave": "33241231245" }
   ],
   "extensions": [],
   "settings": {
     "delay": 5,
-    "openings": 3,
+    "openings": 4,
     "toggles": {
       "proxy-mode-list": false,
       "proxy-mode-rotating": false,
@@ -40,7 +37,7 @@
       "delay-toggle": false,
       "mute-audio-toggle": false
     },
-    "lastSaved": "2025-09-19T21:44:01.820Z"
+    "lastSaved": "2025-09-21T02:19:18.158Z"
   },
   "resolution": {
     "useDefault": true,
@@ -60,5 +57,5 @@
     "jogo": "golden land",
     "pixKeyType": "PHONE"
   },
-  "selectedMonitor": "1"
+  "selectedMonitor": "0"
 }

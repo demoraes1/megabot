@@ -553,6 +553,26 @@ function getActiveBrowsersWithProfiles(syncStates = null) {
 }
 
 /**
+ * Atualiza dados do perfil armazenados para um navegador ativo
+ * @param {string|number} navigatorId - ID do navegador
+ * @param {Object} updates - Campos a serem mesclados no perfil em memoria
+ * @returns {boolean} - true se o navegador foi atualizado
+ */
+function updateActiveBrowserProfile(navigatorId, updates = {}) {
+    const browserId = String(navigatorId);
+    const browserData = activeBrowsers.get(browserId);
+
+    if (!browserData) {
+        return false;
+    }
+
+    const existingProfile = browserData.profile || {};
+    browserData.profile = { ...existingProfile, ...updates };
+    activeBrowsers.set(browserId, browserData);
+    return true;
+}
+
+/**
  * Navega para URLs em todos os navegadores ativos
  * @param {string|Array<string>} urls - URL ou array de URLs
  * @returns {Promise<Object>} - Resultado da operação
@@ -749,6 +769,7 @@ module.exports = {
     navigateToUrl, 
     getActiveBrowsers,
     getActiveBrowsersWithProfiles, 
+    updateActiveBrowserProfile, 
     navigateAllBrowsers,
     injectScriptInBrowser,
     injectScriptInAllBrowsers,
