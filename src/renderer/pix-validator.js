@@ -147,12 +147,19 @@ class PixValidator {
      * @returns {boolean}
      */
     isPhone(phone) {
-        // Remove todos os caracteres não numéricos
+        if (typeof phone !== 'string') {
+            return false;
+        }
+
+        if (phone.includes('.')) {
+            return false;
+        }
+
         const cleanPhone = phone.replace(/[^\d]/g, '');
-        
-        // Telefone brasileiro: 10 ou 11 dígitos (com ou sem 9 no celular)
-        // Formato: DDnnnnnnnnn ou DDnnnnnnnnn
-        return cleanPhone.length === 10 || cleanPhone.length === 11;
+
+        // Telefone brasileiro: DDD + 9 digitos e nao pode iniciar com 0
+        // Terceiro digito deve ser 9 para evitar colisao com CPFs invalidos
+        return cleanPhone.length === 11 && cleanPhone.charAt(0) !== '0' && cleanPhone.charAt(2) === '9';
     }
 
     /**
@@ -217,3 +224,6 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 
 console.log('Módulo PixValidator carregado com sucesso');
+
+
+
