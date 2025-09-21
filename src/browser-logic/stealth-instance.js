@@ -79,6 +79,56 @@ async function detectChromePath() {
     }
 }
 
+
+async function injectAutomationScript(page, navigatorId, scriptFileName, options = {}) {
+    const { configData = null, logLabel = scriptFileName, successMessage = null } = options;
+    const scriptsDir = path.join(__dirname, '..', 'automation', 'scripts');
+    const scriptPath = path.join(scriptsDir, scriptFileName);
+
+    try {
+        console.log(`[Navegador ${navigatorId}] Lendo script ${logLabel} de: ${scriptPath}`);
+        if (!fs.existsSync(scriptPath)) {
+            console.warn(`[Navegador ${navigatorId}] Arquivo ${logLabel} nao encontrado em: ${scriptPath}`);
+            return false;
+        }
+
+        const scriptContent = fs.readFileSync(scriptPath, 'utf8');
+        let configScript = '';
+
+        if (configData) {
+            const serializedConfig = JSON.stringify(configData);
+            configScript = `
+                (function() {
+                    window.megabotConfig = window.megabotConfig || {};
+                    Object.assign(window.megabotConfig, ${serializedConfig});
+                    window.dispatchEvent(new CustomEvent('megabot-config-ready', { detail: window.megabotConfig }));
+                    console.log('Configuracao MegaBot injetada para ${logLabel}:', window.megabotConfig);
+                })();
+            `;
+        }
+
+        const finalScript = configScript ? `${configScript}
+${scriptContent}` : scriptContent;
+
+        await page.evaluateOnNewDocument(finalScript);
+
+        if (configData) {
+            await page.evaluate((payload) => {
+                window.megabotConfig = window.megabotConfig || {};
+                Object.assign(window.megabotConfig, payload);
+                window.dispatchEvent(new CustomEvent('megabot-config-ready', { detail: window.megabotConfig }));
+            }, configData);
+        }
+
+        const successLog = successMessage || `Script ${logLabel} injetado permanentemente via evaluateOnNewDocument`;
+        console.log(`[Navegador ${navigatorId}] ${successLog}`);
+        return true;
+    } catch (error) {
+        console.error(`[Navegador ${navigatorId}] Erro ao injetar ${logLabel}:`, error.message);
+        return false;
+    }
+}
+
 async function startBrowser(options) {
     console.log(`[DEBUG] Iniciando função startBrowser para navegador ${options.navigatorId}`);
     let browser = null;
@@ -636,22 +686,9 @@ async function startBrowser(options) {
         // =================================================================================
         // [NOVO] INJEÇÃO DO POPUP.JS - ELEMENTO DELETER
         // =================================================================================
-        try {
-            const popupScriptPath = path.join(__dirname, '..', 'automation', 'scripts', 'popup.js');
-            console.log(`[Navegador ${navigatorId}] Lendo script popup.js de: ${popupScriptPath}`);
-            
-            if (fs.existsSync(popupScriptPath)) {
-                const popupScriptContent = fs.readFileSync(popupScriptPath, 'utf8');
-                
-                // ETAPA 1: Injeção permanente para garantir que o script exista desde o início e em reloads
-                await page.evaluateOnNewDocument(popupScriptContent);
-                console.log(`[Navegador ${navigatorId}] Script popup.js injetado permanentemente via evaluateOnNewDocument`);
-            } else {
-                console.warn(`[Navegador ${navigatorId}] Arquivo popup.js não encontrado em: ${popupScriptPath}`);
-            }
-        } catch (error) {
-            console.error(`[Navegador ${navigatorId}] Erro ao injetar popup.js:`, error.message);
-        }
+        await injectAutomationScript(page, navigatorId, 'popup.js', {
+            logLabel: 'popup.js'
+        });
         // =================================================================================
         // [NOVO] FIM DA INJEÇÃO DO POPUP.JS
         // =================================================================================
@@ -659,47 +696,21 @@ async function startBrowser(options) {
         // =================================================================================
         // [NOVO] INJEÇÃO DO IPVIEW.JS - VISUALIZADOR DE IP
         // =================================================================================
-        try {
-            const ipviewScriptPath = path.join(__dirname, '..', 'automation', 'scripts', 'ipview.js');
-            console.log(`[Navegador ${navigatorId}] Lendo script ipview.js de: ${ipviewScriptPath}`);
-            
-            if (fs.existsSync(ipviewScriptPath)) {
-                const ipviewScriptContent = fs.readFileSync(ipviewScriptPath, 'utf8');
+        const proxyInfoForInjection = proxyConfig ? {
+            host: proxyConfig.host,
+            port: proxyConfig.port,
+            protocol: proxyConfig.protocol || null
+        } : null;
 
-                const proxyInfoForInjection = proxyConfig ? {
-                    host: proxyConfig.host,
-                    port: proxyConfig.port,
-                    protocol: proxyConfig.protocol || null
-                } : null;
-
-                const configData = {
-                    browserIndex: navigatorId,
-                    proxyEnabled: Boolean(proxyConfig),
-                    proxyInfo: proxyInfoForInjection
-                };
-
-                const configScript = `
-                    (function() {
-                        window.megabotConfig = window.megabotConfig || {};
-                        Object.assign(window.megabotConfig, ${JSON.stringify(configData)});
-                        window.dispatchEvent(new CustomEvent('megabot-config-ready', { detail: window.megabotConfig }));
-                        console.log('Configuracao MegaBot injetada para ipview.js:', window.megabotConfig);
-                    })();
-                `;
-
-                await page.evaluateOnNewDocument(configScript + '\n' + ipviewScriptContent);
-                await page.evaluate((payload) => {
-                    window.megabotConfig = window.megabotConfig || {};
-                    Object.assign(window.megabotConfig, payload);
-                    window.dispatchEvent(new CustomEvent('megabot-config-ready', { detail: window.megabotConfig }));
-                }, configData);
-                console.log(`[Navegador ${navigatorId}] Script ipview.js injetado permanentemente via evaluateOnNewDocument com browserIndex ${navigatorId}`);
-            } else {
-                console.warn(`[Navegador ${navigatorId}] Arquivo ipview.js não encontrado em: ${ipviewScriptPath}`);
-            }
-        } catch (error) {
-            console.error(`[Navegador ${navigatorId}] Erro ao injetar ipview.js:`, error.message);
-        }
+        await injectAutomationScript(page, navigatorId, 'ipview.js', {
+            logLabel: 'ipview.js',
+            configData: {
+                browserIndex: navigatorId,
+                proxyEnabled: Boolean(proxyConfig),
+                proxyInfo: proxyInfoForInjection
+            },
+            successMessage: `Script ipview.js injetado permanentemente via evaluateOnNewDocument com browserIndex ${navigatorId}`
+        });
         // =================================================================================
         // [NOVO] FIM DA INJEÇÃO DO IPVIEW.JS
         // =================================================================================
