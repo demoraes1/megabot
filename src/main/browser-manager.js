@@ -1,5 +1,6 @@
 const path = require('path');
 const fs = require('fs');
+const { EventEmitter } = require('events');
 const { moverJanelas } = require('../browser-logic/moverjanelas.js');
 const { carregarDadosMonitores } = require('./monitor-detector.js');
 const stealth = require('../browser-logic/stealth-instance.js');
@@ -39,6 +40,8 @@ logger.info('Profile Manager carregado com sucesso');
 
 // Sistema de rastreamento de navegadores
 const activeBrowsers = new Map(); // Map<navigatorId, { browser, page }>
+const navigationEvents = new EventEmitter();
+navigationEvents.setMaxListeners(100);
 
 // Configurações baseadas no teste.js
 // Valores padrão de resolução (serão sobrescritos pelas opções se fornecidas)
@@ -575,36 +578,128 @@ function updateActiveBrowserProfile(navigatorId, updates = {}) {
 /**
  * Navega para URLs em todos os navegadores ativos
  * @param {string|Array<string>} urls - URL ou array de URLs
- * @returns {Promise<Object>} - Resultado da operação
+ * @param {Object|null} syncStates - Estados de sincronizacao opcionais
+ * @param {Object} options - Configuracoes adicionais (scriptName, scriptContent, waitForLoad, emitEvents)
+ * @returns {Promise<Object>} - Resultado da operacao
  */
-async function navigateAllBrowsers(urls, syncStates = null) {
+async function navigateAllBrowsers(urls, syncStates = null, options = {}) {
     const activeBrowserIds = getActiveBrowsers(syncStates);
-    
+
     if (activeBrowserIds.length === 0) {
         return {
             success: false,
             error: 'Nenhum navegador ativo encontrado'
         };
     }
-    
+
     const urlArray = Array.isArray(urls) ? urls : [urls];
-    
-    // Criar todas as promessas de navegação em paralelo
-    const navigationPromises = activeBrowserIds.map(async (browserId, i) => {
-        const url = urlArray[i % urlArray.length]; // Rotacionar URLs se houver mais navegadores que URLs
+    const {
+        scriptName = null,
+        scriptContent: providedScriptContent = null,
+        waitForLoad = true,
+        emitEvents = true
+    } = options;
+
+    let baseScriptContent = providedScriptContent;
+    let injectorInstance = null;
+
+    if (!baseScriptContent && scriptName) {
+        try {
+            const { injector } = require('../automation/injection.js');
+            injectorInstance = injector;
+            baseScriptContent = injector.loadScriptContent(scriptName);
+            if (!baseScriptContent) {
+                return {
+                    success: false,
+                    error: `Script '${scriptName}' nao encontrado`
+                };
+            }
+        } catch (error) {
+            logger.error(`Erro ao carregar script '${scriptName}' para injecao pos-navegacao:`, error.message);
+            return {
+                success: false,
+                error: `Falha ao preparar script '${scriptName}'`
+            };
+        }
+    } else if (scriptName) {
+        const { injector } = require('../automation/injection.js');
+        injectorInstance = injector;
+    }
+
+    const navigationPromises = activeBrowserIds.map((browserId, index) => (async () => {
+        const url = urlArray[index % urlArray.length];
         const success = await navigateToUrl(browserId, url);
-        return { browserId, url, success };
-    });
-    
-    // Aguardar todas as navegações em paralelo
+
+        const navigationResult = {
+            browserId,
+            browserIndex: index,
+            url,
+            success
+        };
+
+        if (emitEvents) {
+            navigationEvents.emit('navigation-complete', navigationResult);
+        }
+
+        if (!success) {
+            navigationResult.injection = { success: false, skipped: true };
+            return navigationResult;
+        }
+
+        if (!baseScriptContent) {
+            return navigationResult;
+        }
+
+        try {
+            let scriptToInject = baseScriptContent;
+            if (injectorInstance && scriptName) {
+                scriptToInject = injectorInstance.injectScriptConfiguration(scriptName, baseScriptContent, index);
+            }
+
+            const injectionSuccess = await injectScriptInBrowser(browserId, scriptToInject, waitForLoad);
+            navigationResult.injection = {
+                success: injectionSuccess
+            };
+
+            if (emitEvents) {
+                navigationEvents.emit('injection-complete', {
+                    browserId,
+                    browserIndex: index,
+                    url,
+                    success: injectionSuccess
+                });
+            }
+        } catch (error) {
+            navigationResult.injection = {
+                success: false,
+                error: error.message
+            };
+
+            logger.error(`Erro ao injetar script no navegador ${browserId} apos navegacao:`, error.message);
+
+            if (emitEvents) {
+                navigationEvents.emit('injection-complete', {
+                    browserId,
+                    browserIndex: index,
+                    url,
+                    success: false,
+                    error: error.message
+                });
+            }
+        }
+
+        return navigationResult;
+    })());
+
     const results = await Promise.all(navigationPromises);
-    
+
     return {
         success: true,
         navigatedBrowsers: results.length,
-        results: results
+        results
     };
 }
+
 
 /**
  * Injeta script em um navegador específico
@@ -771,6 +866,7 @@ module.exports = {
     getActiveBrowsersWithProfiles, 
     updateActiveBrowserProfile, 
     navigateAllBrowsers,
+    navigationEvents,
     injectScriptInBrowser,
     injectScriptInAllBrowsers,
     injectScriptInAllBrowsersPostNavigation,

@@ -66,6 +66,25 @@ function showNotification(message, type = 'info', duration = 4000) {
     }, duration);
 }
 
+function initializeNavigationEvents() {
+    if (!window.electronAPI || typeof window.electronAPI.onBrowserNavigationComplete !== 'function') {
+        console.warn('API de eventos de navegacao nao disponivel.');
+        return;
+    }
+
+    window.electronAPI.onBrowserNavigationComplete((payload) => {
+        console.log('[Navegacao] Navegacao concluida:', payload);
+    });
+
+    window.electronAPI.onBrowserNavigationInjection((payload) => {
+        if (payload && payload.success) {
+            console.log('[Navegacao] Injecao automatica finalizada:', payload);
+        } else {
+            console.warn('[Navegacao] Falha ou skip na injecao automatica:', payload);
+        }
+    });
+}
+
 /**
  * Função de confirmação customizada com estilo do app
  */
@@ -171,6 +190,7 @@ async function initializeApplication() {
         // Inicializar sistema de download do Chrome
         initializeChromeDownloadModal();
         initializeChromeDownloadSystem();
+        initializeNavigationEvents();
         
         // Aguardar um pouco para garantir que tudo esteja carregado antes de inicializar monitores
         setTimeout(inicializarSistemaMonitores, 500);
@@ -1778,37 +1798,35 @@ async function executeAllLinksNavigation() {
         }
         
         // Navegar todos os navegadores com as URLs distribuídas
-        const navigationResult = await window.electronAPI.navigateAllBrowsers(distributedUrls, syncStates);
+        const navigationResult = await window.electronAPI.navigateAllBrowsers(distributedUrls, syncStates, {
+            scriptName: 'registro',
+            waitForLoad: true
+        });
         
         if (navigationResult.success) {
-            const successCount = navigationResult.results ? navigationResult.results.filter(r => r.success).length : activeBrowsers.length;
-            showNotification(`Navegação iniciada com sucesso em ${successCount} navegador(es) com ${links.length} link(s) distribuído(s). URLs salvas nos perfis.`, 'success');
-            
-            // Injetar script de registro após navegação bem-sucedida
-            // Usar injeção pós-navegação para aguardar carregamento completo da página automaticamente
-            try {
-                console.log('Iniciando injeção do script de registro (pós-navegação)...');
-                const injectionResult = await window.electronAPI.injectScriptPostNavigation('registro', syncStates);
-                
-                if (injectionResult.success) {
-                    console.log('Script de registro injetado com sucesso em todos os navegadores');
-                    showNotification('Script de registro injetado com sucesso!', 'success');
-                } else {
-                    console.warn('Falha na injeção do script de registro:', injectionResult.message);
-                    showNotification(`Aviso: ${injectionResult.message}`, 'warning');
-                }
-            } catch (injectionError) {
-                console.error('Erro ao injetar script de registro:', injectionError);
-                showNotification('Erro ao injetar script de registro', 'error');
+            const navigationDetails = navigationResult.results || [];
+            const successCount = navigationDetails.length > 0
+                ? navigationDetails.filter(r => r.success).length
+                : activeBrowsers.length;
+            const injectionSuccessCount = navigationDetails.filter(r => r.injection && r.injection.success).length;
+            const injectionFailureCount = navigationDetails.filter(r => r.injection && r.injection.success === false && !r.injection.skipped).length;
+
+            showNotification(`Navegacao iniciada com sucesso em ${successCount} navegador(es) com ${links.length} link(s) distribuido(s). URLs salvas nos perfis.`, 'success');
+
+            if (injectionSuccessCount > 0) {
+                console.log(`[Navegacao] Injecao automatica concluida em ${injectionSuccessCount}/${navigationDetails.length || activeBrowsers.length} navegador(es).`);
             }
-            
-            // Log dos resultados detalhados
-            if (navigationResult.results) {
-                navigationResult.results.forEach((result, index) => {
+
+            if (injectionFailureCount > 0) {
+                showNotification(`Aviso: ${injectionFailureCount} navegador(es) falharam na injecao automatica. Consulte o console para detalhes.`, 'warning');
+            }
+
+            if (navigationDetails.length > 0) {
+                navigationDetails.forEach((result) => {
                     if (result.success) {
-                        console.log(`✓ Navegador ${result.browserId}: Navegando para ${distributedUrls[index]}`);
+                        console.log(`[Navegacao] Navegador ${result.browserId}: Navegando para ${result.url}`);
                     } else {
-                        console.error(`✗ Navegador ${result.browserId}: ${result.error}`);
+                        console.error(`[Navegacao] Navegador ${result.browserId} falhou: ${result.error || 'Falha desconhecida'}`);
                     }
                 });
             }
@@ -1881,37 +1899,35 @@ async function executeAccountCreation(link) {
         console.log(`Encontrados ${activeBrowsers.length} navegadores ativos. Navegando para: ${link}`);
         
         // Navegar todos os navegadores para o link selecionado
-        const navigationResult = await window.electronAPI.navigateAllBrowsers(link, syncStates);
+        const navigationResult = await window.electronAPI.navigateAllBrowsers(link, syncStates, {
+            scriptName: 'registro',
+            waitForLoad: true
+        });
         
         if (navigationResult.success) {
-            const successCount = navigationResult.results ? navigationResult.results.filter(r => r.success).length : activeBrowsers.length;
-            showNotification(`Navegação iniciada com sucesso em ${successCount} navegador(es) para: ${link}`, 'success');
-            
-            // Injetar script de registro após navegação bem-sucedida
-            // Usar injeção pós-navegação para aguardar carregamento completo da página automaticamente
-            try {
-                console.log('Iniciando injeção do script de registro (pós-navegação)...');
-            const injectionResult = await window.electronAPI.injectScriptPostNavigation('registro', syncStates);
-                
-                if (injectionResult.success) {
-                    console.log('Script de registro injetado com sucesso em todos os navegadores');
-                    showNotification('Script de registro injetado com sucesso!', 'success');
-                } else {
-                    console.warn('Falha na injeção do script de registro:', injectionResult.message);
-                    showNotification(`Aviso: ${injectionResult.message}`, 'warning');
-                }
-            } catch (injectionError) {
-                console.error('Erro ao injetar script de registro:', injectionError);
-                showNotification('Erro ao injetar script de registro', 'error');
+            const navigationDetails = navigationResult.results || [];
+            const successCount = navigationDetails.length > 0
+                ? navigationDetails.filter(r => r.success).length
+                : activeBrowsersWithProfiles.length;
+            const injectionSuccessCount = navigationDetails.filter(r => r.injection && r.injection.success).length;
+            const injectionFailureCount = navigationDetails.filter(r => r.injection && r.injection.success === false && !r.injection.skipped).length;
+
+            showNotification(`Navegacao iniciada com sucesso em ${successCount} navegador(es) para: ${link}`, 'success');
+
+            if (injectionSuccessCount > 0) {
+                console.log(`[Navegacao] Injecao automatica concluida em ${injectionSuccessCount}/${navigationDetails.length || successCount} navegador(es).`);
             }
-            
-            // Log dos resultados detalhados
-            if (navigationResult.results) {
-                navigationResult.results.forEach(result => {
+
+            if (injectionFailureCount > 0) {
+                showNotification(`Aviso: ${injectionFailureCount} navegador(es) falharam na injecao automatica. Consulte o console para detalhes.`, 'warning');
+            }
+
+            if (navigationDetails.length > 0) {
+                navigationDetails.forEach((result) => {
                     if (result.success) {
-                        console.log(`✓ Navegador ${result.navigatorId}: Navegação iniciada`);
+                        console.log(`[Navegacao] Navegador ${result.browserId}: Navegando para ${result.url}`);
                     } else {
-                        console.error(`✗ Navegador ${result.navigatorId}: ${result.error}`);
+                        console.error(`[Navegacao] Navegador ${result.browserId} falhou: ${result.error || 'Falha desconhecida'}`);
                     }
                 });
             }

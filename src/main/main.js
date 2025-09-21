@@ -2,11 +2,27 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs').promises;
 const { detectarMonitores, calcularCapacidadeMonitor, salvarDadosMonitores, carregarDadosMonitores, configurarListenerMonitores } = require('./monitor-detector');
-const { launchInstances, navigateToUrl, navigateAllBrowsers, getActiveBrowsers, getActiveBrowsersWithProfiles, updateActiveBrowserProfile, injectScriptInBrowser, injectScriptInAllBrowsers, saveLastBrowserId } = require('./browser-manager');
+const { launchInstances, navigateToUrl, navigateAllBrowsers, navigationEvents, getActiveBrowsers, getActiveBrowsersWithProfiles, updateActiveBrowserProfile, injectScriptInBrowser, injectScriptInAllBrowsers, saveLastBrowserId } = require('./browser-manager');
 const ChromiumDownloader = require('../infrastructure/chromium-downloader');
 const scriptInjector = require('../automation/injection');
 const { reserveAndAssignPixKeys, normalizePixKeyType, getDefaultLabel } = require('../automation/pix-key-manager');
 const { getAllProfiles, getProfileById, removeProfile, generateProfile, addProfile, updateProfile, loadConfig, saveConfig, PROFILES_DIR } = require('../automation/profile-manager');
+
+function broadcastNavigationEvent(channel, payload) {
+  BrowserWindow.getAllWindows().forEach(window => {
+    if (!window.isDestroyed()) {
+      window.webContents.send(channel, payload);
+    }
+  });
+}
+
+navigationEvents.on('navigation-complete', (payload) => {
+  broadcastNavigationEvent('browser-navigation-complete', payload);
+});
+
+navigationEvents.on('injection-complete', (payload) => {
+  broadcastNavigationEvent('browser-navigation-injection', payload);
+});
 
 // Configuração de zoom da interface
 // Valores sugeridos: 0.8 (menor), 0.9 (pequeno), 1.0 (padrão), 1.1 (grande), 1.2 (maior)
@@ -297,13 +313,14 @@ ipcMain.handle('navigate-browser', async (event, navigatorId, url) => {
 });
 
 // Handler para navegar URL em todos os navegadores ativos
-ipcMain.handle('navigate-all-browsers', async (event, url, syncStates = null) => {
+ipcMain.handle('navigate-all-browsers', async (event, url, syncStates = null, options = {}) => {
   try {
     console.log(`Navegando todos os navegadores para: ${url}`);
-    const result = await navigateAllBrowsers(url, syncStates);
+    const result = await navigateAllBrowsers(url, syncStates, options);
     return {
       success: result.success,
       navigatedBrowsers: result.navigatedBrowsers || 0,
+      results: result.results || [],
       error: result.error || null
     };
   } catch (error) {

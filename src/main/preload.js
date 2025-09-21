@@ -91,9 +91,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
 
   // Função para navegar URL em todos os navegadores ativos
-  navigateAllBrowsers: async (url, syncStates = null) => {
+  navigateAllBrowsers: async (url, syncStates = null, options = {}) => {
     try {
-      const result = await ipcRenderer.invoke('navigate-all-browsers', url, syncStates);
+      const result = await ipcRenderer.invoke('navigate-all-browsers', url, syncStates, options);
       return result;
     } catch (error) {
       console.error('Erro ao navegar todos os navegadores via IPC:', error);
@@ -138,6 +138,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   onChromeDownloadError: (callback) => {
     ipcRenderer.on('chrome-download-error', (event, error) => callback(error));
+  },
+
+  onBrowserNavigationComplete: (callback) => {
+    ipcRenderer.on('browser-navigation-complete', (event, payload) => callback(payload));
+  },
+
+  onBrowserNavigationInjection: (callback) => {
+    ipcRenderer.on('browser-navigation-injection', (event, payload) => callback(payload));
   },
 
   // Função para injetar script por nome em todos os navegadores
