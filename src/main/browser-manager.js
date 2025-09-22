@@ -389,8 +389,101 @@ async function launchInstances(options) {
     // Variável para controlar se algum navegador usou perfil específico
     let hasSpecificProfile = false;
 
+    // Controle de injeção inicial por navegador
+    const initialScriptDelay = typeof options.initialScriptDelay === 'number' ? options.initialScriptDelay : 2000;
+    const initialInjectionPromises = [];
+    const initialInjectionScriptCache = new Map();
+    let scriptInjectorModule = null;
+
+    const getScriptInjectorInstance = () => {
+        if (!scriptInjectorModule) {
+            scriptInjectorModule = require('../automation/injection');
+        }
+        return scriptInjectorModule.injector;
+    };
+
+    const getInitialScriptContent = (scriptName, browserIndex) => {
+        try {
+            const injectorInstance = getScriptInjectorInstance();
+            if (!injectorInstance) {
+                return null;
+            }
+
+            if (!initialInjectionScriptCache.has(scriptName)) {
+                const scriptContent = injectorInstance.loadScriptContent(scriptName);
+                initialInjectionScriptCache.set(scriptName, scriptContent);
+            }
+
+            const baseContent = initialInjectionScriptCache.get(scriptName);
+            if (!baseContent) {
+                return null;
+            }
+
+            return injectorInstance.injectScriptConfiguration(scriptName, baseContent, browserIndex);
+        } catch (error) {
+            logger.error(`Erro ao preparar script '${scriptName}' para injeção inicial:`, error.message);
+            initialInjectionScriptCache.set(scriptName, null);
+            return null;
+        }
+    };
+
+    const scheduleInitialScriptInjection = (navigatorId, browserIndex) => {
+        const injectionTask = (async () => {
+            try {
+                if (initialScriptDelay > 0) {
+                    await sleep(initialScriptDelay);
+                }
+
+                const browserData = activeBrowsers.get(String(navigatorId));
+                if (!browserData) {
+                    logger.warn(`Navegador ${navigatorId} não está mais ativo para injeção inicial`);
+                    return;
+                }
+
+                const popupScript = getInitialScriptContent('popup', browserIndex);
+                if (popupScript) {
+                    await injectScriptInBrowser(navigatorId, popupScript, false);
+                    navigationEvents.emit('initial-injection-complete', {
+                        browserId: navigatorId,
+                        browserIndex,
+                        script: 'popup',
+                        success: true
+                    });
+                    logger.info(`Script popup.js injetado assim que o navegador ${navigatorId} ficou pronto`);
+                }
+
+                const ipviewScript = getInitialScriptContent('ipview', browserIndex);
+                if (ipviewScript) {
+                    await injectScriptInBrowser(navigatorId, ipviewScript, false);
+                    navigationEvents.emit('initial-injection-complete', {
+                        browserId: navigatorId,
+                        browserIndex,
+                        script: 'ipview',
+                        success: true
+                    });
+                    logger.info(`Script ipview.js injetado assim que o navegador ${navigatorId} ficou pronto`);
+                }
+            } catch (error) {
+                navigationEvents.emit('initial-injection-complete', {
+                    browserId: navigatorId,
+                    browserIndex,
+                    script: 'initial',
+                    success: false,
+                    error: error.message
+                });
+                logger.error(`Erro ao injetar scripts iniciais no navegador ${navigatorId}:`, error.message);
+            }
+        })();
+
+        injectionTask.catch(error => {
+            logger.error(`Erro não tratado ao injetar scripts iniciais no navegador ${navigatorId}:`, error.message);
+        });
+
+        initialInjectionPromises.push(injectionTask);
+    };
+
     // 6. Lançar todos os navegadores em paralelo com movimento assíncrono
-    const launchPromises = posicoesParaLancar.map(async (posicao) => {
+    const launchPromises = posicoesParaLancar.map(async (posicao, index) => {
         let navegadorId;
         let shouldUpdateLastBrowserId = true;
         
@@ -487,6 +580,8 @@ async function launchInstances(options) {
             
             logger.info(`Navegador ID_${navegadorId} lançado com sucesso em single-process.`);
             launchedBrowsers.push({ browser, page });
+
+            scheduleInitialScriptInjection(navegadorId, index);
             
             // Mover a janela deste navegador assim que for lançado (assíncrono)
             // Verificar se moverJanelas está desabilitado
@@ -518,35 +613,12 @@ async function launchInstances(options) {
 
     logger.info(`\nOperação concluída. ${totalJanelasMovidas} de ${numNavegadores} janelas foram reposicionadas com sucesso!`);
 
-    // Aguardar 2 segundos antes de injetar scripts pós-reposicionamento
-    logger.info('Aguardando 2 segundos antes de injetar scripts pós-reposicionamento...');
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    // Injetar scripts essenciais após reposicionamento
-    try {
-        const scriptInjector = require('../automation/injection');
-        
-        // Injetar popup.js em todos os navegadores
-        logger.info('Injetando script popup.js em todos os navegadores...');
-        const popupResult = await scriptInjector.injectScript('popup');
-        if (popupResult.success) {
-            logger.info('Script popup.js injetado com sucesso em todos os navegadores');
-        } else {
-            logger.warn('Falha na injeção do script popup.js:', popupResult.message);
-        }
-
-        // Injetar ipview.js em todos os navegadores
-        logger.info('Injetando script ipview.js em todos os navegadores...');
-        const ipviewResult = await scriptInjector.injectScript('ipview');
-        if (ipviewResult.success) {
-            logger.info('Script ipview.js injetado com sucesso em todos os navegadores');
-        } else {
-            logger.warn('Falha na injeção do script ipview.js:', ipviewResult.message);
-        }
-
-        logger.info('Injeção de scripts pós-reposicionamento concluída');
-    } catch (error) {
-        logger.error('Erro durante injeção de scripts pós-reposicionamento:', error.message);
+    if (initialInjectionPromises.length > 0) {
+        logger.info('Aguardando a finalização das injeções iniciais de scripts por navegador...');
+        await Promise.allSettled(initialInjectionPromises);
+        logger.info('Injeções iniciais finalizadas para todos os navegadores disponíveis.');
+    } else {
+        logger.info('Nenhuma injeção inicial de script foi agendada.');
     }
 
     // Salvar o último ID usado para persistência apenas se não usou perfil específico
@@ -663,8 +735,8 @@ function updateActiveBrowserProfile(navigatorId, updates = {}) {
  * Navega para URLs em todos os navegadores ativos
  * @param {string|Array<string>} urls - URL ou array de URLs
  * @param {Object|null} syncStates - Estados de sincronizacao opcionais
- * @param {Object} options - Configuracoes adicionais (scriptName, scriptContent, waitForLoad, emitEvents)
- * @returns {Promise<Object>} - Resultado da operacao
+ * @param {Object} options - Configurações adicionais (scriptName, scriptContent, waitForLoad, emitEvents, awaitAll, onNavigationComplete, onInjectionComplete)
+ * @returns {Promise<Object>} - Resultado da operação
  */
 async function navigateAllBrowsers(urls, syncStates = null, options = {}) {
     const activeBrowserIds = getActiveBrowsers(syncStates);
@@ -681,7 +753,10 @@ async function navigateAllBrowsers(urls, syncStates = null, options = {}) {
         scriptName = null,
         scriptContent: providedScriptContent = null,
         waitForLoad = true,
-        emitEvents = true
+        emitEvents = true,
+        awaitAll = true,
+        onNavigationComplete = null,
+        onInjectionComplete = null
     } = options;
 
     let baseScriptContent = providedScriptContent;
@@ -710,7 +785,7 @@ async function navigateAllBrowsers(urls, syncStates = null, options = {}) {
         injectorInstance = injector;
     }
 
-    const navigationPromises = activeBrowserIds.map((browserId, index) => (async () => {
+    const handleNavigation = async (browserId, index) => {
         const url = urlArray[index % urlArray.length];
         const success = await navigateToUrl(browserId, url);
 
@@ -723,6 +798,14 @@ async function navigateAllBrowsers(urls, syncStates = null, options = {}) {
 
         if (emitEvents) {
             navigationEvents.emit('navigation-complete', navigationResult);
+        }
+
+        if (typeof onNavigationComplete === 'function') {
+            try {
+                onNavigationComplete(navigationResult);
+            } catch (callbackError) {
+                logger.warn('Callback onNavigationComplete falhou:', callbackError.message);
+            }
         }
 
         if (!success) {
@@ -753,6 +836,19 @@ async function navigateAllBrowsers(urls, syncStates = null, options = {}) {
                     success: injectionSuccess
                 });
             }
+
+            if (typeof onInjectionComplete === 'function') {
+                try {
+                    onInjectionComplete({
+                        browserId,
+                        browserIndex: index,
+                        url,
+                        success: injectionSuccess
+                    });
+                } catch (callbackError) {
+                    logger.warn('Callback onInjectionComplete falhou:', callbackError.message);
+                }
+            }
         } catch (error) {
             navigationResult.injection = {
                 success: false,
@@ -770,10 +866,35 @@ async function navigateAllBrowsers(urls, syncStates = null, options = {}) {
                     error: error.message
                 });
             }
+
+            if (typeof onInjectionComplete === 'function') {
+                try {
+                    onInjectionComplete({
+                        browserId,
+                        browserIndex: index,
+                        url,
+                        success: false,
+                        error: error.message
+                    });
+                } catch (callbackError) {
+                    logger.warn('Callback onInjectionComplete falhou:', callbackError.message);
+                }
+            }
         }
 
         return navigationResult;
-    })());
+    };
+
+    const navigationPromises = activeBrowserIds.map((browserId, index) => handleNavigation(browserId, index));
+
+    if (!awaitAll) {
+        return {
+            success: true,
+            navigatedBrowsers: navigationPromises.length,
+            results: [],
+            promises: navigationPromises
+        };
+    }
 
     const results = await Promise.all(navigationPromises);
 
