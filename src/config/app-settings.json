@@ -4,14 +4,17 @@
   ],
   "proxies": [],
   "rotatingProxies": [
-    "proxy.tourosnet.com.br:5900"
+    "0d27ebbd6013c62757e1__cr.br:2083cc334e54f30d@gw.dataimpulse.com:823"
   ],
   "pixKeys": [
+    { "id": 1, "tipo": "Telefone", "chave": "22976019683" },
+    { "id": 2, "tipo": "Telefone", "chave": "24920053857" },
+    { "id": 3, "tipo": "Telefone", "chave": "24920062624" }
   ],
   "extensions": [],
   "settings": {
     "delay": 5,
-    "openings": 5,
+    "openings": 1,
     "toggles": {
       "proxy-mode-list": false,
       "proxy-mode-rotating": true,
@@ -21,7 +24,7 @@
       "delay-toggle": false,
       "mute-audio-toggle": false
     },
-    "lastSaved": "2025-09-22T15:15:49.757Z"
+    "lastSaved": "2025-09-23T21:49:05.876Z"
   },
   "resolution": {
     "useDefault": true,
@@ -39,7 +42,7 @@
     "randomPasswords": false,
     "categoria": "slots",
     "jogo": "",
-    "pixKeyType": "CPF"
+    "pixKeyType": "PHONE"
   },
   "selectedMonitor": "1"
 }

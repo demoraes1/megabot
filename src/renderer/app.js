@@ -3576,6 +3576,10 @@ async function createProfileCard(profile) {
                 <span class="text-white text-right">${profile.senha || 'N/A'}</span>
             </div>
             <div class="flex justify-between">
+                <span class="text-gray-400">Senha de Saque:</span>
+                <span class="text-white text-right">${profile.senha_saque || 'N/A'}</span>
+            </div>
+            <div class="flex justify-between">
                 <span class="text-gray-400">Proxy:</span>
                 <span class="text-gray-300 text-right max-w-40 truncate">${profile.proxy && profile.proxy.host ? `${profile.proxy.host}:${profile.proxy.port}` : 'N/A'}</span>
             </div>
@@ -3593,26 +3597,6 @@ async function createProfileCard(profile) {
             <button class="hover:bg-gray-700 text-white p-2 rounded flex items-center justify-center play-button" data-profile-id="${profile.navigatorId}" title="Iniciar">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                     <path d="M8 5v14l11-7z" fill="#10b981"/>
-                </svg>
-            </button>
-            <button class="hover:bg-gray-700 text-white p-2 rounded flex items-center justify-center" onclick="withdrawProfile('${profile.navigatorId}')" title="Saque">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="#f59e0b"/>
-                </svg>
-            </button>
-            <button class="hover:bg-gray-700 text-white p-2 rounded flex items-center justify-center" onclick="depositProfile('${profile.navigatorId}')" title="Depósito">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z" fill="#3b82f6"/>
-                </svg>
-            </button>
-            <button class="hover:bg-gray-700 text-white p-2 rounded flex items-center justify-center" onclick="statsProfile('${profile.navigatorId}')" title="Relatório">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z" fill="#8b5cf6"/>
-                </svg>
-            </button>
-            <button class="hover:bg-gray-700 text-white p-2 rounded flex items-center justify-center" onclick="homeProfile('${profile.navigatorId}')" title="Home">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" fill="#6b7280"/>
                 </svg>
             </button>
             <button class="hover:bg-gray-700 text-white p-2 rounded flex items-center justify-center" onclick="deleteProfile('${profile.navigatorId}')" title="Delete">
@@ -3661,65 +3645,13 @@ async function playProfile(profileId) {
     }
 }
 
-async function withdrawProfile(profileId) {
-    console.log('Saque profile:', profileId);
-    try {
-        const result = await window.electronAPI.injectScriptInProfile(profileId, 'saque');
-        if (result.success) {
-            showNotification(`Script de saque injetado no perfil ${profileId}`, 'success');
-        } else {
-            showNotification(`Erro ao injetar script: ${result.error}`, 'error');
-        }
-    } catch (error) {
-        console.error('Erro ao injetar script de saque:', error);
-        showNotification('Erro ao injetar script de saque', 'error');
-    }
-}
 
-async function depositProfile(profileId) {
-    console.log('Depósito profile:', profileId);
-    try {
-        const result = await window.electronAPI.injectScriptInProfile(profileId, 'deposito');
-        if (result.success) {
-            showNotification(`Script de depósito injetado no perfil ${profileId}`, 'success');
-        } else {
-            showNotification(`Erro ao injetar script: ${result.error}`, 'error');
-        }
-    } catch (error) {
-        console.error('Erro ao injetar script de depósito:', error);
-        showNotification('Erro ao injetar script de depósito', 'error');
-    }
-}
 
-async function statsProfile(profileId) {
-    console.log('Stats profile:', profileId);
-    try {
-        const result = await window.electronAPI.injectScriptInProfile(profileId, 'relatorio');
-        if (result.success) {
-            showNotification(`Script de relatório injetado no perfil ${profileId}`, 'success');
-        } else {
-            showNotification(`Erro ao injetar script: ${result.error}`, 'error');
-        }
-    } catch (error) {
-        console.error('Erro ao injetar script de relatório:', error);
-        showNotification('Erro ao injetar script de relatório', 'error');
-    }
-}
 
-async function homeProfile(profileId) {
-    console.log('Home profile:', profileId);
-    try {
-        const result = await window.electronAPI.injectScriptInProfile(profileId, 'home');
-        if (result.success) {
-            showNotification(`Script de home injetado no perfil ${profileId}`, 'success');
-        } else {
-            showNotification(`Erro ao injetar script: ${result.error}`, 'error');
-        }
-    } catch (error) {
-        console.error('Erro ao injetar script de home:', error);
-        showNotification('Erro ao injetar script de home', 'error');
-    }
-}
+
+
+
+
 
 async function deleteProfile(profileId) {
     console.log('Delete profile:', profileId);

@@ -54,7 +54,15 @@ class PixValidator {
      * @returns {boolean}
      */
     isCPF(cpf) {
-        // Remove pontuação
+        // Verifica se está nos formatos válidos: xxx.xxx.xxx-xx ou xxx.xxx.xxx.xx
+        const formatoComHifen = /^\d{3}\.\d{3}\.\d{3}-\d{2}$/;
+        const formatoComPonto = /^\d{3}\.\d{3}\.\d{3}\.\d{2}$/;
+        
+        if (!formatoComHifen.test(cpf) && !formatoComPonto.test(cpf)) {
+            return false;
+        }
+        
+        // Remove pontuação para validação dos dígitos
         const cleanCpf = cpf.replace(/[^\d]/g, '');
         
         // Verifica se tem 11 dígitos
@@ -158,8 +166,7 @@ class PixValidator {
         const cleanPhone = phone.replace(/[^\d]/g, '');
 
         // Telefone brasileiro: DDD + 9 digitos e nao pode iniciar com 0
-        // Terceiro digito deve ser 9 para evitar colisao com CPFs invalidos
-        return cleanPhone.length === 11 && cleanPhone.charAt(0) !== '0' && cleanPhone.charAt(2) === '9';
+        return cleanPhone.length === 11 && cleanPhone.charAt(0) !== '0';
     }
 
     /**
