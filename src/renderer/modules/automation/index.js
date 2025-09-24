@@ -1,4 +1,4 @@
-import { showNotification, showCustomConfirm } from '../ui/notifications.js';
+﻿import { showNotification, showCustomConfirm } from '../ui/notifications.js';
 import { debouncedSave } from '../settings/autosave.js';
 import { mapPixKeyTypeToFile } from '../settings/storage.js';
 import {
@@ -12,6 +12,7 @@ import {
 } from '../links/index.js';
 import { state } from '../state.js';
 import { atualizarPaginas } from '../browser/actions.js';
+import { abrirNavegadores } from '../monitors/index.js';
 
 function initializeButtons() {
   const mainButtons = [
@@ -386,3 +387,4 @@ export {
   initializeScriptInjectionButtons,
   injectCustomScript,
 };
+

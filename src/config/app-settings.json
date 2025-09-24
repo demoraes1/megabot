@@ -14,7 +14,7 @@
   "extensions": [],
   "settings": {
     "delay": 5,
-    "openings": 1,
+    "openings": 14,
     "toggles": {
       "proxy-mode-list": false,
       "proxy-mode-rotating": true,
@@ -24,7 +24,7 @@
       "delay-toggle": false,
       "mute-audio-toggle": false
     },
-    "lastSaved": "2025-09-23T22:35:09.547Z"
+    "lastSaved": "2025-09-24T14:07:49.731Z"
   },
   "resolution": {
     "useDefault": true,
@@ -42,7 +42,8 @@
     "randomPasswords": false,
     "categoria": "slots",
     "jogo": "",
-    "pixKeyType": "PHONE"
+    "pixKeyType": "PHONE",
+    "generateWithdraw": false
   },
   "selectedMonitor": "1"
 }
