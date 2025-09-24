@@ -9,6 +9,8 @@
     "0d27ebbd6013c62757e1__cr.br:2083cc334e54f30d@gw.dataimpulse.com:823"
   ],
   "pixKeys": [
+    { "id": 1, "tipo": "Telefone", "chave": "56415616847" },
+    { "id": 2, "tipo": "Telefone", "chave": "45613184841" }
   ],
   "extensions": [],
   "settings": {
@@ -23,7 +25,7 @@
       "delay-toggle": false,
       "mute-audio-toggle": false
     },
-    "lastSaved": "2025-09-24T15:12:00.315Z"
+    "lastSaved": "2025-09-24T15:30:39.210Z"
   },
   "resolution": {
     "useDefault": true,

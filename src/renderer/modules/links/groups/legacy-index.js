@@ -2,7 +2,6 @@
 
 import { debouncedSave } from '../settings/autosave.js';
 
-import { normalizeUrlFrontend, validateAndNormalizeUrl } from './groups/utils.js';
 import {
 
   registerSettingsCollectors,
@@ -1961,11 +1960,75 @@ async function executeAccountCreation(link) {
 
 // FunAAo para normalizar URLs no frontend (similar A do backend)
 
+function normalizeUrlFrontend(url) {
+
+  if (!url || url.trim() === '') {
+
+    return '';
+
+  }
+
+
+
+  const trimmedUrl = url.trim();
+
+
+
+  // Se jA tem protocolo, retorna como estA
+
+  if (trimmedUrl.match(/^https?:\/\//)) {
+
+    return trimmedUrl;
+
+  }
+
+
+
+  // Protocolos especiais
+
+  if (
+
+    trimmedUrl.startsWith('about:') ||
+
+    trimmedUrl.startsWith('file:') ||
+
+    trimmedUrl.startsWith('data:')
+
+  ) {
+
+    return trimmedUrl;
+
+  }
+
+
+
+  // Para todos os outros casos, adiciona https://
+
+  return `https://${trimmedUrl}`;
+
+}
 
 
 
 // FunAAo para validar e normalizar URL quando o usuArio digita
 
+function validateAndNormalizeUrl(input) {
+
+  const originalValue = input.value.trim();
+
+  if (originalValue && !originalValue.match(/^https?:\/\//)) {
+
+    const normalizedUrl = normalizeUrlFrontend(originalValue);
+
+    console.log(`URL normalizada: ${originalValue} -> ${normalizedUrl}`);
+
+    // Mostrar uma dica visual de que a URL foi normalizada
+
+    showNotification(`URL normalizada: ${normalizedUrl}`, 'info', 2000);
+
+  }
+
+}
 
 
 
