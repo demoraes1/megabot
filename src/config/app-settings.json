@@ -15,7 +15,7 @@
   "extensions": [],
   "settings": {
     "delay": 5,
-    "openings": 6,
+    "openings": 5,
     "toggles": {
       "proxy-mode-list": false,
       "proxy-mode-rotating": true,
@@ -25,7 +25,7 @@
       "delay-toggle": false,
       "mute-audio-toggle": false
     },
-    "lastSaved": "2025-09-24T15:30:39.210Z"
+    "lastSaved": "2025-09-24T17:28:19.344Z"
   },
   "resolution": {
     "useDefault": true,

@@ -2,6 +2,8 @@
 
 import { debouncedSave } from '../settings/autosave.js';
 
+import { showPopup, hidePopup, hideLinksDropdown, updateLinksDropdownContent, configurePopupsHooks } from './groups/popups.js';
+import { getAddedPixKeys, updatePixCount, updatePixCountsByType, initializePixManagement, removeConsumedPixKeys } from './groups/pix.js';
 import { normalizeUrlFrontend, validateAndNormalizeUrl } from './groups/utils.js';
 import {
 
@@ -137,73 +139,9 @@ function initializeLinkManagement() {
 
 // FunAAes auxiliares
 
-function showPopup(popupId) {
-
-  const popup = document.getElementById(popupId);
-
-  if (popup) {
-
-    popup.classList.remove('opacity-0', 'invisible');
-
-    popup.classList.add('opacity-100', 'visible');
 
 
 
-    const sidebar = popup.querySelector('.transform');
-
-    if (sidebar) {
-
-      sidebar.classList.remove('translate-x-full');
-
-      sidebar.classList.add('translate-x-0');
-
-    }
-
-  }
-
-}
-
-
-
-function hidePopup(popupId) {
-
-  const popup = document.getElementById(popupId);
-
-  if (popup) {
-
-    const sidebar = popup.querySelector('.transform');
-
-    if (sidebar) {
-
-      sidebar.classList.remove('translate-x-0');
-
-      sidebar.classList.add('translate-x-full');
-
-    }
-
-
-
-    // Se for o popup de links, remover campos vazios antes de fechar
-
-    if (popupId === 'links-popup') {
-
-      removeEmptyLinkInputs();
-
-    }
-
-
-
-    setTimeout(() => {
-
-      popup.classList.remove('opacity-100', 'visible');
-
-      popup.classList.add('opacity-0', 'invisible');
-
-    }, 300);
-
-  }
-
-}
 
 
 
@@ -545,73 +483,6 @@ function getRotatingProxy() {
 
 // FunAAo para obter chaves PIX adicionadas
 
-function getAddedPixKeys() {
-
-  const pixKeys = [];
-
-
-
-  // Obter chaves PIX do textarea
-
-  const pixListPopup = document.getElementById('pix-list-popup');
-
-  if (pixListPopup && pixListPopup.value) {
-
-    const lines = pixListPopup.value.split('\n');
-
-    let id = 1;
-
-
-
-    lines.forEach((line) => {
-
-      const pixKey = line.trim();
-
-      if (pixKey !== '') {
-
-        // Identificar automaticamente o tipo da chave PIX
-
-        let tipo = 'InvAlida';
-
-        if (typeof PixValidator !== 'undefined') {
-
-          const validator = new PixValidator();
-
-          const identifiedType = validator.identifyPixKeyType(pixKey);
-
-          if (identifiedType) {
-
-            tipo = identifiedType;
-
-          }
-
-        }
-
-
-
-        // Adicionar no formato { id, tipo, chave }
-
-        pixKeys.push({
-
-          id: id++,
-
-          tipo: tipo,
-
-          chave: pixKey,
-
-        });
-
-      }
-
-    });
-
-  }
-
-
-
-  return pixKeys;
-
-}
 
 
 
@@ -871,63 +742,6 @@ function loadPixKeys(pixKeys) {
 
 
 
-function removeConsumedPixKeys(consumedKeys = []) {
-
-  if (!Array.isArray(consumedKeys) || consumedKeys.length === 0) {
-
-    return;
-
-  }
-
-
-
-  const pixListPopup = document.getElementById('pix-list-popup');
-
-  if (!pixListPopup) {
-
-    return;
-
-  }
-
-
-
-  const keysToRemove = new Set(
-
-    consumedKeys
-
-      .map((key) => (typeof key === 'object' && key !== null ? key.chave : key))
-
-      .filter((key) => typeof key === 'string' && key.trim() !== ''),
-
-  );
-
-
-
-  if (keysToRemove.size === 0) {
-
-    return;
-
-  }
-
-
-
-  const remaining = pixListPopup.value
-
-    .split('\n')
-
-    .map((line) => line.trim())
-
-    .filter((line) => line !== '' && !keysToRemove.has(line));
-
-
-
-  pixListPopup.value = remaining.join('\n');
-
-  updatePixCount();
-
-  saveSettings();
-
-}
 
 
 
@@ -993,109 +807,11 @@ function loadExtensions(extensions) {
 
 // FunAAo para atualizar contador de chaves PIX
 
-function updatePixCount() {
-
-  const pixListPopup = document.getElementById('pix-list-popup');
-
-  let totalPixKeys = 0;
-
-  let pixKeys = [];
-
-
-
-  if (pixListPopup && pixListPopup.value) {
-
-    const lines = pixListPopup.value.split('\n');
-
-    pixKeys = lines
-
-      .filter((line) => line.trim() !== '')
-
-      .map((line) => line.trim());
-
-    totalPixKeys = pixKeys.length;
-
-  }
-
-
-
-  // Atualizar contador na interface (se existir)
-
-  const pixCounter = document.getElementById('pix-counter-text');
-
-  if (pixCounter) {
-
-    pixCounter.textContent = `${totalPixKeys} chaves PIX disponAveis`;
-
-  }
-
-
-
-  // Atualizar contadores por tipo usando o PixValidator
-
-  updatePixCountsByType(pixKeys);
-
-
-
-  console.log(`Total de chaves PIX: ${totalPixKeys}`);
-
-}
 
 
 
 // FunAAo para atualizar contadores por tipo de chave PIX
 
-function updatePixCountsByType(pixKeys) {
-
-  if (typeof PixValidator === 'undefined') {
-
-    console.warn('PixValidator nAo estA disponAvel');
-
-    return;
-
-  }
-
-
-
-  const validator = new PixValidator();
-
-  const counts = validator.countPixKeysByType(pixKeys);
-
-
-
-  // Atualizar elementos na interface
-
-  const cpfCount = document.getElementById('cpf-count');
-
-  const cnpjCount = document.getElementById('cnpj-count');
-
-  const emailCount = document.getElementById('email-count');
-
-  const phoneCount = document.getElementById('phone-count');
-
-  const randomCount = document.getElementById('random-count');
-
-  const invalidCount = document.getElementById('invalid-count');
-
-
-
-  if (cpfCount) cpfCount.textContent = counts['CPF'] || 0;
-
-  if (cnpjCount) cnpjCount.textContent = counts['CNPJ'] || 0;
-
-  if (emailCount) emailCount.textContent = counts['E-mail'] || 0;
-
-  if (phoneCount) phoneCount.textContent = counts['Telefone'] || 0;
-
-  if (randomCount) randomCount.textContent = counts['Chave AleatAria'] || 0;
-
-  if (invalidCount) invalidCount.textContent = counts['InvAlidas'] || 0;
-
-
-
-  console.log('Contadores por tipo atualizados:', counts);
-
-}
 
 
 
@@ -1183,87 +899,11 @@ function applyToggleStates(toggleStates) {
 
 // FunAAo para atualizar conteAdo do dropdown
 
-function updateLinksDropdownContent(links) {
-
-  const dropdownContent = document.getElementById('links-dropdown-content');
-
-  if (!dropdownContent) return;
-
-
-
-  dropdownContent.innerHTML = '';
-
-
-
-  links.forEach((link, index) => {
-
-    const linkItem = document.createElement('div');
-
-    linkItem.className =
-
-      'px-4 py-2 hover:bg-app-gray-700 cursor-pointer text-white text-sm transition-colors duration-200';
-
-    linkItem.innerHTML = `
-
-            <div class="flex items-center justify-between">
-
-                <span class="truncate flex-1 mr-2">${link}</span>
-
-                <span class="text-xs text-app-gray-400">${index + 1}</span>
-
-            </div>
-
-        `;
-
-
-
-    linkItem.addEventListener('click', () => {
-
-      console.log('Executando criaAAo de contas com link selecionado:', link);
-
-      executeAccountCreation(link);
-
-      hideLinksDropdown();
-
-    });
-
-
-
-    dropdownContent.appendChild(linkItem);
-
-  });
-
-}
 
 
 
 // FunAAo para esconder dropdown
 
-function hideLinksDropdown() {
-
-  const dropdown = document.getElementById('links-dropdown');
-
-  const arrow = document.getElementById('dropdown-arrow');
-
-  const criarContasBtn = document.getElementById('criar-contas-btn');
-
-  const criarContasText = document.getElementById('criar-contas-text');
-
-
-
-  if (dropdown && arrow && criarContasBtn) {
-
-    dropdown.classList.add('hidden');
-
-    arrow.style.transform = 'rotate(0deg)';
-
-    criarContasBtn.classList.remove('dropdown-active');
-
-    criarContasText.textContent = 'Criar contas';
-
-  }
-
-}
 
 
 
@@ -2387,109 +2027,6 @@ function updateProxyCount() {
 
 // Gerenciamento de proxies
 
-function initializePixManagement() {
-
-  const pixListPopup = document.getElementById('pix-list-popup');
-
-  const pixCounter = document.getElementById('pix-counter-text');
-
-  const clearPixBtn = document.getElementById('clear-pix-btn');
-
-
-
-  // Event listener para campo do popup
-
-  if (pixListPopup) {
-
-    pixListPopup.addEventListener('input', () => {
-
-      updatePixCount();
-
-      debouncedSave();
-
-    });
-
-
-
-    // Event listener para interceptar Enter e validar linha atual
-
-    pixListPopup.addEventListener('keydown', (e) => {
-
-      if (e.key === 'Enter') {
-
-        const textarea = e.target;
-
-        const cursorPosition = textarea.selectionStart;
-
-        const textBeforeCursor = textarea.value.substring(0, cursorPosition);
-
-
-
-        // Encontrar o inAcio da linha atual
-
-        const lastNewlineIndex = textBeforeCursor.lastIndexOf('\n');
-
-        const currentLineStart =
-
-          lastNewlineIndex === -1 ? 0 : lastNewlineIndex + 1;
-
-        const currentLine = textBeforeCursor.substring(currentLineStart);
-
-
-
-        // Verificar se a linha atual estA vazia ou contAm apenas espaAos
-
-        if (currentLine.trim() === '') {
-
-          e.preventDefault(); // Impedir a quebra de linha
-
-          return false;
-
-        }
-
-      }
-
-    });
-
-  }
-
-
-
-  // BotAo limpar chaves PIX
-
-  if (clearPixBtn) {
-
-    clearPixBtn.addEventListener('click', async () => {
-
-      const confirmed = await showCustomConfirm(
-
-        'Tem certeza que deseja limpar todas as chaves PIX?',
-
-      );
-
-      if (confirmed) {
-
-        if (pixListPopup) pixListPopup.value = '';
-
-        updatePixCount();
-
-        debouncedSave();
-
-        showNotification('Chaves PIX limpas com sucesso!', 'success');
-
-      }
-
-    });
-
-  }
-
-
-
-  // Atualizar contagem inicial
-
-  updatePixCount();
-
-}
 
 
 
@@ -2692,6 +2229,11 @@ function initializeProxyManagement() {
 }
 
 
+
+configurePopupsHooks({
+  removeEmptyLinkInputs,
+  executeAccountCreation,
+});
 
 registerSettingsCollectors({
 
