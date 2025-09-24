@@ -1,8 +1,8 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+﻿const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs').promises;
 const { detectarMonitores, calcularCapacidadeMonitor, salvarDadosMonitores, carregarDadosMonitores, configurarListenerMonitores } = require('./monitor-detector');
-const { launchInstances, navigateToUrl, navigateAllBrowsers, navigationEvents, getActiveBrowsers, getActiveBrowsersWithProfiles, updateActiveBrowserProfile, injectScriptInBrowser, injectScriptInAllBrowsers, saveLastBrowserId } = require('./browser-manager');
+const { launchInstances, navigateToUrl, navigateAllBrowsers, navigationEvents, launchEvents, getActiveBrowsers, getActiveBrowsersWithProfiles, updateActiveBrowserProfile, injectScriptInBrowser, injectScriptInAllBrowsers, saveLastBrowserId } = require('./browser-manager');
 const ChromiumDownloader = require('../infrastructure/chromium-downloader');
 const scriptInjector = require('../automation/injection');
 const { reserveAndAssignPixKeys, normalizePixKeyType, getDefaultLabel } = require('../automation/pix-key-manager');
@@ -22,6 +22,14 @@ navigationEvents.on('navigation-complete', (payload) => {
 
 navigationEvents.on('injection-complete', (payload) => {
   broadcastNavigationEvent('browser-navigation-injection', payload);
+});
+
+launchEvents.on('browser-launch-ready', (payload) => {
+  broadcastNavigationEvent('browser-launch-ready', payload);
+});
+
+launchEvents.on('browser-launch-injection', (payload) => {
+  broadcastNavigationEvent('browser-launch-injection', payload);
 });
 
 // Configuração de zoom da interface

@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require('electron');
+﻿const { contextBridge, ipcRenderer } = require('electron');
 
 // Expor APIs seguras para o renderer process
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -146,6 +146,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   onBrowserNavigationInjection: (callback) => {
     ipcRenderer.on('browser-navigation-injection', (event, payload) => callback(payload));
+  },
+
+  onBrowserLaunchReady: (callback) => {
+    ipcRenderer.on('browser-launch-ready', (event, payload) => callback(payload));
+  },
+
+  onBrowserLaunchInjection: (callback) => {
+    ipcRenderer.on('browser-launch-injection', (event, payload) => callback(payload));
   },
 
   // Função para injetar script por nome em todos os navegadores
