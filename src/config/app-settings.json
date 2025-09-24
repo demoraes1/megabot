@@ -1,20 +1,19 @@
 {
   "links": [
-    "https://hhhalfa.bet"
+    "https://hhhalfa.bet",
+    "https://iiialfa.bet",
+    "https://fffalfa.bet"
   ],
   "proxies": [],
   "rotatingProxies": [
     "0d27ebbd6013c62757e1__cr.br:2083cc334e54f30d@gw.dataimpulse.com:823"
   ],
   "pixKeys": [
-    { "id": 1, "tipo": "Telefone", "chave": "22976019683" },
-    { "id": 2, "tipo": "Telefone", "chave": "24920053857" },
-    { "id": 3, "tipo": "Telefone", "chave": "24920062624" }
   ],
   "extensions": [],
   "settings": {
     "delay": 5,
-    "openings": 14,
+    "openings": 6,
     "toggles": {
       "proxy-mode-list": false,
       "proxy-mode-rotating": true,
@@ -24,7 +23,7 @@
       "delay-toggle": false,
       "mute-audio-toggle": false
     },
-    "lastSaved": "2025-09-24T14:07:49.731Z"
+    "lastSaved": "2025-09-24T15:12:00.315Z"
   },
   "resolution": {
     "useDefault": true,

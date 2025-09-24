@@ -1,11 +1,13 @@
-import { showNotification } from '../ui/notifications.js';
+﻿import { showNotification } from '../ui/notifications.js';
 import { state } from '../state.js';
 import {
   saveSettings,
   loadSettingsAsync,
   registerSettingsLoaders,
 } from '../settings/storage.js';
-import { consumeProxy, getRotatingProxy } from '../links/index.js';
+import { LinkProxiesAPI } from '../links/index.js';
+
+const { consumeProxy, getRotatingProxy } = LinkProxiesAPI;
 
 // Log para debug
 
@@ -1167,3 +1169,5 @@ export {
   abrirNavegadores,
   updateSyncPopupLocalStorage,
 };
+
+

@@ -1,18 +1,14 @@
 ﻿import { showNotification, showCustomConfirm } from '../ui/notifications.js';
 import { debouncedSave } from '../settings/autosave.js';
 import { mapPixKeyTypeToFile } from '../settings/storage.js';
-import {
-  showPopup,
-  hidePopup,
-  toggleLinksDropdown,
-  hideLinksDropdown,
-  executeAllLinksNavigation,
-  getAddedPixKeys,
-  removeConsumedPixKeys,
-} from '../links/index.js';
+import { LinkPopups, LinkNavigation, LinkPixAPI } from '../links/index.js';
 import { state } from '../state.js';
 import { atualizarPaginas } from '../browser/actions.js';
 import { abrirNavegadores } from '../monitors/index.js';
+
+const { showPopup, hidePopup, hideLinksDropdown } = LinkPopups;
+const { toggleLinksDropdown, executeAllLinksNavigation } = LinkNavigation;
+const { getAddedPixKeys, removeConsumedPixKeys } = LinkPixAPI;
 
 function initializeButtons() {
   const mainButtons = [
@@ -387,4 +383,7 @@ export {
   initializeScriptInjectionButtons,
   injectCustomScript,
 };
+
+
+
 

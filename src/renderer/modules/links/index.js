@@ -2312,10 +2312,10 @@ function updateCriarContasButton() {
 
 // FunAAo global para remoAAo de links (chamada pelo HTML)
 
-window.removeLinkInputGlobal = removeLinkInput;
-
-window.removeExtension = removeExtension;
-
+if (typeof window !== 'undefined') {
+  window.removeLinkInputGlobal = removeLinkInput;
+  window.removeExtension = removeExtension;
+}
 
 
 // FunAAes para upload de arquivos
@@ -2796,45 +2796,97 @@ registerSettingsLoaders({
 
 });
 
-
-
-if (typeof window !== 'undefined') {
-
-  window.removeLinkInputGlobal = removeLinkInput;
-
-  window.removeExtension = removeExtension;
-
-}
-
-
-
-export {
-  initializeLinkManagement,
+const LinkPopups = {
   showPopup,
   hidePopup,
   hideLinksDropdown,
-  toggleLinksDropdown,
-  executeAllLinksNavigation,
-  executeAccountCreation,
+  updateLinksDropdownContent,
+};
+
+const LinkInputs = {
   addNewLinkInput,
   removeLinkInput,
+  reorganizeLinkIds,
+  removeEmptyLinkInputs,
   updateCriarContasButton,
-  loadLinks,
-  loadProxies,
-  loadRotatingProxies,
-  loadPixKeys,
-  loadExtensions,
-  removeConsumedPixKeys,
+};
+
+const LinkData = {
   getAddedLinks,
   getAddedProxies,
   getRotatingProxy,
   getAddedPixKeys,
   getAddedExtensions,
   getToggleStates,
-  consumeProxy,
-  updatePixCount,
-  updateExtensionCount,
-  updateProxyCount,
-  applyToggleStates,
 };
 
+const LinkLoaders = {
+  loadLinks,
+  loadProxies,
+  loadRotatingProxies,
+  loadPixKeys,
+  loadExtensions,
+};
+
+const LinkPixAPI = {
+  getAddedPixKeys,
+  updatePixCount,
+  updatePixCountsByType,
+  initializePixManagement,
+  removeConsumedPixKeys,
+};
+
+const LinkExtensionsAPI = {
+  getAddedExtensions,
+  handleExtensionUpload,
+  displayExtension,
+  removeExtension,
+  updateExtensionCount,
+};
+
+const LinkProxiesAPI = {
+  getAddedProxies,
+  consumeProxy,
+  getNextAvailableProxy,
+  getAndConsumeNextProxy,
+  getRotatingProxy,
+  updateProxyCount,
+  initializeProxyManagement,
+};
+
+const LinkNavigation = {
+  toggleLinksDropdown,
+  executeAllLinksNavigation,
+  executeAccountCreation,
+};
+
+const LinkUtils = {
+  normalizeUrlFrontend,
+  validateAndNormalizeUrl,
+};
+
+const LinkAPI = {
+  popups: LinkPopups,
+  inputs: LinkInputs,
+  data: LinkData,
+  loaders: LinkLoaders,
+  pix: LinkPixAPI,
+  extensions: LinkExtensionsAPI,
+  proxies: LinkProxiesAPI,
+  navigation: LinkNavigation,
+  utils: LinkUtils,
+};
+
+export {
+  initializeLinkManagement,
+  LinkAPI,
+  LinkPopups,
+  LinkInputs,
+  LinkData,
+  LinkLoaders,
+  LinkPixAPI,
+  LinkExtensionsAPI,
+  LinkProxiesAPI,
+  LinkNavigation,
+  LinkUtils,
+};
