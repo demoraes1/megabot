@@ -1,4 +1,4 @@
-// --- SCRIPT DE RELATÓRIO COM NAVEGAÇÃO DE PERFIL ---
+﻿// --- SCRIPT DE RELATÓRIO COM NAVEGAÇÃO DE PERFIL ---
 
 (function() {
     'use strict';
@@ -48,9 +48,9 @@
     } else {
         // Se não, primeiro clica no botão "Perfil" na barra inferior
         waitForElement(
-            () => Array.from(document.querySelectorAll('span.tabbar-text')).find(span => span.textContent.trim() === 'Perfil'),
+            () => Array.from(document.querySelectorAll('footer [role="tab"] span')).find(span => span.textContent.trim() === 'Perfil'),
             (perfilSpan) => {
-                const clickableButton = perfilSpan.closest('.ui-tab');
+                const clickableButton = perfilSpan.closest('[role="tab"]');
                 if (clickableButton) {
                     clickableButton.click();
                     console.log('Ação: Clicou em "Perfil".');

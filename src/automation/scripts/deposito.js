@@ -1,4 +1,4 @@
-// --- SCRIPT FINAL (OPÇÃO 4 - AJUSTE HÍBRIDO) ---
+﻿// --- SCRIPT FINAL (OPÇÃO 4 - AJUSTE HÍBRIDO) ---
 // Injetar este script APENAS UMA VEZ na página inicial.
 
 (function() {
@@ -15,8 +15,8 @@
         // **REVERTIDO:** Configuração do botão "Perfil" voltou a ser a genérica, que estava funcionando.
         profileButton: {
             textToFind: 'Perfil',
-            textElementSelector: 'span.tabbar-text',
-            clickableParentSelector: '.ui-tab'
+            textElementSelector: 'footer [role="tab"] span',
+            clickableParentSelector: '[role="tab"]'
         },
         // **MANTIDO:** Configuração específica para o botão "Depósito", conforme a imagem.
         depositTrigger: {
@@ -143,3 +143,7 @@
         );
     }
 })();
+
+
+
+

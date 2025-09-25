@@ -1,4 +1,4 @@
-(async function() {
+﻿(async function() {
     'use strict';
 
     // =================================================================================
@@ -79,8 +79,8 @@
             // Navegação
             profileButton: {
                 textToFind: 'Perfil',
-                textElementSelector: 'span.tabbar-text',
-                clickableParentSelector: '.ui-tab'
+                textElementSelector: 'footer [role="tab"] span',
+                clickableParentSelector: '[role="tab"]'
             },
             mainScreen: {
                 withdrawPageButtonText: 'Saques',
@@ -93,7 +93,7 @@
             },
             passwordField: '.ui-password-input__security',
             buttonTextSpan: 'button .ui-button__text',
-            tab: '.ui-tab',
+            tab: '[role="tab"]',
             
             // Cenário 1: Definir Senha de Saque
             setPinScreen: {
@@ -449,4 +449,5 @@
     main();
 
 })();
+
 
