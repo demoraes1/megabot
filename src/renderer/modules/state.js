@@ -17,6 +17,8 @@ export const state = {
     list: [],
     filtered: [],
     filtersInitialized: false,
+    statusListenerRegistered: false,
+    profilesListenerRegistered: false,
   },
   saveTimeoutId: null,
 };

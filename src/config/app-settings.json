@@ -1,12 +1,10 @@
 {
   "links": [
-    "https://hhhalfa.bet",
-    "https://iiialfa.bet",
-    "https://fffalfa.bet",
-    "https://browserscan.net"
+    "https://www.888bem.me/?id=559130207",
+    "https://888bem.com/?id=695725737",
+    "https://www.888bem.win/?id=657463849"
   ],
   "proxies": [
-    "proxy.tourosnet.com.br:6001",
     "proxy.tourosnet.com.br:6002",
     "proxy.tourosnet.com.br:6003",
     "proxy.tourosnet.com.br:6004",
@@ -210,11 +208,25 @@
     "0d27ebbd6013c62757e1__cr.br:2083cc334e54f30d@gw.dataimpulse.com:823"
   ],
   "pixKeys": [
+    { "id": 1, "tipo": "Telefone", "chave": "65920018963" },
+    { "id": 2, "tipo": "Telefone", "chave": "21920404232" },
+    { "id": 3, "tipo": "Telefone", "chave": "88933006558" },
+    { "id": 4, "tipo": "Telefone", "chave": "77920060812" },
+    { "id": 5, "tipo": "Telefone", "chave": "77920094838" },
+    { "id": 6, "tipo": "Telefone", "chave": "22920043037" },
+    { "id": 7, "tipo": "Telefone", "chave": "92920016871" },
+    { "id": 8, "tipo": "Telefone", "chave": "91920019773" },
+    { "id": 9, "tipo": "Telefone", "chave": "22920079208" },
+    { "id": 10, "tipo": "Telefone", "chave": "22920161340" },
+    { "id": 11, "tipo": "Telefone", "chave": "84933006045" },
+    { "id": 12, "tipo": "Telefone", "chave": "77920021026" },
+    { "id": 13, "tipo": "Telefone", "chave": "77933001979" },
+    { "id": 14, "tipo": "Telefone", "chave": "31933023539" }
   ],
   "extensions": [],
   "settings": {
     "delay": 5,
-    "openings": 2,
+    "openings": 10,
     "toggles": {
       "proxy-mode-list": false,
       "proxy-mode-rotating": true,
@@ -222,9 +234,9 @@
       "default-resolution-checkbox": true,
       "random-passwords-toggle": false,
       "delay-toggle": false,
-      "mute-audio-toggle": false
+      "mute-audio-toggle": true
     },
-    "lastSaved": "2025-09-25T00:04:35.234Z"
+    "lastSaved": "2025-09-28T13:30:00.067Z"
   },
   "resolution": {
     "useDefault": true,
@@ -232,9 +244,9 @@
     "height": 800
   },
   "automation": {
-    "muteAudio": false,
+    "muteAudio": true,
     "depositMin": 10,
-    "depositMax": 20,
+    "depositMax": 15,
     "delayEnabled": false,
     "delaySeconds": 5,
     "password": "",

@@ -123,6 +123,22 @@ contextBridge.exposeInMainWorld('electronAPI', {
     }
   },
 
+  onActiveBrowsersUpdated: (callback) => {
+    ipcRenderer.on('active-browsers-updated', (event, data) => callback(data));
+  },
+
+  removeActiveBrowsersUpdatedListener: () => {
+    ipcRenderer.removeAllListeners('active-browsers-updated');
+  },
+
+  onProfilesUpdated: (callback) => {
+    ipcRenderer.on('profiles-updated', (event, data) => callback(data));
+  },
+
+  removeProfilesUpdatedListener: () => {
+    ipcRenderer.removeAllListeners('profiles-updated');
+  },
+
   // Listeners para eventos do Chrome download
   onShowChromeDownloadModal: (callback) => {
     ipcRenderer.on('show-chrome-download-modal', (event, data) => callback(data));

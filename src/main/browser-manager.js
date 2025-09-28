@@ -44,6 +44,8 @@ const navigationEvents = new EventEmitter();
 navigationEvents.setMaxListeners(100);
 const launchEvents = new EventEmitter();
 launchEvents.setMaxListeners(100);
+const browserStateEvents = new EventEmitter();
+browserStateEvents.setMaxListeners(100);
 
 // Configurações baseadas no teste.js
 // Valores padrão de resolução (serão sobrescritos pelas opções se fornecidas)
@@ -561,10 +563,12 @@ const processarPosicoesMonitor = (monitorData, monitorId = null) => {
             const { browser, page } = await stealth.startBrowser(instanceOptions);
             console.log(`[DEBUG] stealth.startBrowser concluído para navegador ${navegadorId}`);
             activeBrowsers.set(String(navegadorId), { browser, page, profile: profile });
+            browserStateEvents.emit('active-browsers-changed', getActiveBrowsersWithProfiles());
 
             browser.on('disconnected', () => {
                 console.log(`Navegador ${navegadorId} foi fechado.`);
                 activeBrowsers.delete(String(navegadorId));
+                browserStateEvents.emit('active-browsers-changed', getActiveBrowsersWithProfiles());
             });
 
             logger.info(`Navegador ID_${navegadorId} lançado com sucesso em single-process.`);
@@ -1046,6 +1050,7 @@ module.exports = {
     navigateAllBrowsers,
     navigationEvents,
     launchEvents,
+    browserStateEvents,
     injectScriptInBrowser,
     injectScriptInAllBrowsers,
     injectScriptInAllBrowsersPostNavigation,

@@ -2,7 +2,7 @@
 const path = require('path');
 const fs = require('fs').promises;
 const { detectarMonitores, calcularCapacidadeMonitor, salvarDadosMonitores, carregarDadosMonitores, configurarListenerMonitores } = require('./monitor-detector');
-const { launchInstances, navigateToUrl, navigateAllBrowsers, navigationEvents, launchEvents, getActiveBrowsers, getActiveBrowsersWithProfiles, updateActiveBrowserProfile, injectScriptInBrowser, injectScriptInAllBrowsers, saveLastBrowserId } = require('./browser-manager');
+const { launchInstances, navigateToUrl, navigateAllBrowsers, navigationEvents, launchEvents, browserStateEvents, getActiveBrowsers, getActiveBrowsersWithProfiles, updateActiveBrowserProfile, injectScriptInBrowser, injectScriptInAllBrowsers, saveLastBrowserId } = require('./browser-manager');
 const ChromiumDownloader = require('../infrastructure/chromium-downloader');
 const scriptInjector = require('../automation/injection');
 const { reserveAndAssignPixKeys, normalizePixKeyType, getDefaultLabel } = require('../automation/pix-key-manager');
@@ -14,6 +14,19 @@ function broadcastNavigationEvent(channel, payload) {
       window.webContents.send(channel, payload);
     }
   });
+}
+
+function broadcastProfilesUpdate(reason, extra = {}) {
+  try {
+    const profiles = getAllProfiles();
+    broadcastNavigationEvent('profiles-updated', {
+      reason,
+      profiles,
+      ...extra,
+    });
+  } catch (error) {
+    console.error('Erro ao emitir atualizacao de perfis:', error);
+  }
 }
 
 navigationEvents.on('navigation-complete', (payload) => {
@@ -30,6 +43,10 @@ launchEvents.on('browser-launch-ready', (payload) => {
 
 launchEvents.on('browser-launch-injection', (payload) => {
   broadcastNavigationEvent('browser-launch-injection', payload);
+});
+
+browserStateEvents.on('active-browsers-changed', (payload) => {
+  broadcastNavigationEvent('active-browsers-updated', payload);
 });
 
 // Configuração de zoom da interface
@@ -614,6 +631,7 @@ ipcMain.handle('remove-profile', async (event, profileId) => {
   try {
     console.log(`Removendo perfil com ID: ${profileId}`);
     const result = await removeProfile(profileId);
+    broadcastProfilesUpdate('removed', { profileId });
     return { success: true, result };
   } catch (error) {
     console.error('Erro ao remover perfil:', error);
@@ -626,6 +644,7 @@ ipcMain.handle('create-new-profile', async () => {
     console.log('Criando novo perfil...');
     const newProfile = await generateProfile();
     const result = await addProfile(newProfile);
+    broadcastProfilesUpdate('created', { profileId: newProfile?.profile });
     return { success: true, profile: newProfile, result };
   } catch (error) {
     console.error('Erro ao criar novo perfil:', error);
@@ -637,6 +656,7 @@ ipcMain.handle('update-profile', async (event, profileId, updates) => {
   try {
     console.log(`Atualizando perfil com ID: ${profileId}`);
     const result = await updateProfile(profileId, updates);
+    broadcastProfilesUpdate('updated', { profileId });
     return { success: true, result };
   } catch (error) {
     console.error('Erro ao atualizar perfil:', error);
@@ -655,6 +675,7 @@ ipcMain.handle('delete-all-profiles', async (event) => {
     const totalProfiles = profiles.length;
     
     if (totalProfiles === 0) {
+      broadcastProfilesUpdate('deleted-all', { profiles: [] });
       return { success: true, message: 'Nenhum perfil para excluir' };
     }
     
@@ -702,6 +723,7 @@ ipcMain.handle('delete-all-profiles', async (event) => {
       currentItem: 'Exclusão concluída!'
     });
     
+    broadcastProfilesUpdate('deleted-all', {});
     return { success: true, message: 'Todos os perfis foram excluídos' };
   } catch (error) {
     console.error('Erro ao excluir todos os perfis:', error);
