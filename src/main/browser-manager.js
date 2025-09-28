@@ -108,7 +108,7 @@ function saveLastBrowserId(lastId) {
 // Variável para controle sequencial de IDs
 let idSequencial = 1;
 
-async function launchInstances(options) {
+async function launchInstances(options = {}) {
     // Recarregar idSequencial do arquivo para garantir valor atualizado
     idSequencial = loadLastBrowserId();
     logger.info('Iniciando lançamento de navegadores com opções:', options);
@@ -267,9 +267,9 @@ async function launchInstances(options) {
         logger.error('Erro ao preparar scripts pós-lançamento:', error.message);
     }
 
-    const postLaunchInjectionDelay = typeof options.postLaunchInjectionDelay === 'number'
-        ? options.postLaunchInjectionDelay
-        : 2000;
+    const postLaunchInjectionDelay = Number.isFinite(options.postLaunchInjectionDelay)
+        ? Math.max(0, options.postLaunchInjectionDelay)
+        : 0;
 
     async function runPostLaunchScripts(navigatorId, browserIndex, profileRef = null) {
         launchEvents.emit('browser-launch-ready', {

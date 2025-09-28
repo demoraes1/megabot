@@ -1,7 +1,7 @@
 // profile-manager.js
 // Módulo responsável por gerenciar perfis de usuário com dados aleatórios
 
-const { generateUser, generatePassword, generateRandomNumbers, generatePhoneNumber } = require('./fabrica-de-dados.js');
+const { generateUser, generatePassword, generateRandomNumbers, generatePhoneNumber, initializeFaker } = require('./fabrica-de-dados.js');
 const fs = require('fs');
 const path = require('path');
 
@@ -23,6 +23,10 @@ function generateProfileId() {
     }
     return result;
 }
+
+
+// Disparar pre-aquecimento do Faker em background
+initializeFaker({ background: true });
 
 
 

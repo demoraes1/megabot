@@ -7,6 +7,7 @@ import {
   initializeButtons,
   initializePopups,
   initializeCounters,
+  initializeAutomationSettingsControls,
 } from './modules/automation/index.js';
 import {
   initializeChromeDownloadModal,
@@ -24,6 +25,7 @@ async function initializeApplication() {
     initializeButtons();
     initializePopups();
     initializeCounters();
+    initializeAutomationSettingsControls();
     initializeLinkManagement();
     initializeProfilesTab();
     initializeAutoSave();

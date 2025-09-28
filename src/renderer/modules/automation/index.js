@@ -9,6 +9,7 @@ import { abrirNavegadores } from '../monitors/index.js';
 const { showPopup, hidePopup, hideLinksDropdown } = LinkPopups;
 const { toggleLinksDropdown, executeAllLinksNavigation } = LinkNavigation;
 const { getAddedPixKeys, removeConsumedPixKeys } = LinkPixAPI;
+let automationSettingsInitialized = false;
 
 function initializeButtons() {
   const mainButtons = [
@@ -372,6 +373,76 @@ function initializeCounters() {
   }
 }
 
+function initializeAutomationSettingsControls() {
+  if (automationSettingsInitialized) {
+    return;
+  }
+
+  if (typeof document === 'undefined') {
+    automationSettingsInitialized = true;
+    return;
+  }
+
+  const scheduleSave = () => debouncedSave();
+  const bind = (element, events = ['change']) => {
+    if (!element) {
+      return;
+    }
+
+    events.forEach((eventName) => {
+      element.addEventListener(eventName, scheduleSave);
+    });
+  };
+
+  const generateWithdrawToggle = document.getElementById('generate-withdraw-toggle');
+  bind(generateWithdrawToggle);
+
+  const muteAudioToggle = document.getElementById('mute-audio-toggle');
+  bind(muteAudioToggle);
+
+  const depositMinInput = document.getElementById('deposit-min');
+  bind(depositMinInput, ['input', 'change']);
+
+  const depositMaxInput = document.getElementById('deposit-max');
+  bind(depositMaxInput, ['input', 'change']);
+
+  const passwordField = document.getElementById('password-field');
+  bind(passwordField, ['input']);
+
+  const withdrawPasswordField = document.getElementById('withdraw-password-field');
+  bind(withdrawPasswordField, ['input']);
+
+  const randomPasswordsToggle = document.getElementById('random-passwords-toggle');
+  bind(randomPasswordsToggle);
+
+  const categoriaField = document.getElementById('categoria-field');
+  bind(categoriaField);
+
+  const jogoField = document.getElementById('jogo-field');
+  bind(jogoField, ['input', 'change']);
+
+  const pixKeyTypeField = document.getElementById('pix-key-type');
+  bind(pixKeyTypeField);
+
+  const delayToggle = document.getElementById('delay-toggle');
+  if (delayToggle) {
+    delayToggle.addEventListener('change', () => {
+      const delayControls = document.getElementById('delay-controls');
+      if (delayControls) {
+        if (delayToggle.checked) {
+          delayControls.classList.remove('hidden');
+        } else {
+          delayControls.classList.add('hidden');
+        }
+      }
+
+      debouncedSave();
+    });
+  }
+
+  automationSettingsInitialized = true;
+}
+
 if (typeof window !== 'undefined') {
   window.injectCustomScript = injectCustomScript;
 }
@@ -380,6 +451,7 @@ export {
   initializeButtons,
   initializePopups,
   initializeCounters,
+  initializeAutomationSettingsControls,
   initializeScriptInjectionButtons,
   injectCustomScript,
 };
