@@ -5,6 +5,7 @@ const { detectarMonitores, calcularCapacidadeMonitor, salvarDadosMonitores, carr
 const { launchInstances, navigateToUrl, navigateAllBrowsers, navigationEvents, launchEvents, browserStateEvents, getActiveBrowsers, getActiveBrowsersWithProfiles, updateActiveBrowserProfile, injectScriptInBrowser, injectScriptInAllBrowsers, saveLastBrowserId, generateProfilesForBrowsers } = require('./browser-manager');
 const ChromiumDownloader = require('../infrastructure/chromium-downloader');
 const scriptInjector = require('../automation/injection');
+const extensionsService = require('./extensions-service');
 const { reserveAndAssignPixKeys, normalizePixKeyType, getDefaultLabel } = require('../automation/pix-key-manager');
 const { getAllProfiles, getProfileById, removeProfile, generateProfile, addProfile, updateProfile, loadConfig, saveConfig, PROFILES_DIR } = require('../automation/profile-manager');
 
@@ -851,6 +852,16 @@ ipcMain.handle('delete-profile', async (event, profileId) => {
 });
 
 // Handler para salvar URL em perfis específicos ou todos
+ipcMain.handle('extensions:import', async (event, sourcePath) => {
+  try {
+    const result = await extensionsService.importExtensionFolder(sourcePath);
+    return { success: true, extension: result };
+  } catch (error) {
+    console.error('Erro ao importar extensao:', error);
+    return { success: false, error: error.message };
+  }
+});
+
 ipcMain.handle('save-url-to-profiles', async (event, url, profileIds = null) => {
   try {
     console.log(`Salvando URL: ${url}`);

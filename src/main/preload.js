@@ -367,6 +367,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
      }
    },
 
+  extensions: {
+    importExtension: async (sourcePath) => {
+      try {
+        const result = await ipcRenderer.invoke('extensions:import', sourcePath);
+        return result;
+      } catch (error) {
+        console.error('Erro ao importar extensao via IPC:', error);
+        throw error;
+      }
+    },
+  },
+
   // Função para salvar URL em perfis específicos ou todos
   saveUrlToProfiles: async (url, profileIds = null) => {
     try {

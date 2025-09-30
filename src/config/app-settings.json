@@ -232,7 +232,8 @@
       "name": "asset-manifest.json",
       "directory": "asset-manifest.json",
       "path": "C:\\Users\\Usuario\\Downloads\\HTML5-Universal-Speed-Hack-Chrome-Web-Store",
-      "enabled": false
+      "enabled": false,
+      "description": null
     }
   ],
   "settings": {
@@ -247,7 +248,7 @@
       "delay-toggle": false,
       "mute-audio-toggle": true
     },
-    "lastSaved": "2025-09-30T19:19:49.787Z"
+    "lastSaved": "2025-09-30T22:09:02.994Z"
   },
   "resolution": {
     "useDefault": true,

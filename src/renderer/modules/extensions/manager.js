@@ -186,31 +186,36 @@ function renderExtensions() {
 
 function createExtensionElement(extension) {
   const wrapper = document.createElement('div');
-  wrapper.className = 'extension-item flex items-center justify-between gap-4';
+  wrapper.className = 'extension-item flex flex-wrap items-center justify-between gap-4';
   wrapper.dataset.extensionId = extension.id;
 
   const infoContainer = document.createElement('div');
-  infoContainer.className = 'extension-info';
+  infoContainer.className = 'extension-info flex-1 min-w-0';
 
+  const displayName = extension.name || extension.directory || 'Extensao';
   const nameElement = document.createElement('p');
   nameElement.className = 'extension-name font-medium';
-  nameElement.textContent = extension.name || extension.directory;
+  nameElement.textContent = displayName;
   infoContainer.appendChild(nameElement);
-
-  const pathElement = document.createElement('p');
-  pathElement.className = 'extension-description text-xs text-app-gray-400 break-all';
-  pathElement.textContent = extension.path || extension.directory;
-  infoContainer.appendChild(pathElement);
 
   if (extension.description) {
     const descriptionElement = document.createElement('p');
-    descriptionElement.className = 'text-xs text-app-gray-500 mt-1';
+    descriptionElement.className = 'text-xs text-app-gray-500 mt-1 break-all';
     descriptionElement.textContent = extension.description;
     infoContainer.appendChild(descriptionElement);
+  } else if (extension.directory) {
+    const dirLower = (extension.directory || '').toLowerCase();
+    const nameLower = displayName.toLowerCase();
+    if (dirLower !== nameLower) {
+      const directoryElement = document.createElement('p');
+      directoryElement.className = 'text-xs text-app-gray-500 mt-1 break-all';
+      directoryElement.textContent = extension.directory;
+      infoContainer.appendChild(directoryElement);
+    }
   }
 
   const actionsContainer = document.createElement('div');
-  actionsContainer.className = 'extension-actions items-center flex gap-3';
+  actionsContainer.className = 'extension-actions flex items-center gap-3 flex-shrink-0';
 
   const toggleLabel = document.createElement('label');
   toggleLabel.className = 'flex items-center gap-2 cursor-pointer select-none';
@@ -318,7 +323,7 @@ function clearFileInput(input) {
   }
 }
 
-function handleExtensionUpload(event) {
+async function handleExtensionUpload(event) {
   const input = event?.target;
   const files = Array.from(input?.files || []);
   if (files.length === 0) {
@@ -326,42 +331,33 @@ function handleExtensionUpload(event) {
   }
 
   const firstFile = files[0];
-  const inferredDirectory = extractDirectoryName(
-    firstFile?.webkitRelativePath || firstFile?.path || firstFile?.name,
-  );
   const folderPath = extractFolderPathFromFile(firstFile);
 
-  if (!inferredDirectory) {
-    showNotification('Nao foi possivel identificar a pasta da extensao selecionada.', 'error');
+  if (!folderPath) {
+    showNotification('Nao foi possivel localizar a pasta selecionada.', 'error');
     clearFileInput(input);
     return;
   }
 
-  const extensionData = {
-    id: generateId(),
-    name: inferredDirectory,
-    directory: inferredDirectory,
-    path: folderPath || inferredDirectory,
-    enabled: true,
-  };
+  try {
+    if (!window.electronAPI || !window.electronAPI.extensions || typeof window.electronAPI.extensions.importExtension !== 'function') {
+      throw new Error('Modulo de extensoes indisponivel.');
+    }
 
-  const existing = extensionsState.find((extension) => {
-    const currentKey = extension.path || extension.directory;
-    const newKey = extensionData.path || extensionData.directory;
-    return currentKey === newKey;
-  });
+    const result = await window.electronAPI.extensions.importExtension(folderPath);
+    if (!result || result.success !== true || !result.extension) {
+      const message = result && result.error ? result.error : 'Falha ao importar extensao.';
+      throw new Error(message);
+    }
 
-  if (existing) {
-    showNotification('Essa extensao ja foi adicionada.', 'warning');
+    displayExtension(result.extension);
+    showNotification('Extensao importada com sucesso!', 'success');
+  } catch (error) {
+    console.error('[Extensions] Erro ao importar extensao:', error);
+    showNotification(error.message || 'Falha ao importar extensao.', 'error');
+  } finally {
     clearFileInput(input);
-    return;
   }
-
-  extensionsState.push(extensionData);
-  renderExtensions();
-  debouncedSave();
-  showNotification('Extensao adicionada com sucesso!', 'success');
-  clearFileInput(input);
 }
 
 function displayExtension(entry) {
