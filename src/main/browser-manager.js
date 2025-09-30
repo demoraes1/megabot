@@ -516,19 +516,28 @@ const processarPosicoesMonitor = (monitorData, monitorId = null) => {
         // Gerar novo perfil se ainda não foi definido
         if (!profile && profileManager) {
             try {
-                profile = await profileManager.createNewProfile();
-                // Definir o navigatorId baseado no ID gerado
-                profile.navigatorId = navegadorId;
-                await profileManager.updateProfile(profile.profile, { navigatorId: navegadorId });
+                profile = profileManager.getProfileByNavigatorId(navegadorId);
 
-                logger.info(`Novo perfil criado para navegador ${navegadorId}:`, {
-                    profileId: profile.profile,
-                    navigatorId: profile.navigatorId,
-                    usuario: profile.usuario,
-                    nome: profile.nome_completo
-                });
+                if (profile) {
+                    if (profile.navigatorId !== navegadorId) {
+                        profileManager.updateProfile(profile.profile, { navigatorId: navegadorId });
+                        profile.navigatorId = navegadorId;
+                    }
+                    logger.info(`Perfil existente reutilizado para navegador ${navegadorId}:`, {
+                        profileId: profile.profile,
+                        navigatorId: profile.navigatorId,
+                        usuario: profile.usuario,
+                        nome: profile.nome_completo
+                    });
+                } else {
+                    profile = profileManager.createProfilePlaceholder(navegadorId);
+                    logger.info(`Perfil placeholder criado para navegador ${navegadorId}:`, {
+                        profileId: profile.profile,
+                        navigatorId: profile.navigatorId
+                    });
+                }
             } catch (error) {
-                logger.error(`Erro ao criar novo perfil para navegador ${navegadorId}:`, error.message);
+                logger.error(`Erro ao preparar perfil para navegador ${navegadorId}:`, error.message);
                 // Continuar sem perfil se houver erro
                 profile = null;
             }
@@ -1017,6 +1026,85 @@ async function injectScriptInAllBrowsersPostNavigation(scriptContent, scriptName
  * Inicializa o sistema de perfis
  * @returns {Object} Resultado da inicialização
  */
+async function generateProfilesForBrowsers(syncStates = null, options = {}) {
+    const { regenerate = true } = options || {};
+    const activeBrowsersList = getActiveBrowsersWithProfiles(syncStates);
+
+    if (!Array.isArray(activeBrowsersList) || activeBrowsersList.length === 0) {
+        return {
+            success: false,
+            error: 'Nenhum navegador ativo encontrado',
+            browsers: [],
+            generatedProfiles: 0
+        };
+    }
+
+    let generatedCount = 0;
+    const updatedBrowsers = [];
+
+    for (const browserData of activeBrowsersList) {
+        let profile = browserData.profile;
+
+        if (!profile || !profile.profile) {
+            profile = profileManager.getProfileByNavigatorId(browserData.navigatorId);
+            if (!profile) {
+                profile = profileManager.createProfilePlaceholder(browserData.navigatorId);
+            }
+
+            if (!profile) {
+                logger.error(`Falha ao preparar perfil para navegador ${browserData.navigatorId}`);
+                updatedBrowsers.push({
+                    navigatorId: browserData.navigatorId,
+                    profileId: null,
+                    profile: null,
+                    error: 'Falha ao preparar perfil'
+                });
+                continue;
+            }
+
+            updateActiveBrowserProfile(browserData.navigatorId, profile);
+        }
+
+        let shouldRegenerate = regenerate;
+
+        if (!profileManager.profileHasUserData(profile)) {
+            shouldRegenerate = true;
+        }
+
+        if (shouldRegenerate) {
+            try {
+                const result = await profileManager.regenerateProfileData(profile.profile);
+                profile = result.profile;
+                generatedCount += 1;
+                updateActiveBrowserProfile(browserData.navigatorId, profile);
+            } catch (error) {
+                logger.error(`Erro ao gerar dados do perfil ${profile.profile}:`, error.message);
+                updatedBrowsers.push({
+                    navigatorId: browserData.navigatorId,
+                    profileId: profile ? profile.profile : null,
+                    profile,
+                    error: error.message
+                });
+                continue;
+            }
+        }
+
+        updatedBrowsers.push({
+            navigatorId: browserData.navigatorId,
+            profileId: profile.profile,
+            profile
+        });
+    }
+
+    browserStateEvents.emit('active-browsers-changed', getActiveBrowsersWithProfiles(syncStates));
+
+    return {
+        success: true,
+        generatedProfiles: generatedCount,
+        browsers: updatedBrowsers
+    };
+}
+
 function initializeProfileSystem() {
     try {
         const result = profileManager.initializeProfileSystem();
@@ -1057,5 +1145,6 @@ module.exports = {
     initializeProfileSystem,
     getAllProfiles,
     loadLastBrowserId,
-    saveLastBrowserId
+    saveLastBrowserId,
+    generateProfilesForBrowsers
 };

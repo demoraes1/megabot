@@ -123,6 +123,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
     }
   },
 
+  generateProfilesForBrowsers: async (syncStates = null, options = {}) => {
+    try {
+      const result = await ipcRenderer.invoke('generate-profiles-for-browsers', syncStates, options);
+      return result;
+    } catch (error) {
+      console.error('Erro ao gerar dados de perfis via IPC:', error);
+      throw error;
+    }
+  },
+
   onActiveBrowsersUpdated: (callback) => {
     ipcRenderer.on('active-browsers-updated', (event, data) => callback(data));
   },

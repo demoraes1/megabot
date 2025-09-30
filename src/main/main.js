@@ -2,7 +2,7 @@
 const path = require('path');
 const fs = require('fs').promises;
 const { detectarMonitores, calcularCapacidadeMonitor, salvarDadosMonitores, carregarDadosMonitores, configurarListenerMonitores } = require('./monitor-detector');
-const { launchInstances, navigateToUrl, navigateAllBrowsers, navigationEvents, launchEvents, browserStateEvents, getActiveBrowsers, getActiveBrowsersWithProfiles, updateActiveBrowserProfile, injectScriptInBrowser, injectScriptInAllBrowsers, saveLastBrowserId } = require('./browser-manager');
+const { launchInstances, navigateToUrl, navigateAllBrowsers, navigationEvents, launchEvents, browserStateEvents, getActiveBrowsers, getActiveBrowsersWithProfiles, updateActiveBrowserProfile, injectScriptInBrowser, injectScriptInAllBrowsers, saveLastBrowserId, generateProfilesForBrowsers } = require('./browser-manager');
 const ChromiumDownloader = require('../infrastructure/chromium-downloader');
 const scriptInjector = require('../automation/injection');
 const { reserveAndAssignPixKeys, normalizePixKeyType, getDefaultLabel } = require('../automation/pix-key-manager');
@@ -384,6 +384,22 @@ ipcMain.handle('get-active-browsers-with-profiles', async (event, syncStates = n
     };
   } catch (error) {
     console.error('Erro ao obter navegadores ativos com perfis:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+});
+
+ipcMain.handle('generate-profiles-for-browsers', async (event, syncStates = null, options = {}) => {
+  try {
+    const result = await generateProfilesForBrowsers(syncStates, options);
+    if (result.success) {
+      broadcastProfilesUpdate('regenerated', { generated: result.generatedProfiles });
+    }
+    return result;
+  } catch (error) {
+    console.error('Erro ao gerar dados de perfis para navegadores:', error);
     return {
       success: false,
       error: error.message

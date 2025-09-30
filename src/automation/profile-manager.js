@@ -93,79 +93,87 @@ function loadAutomationSettings() {
 }
 
 /**
- * Gera um novo perfil de usuário com dados aleatórios ou configurados
- * @returns {Object} Perfil gerado com todos os dados necessários
+ * Gera dados principais de usuario e senhas com base nas configuracoes de automacao
+ * @returns {Promise<{ profileData: Object, automationSettings: Object }>}
+ */
+async function buildProfileCoreData() {
+  const automationSettings = loadAutomationSettings();
+
+  const userData = await generateUser();
+  const phone = await generatePhoneNumber();
+
+  let password;
+  let withdrawPassword;
+
+  if (automationSettings.randomPasswords === true) {
+    password = await generatePassword(12);
+    withdrawPassword = (await generateRandomNumbers(100000, 999999)).toString();
+  } else {
+    if (automationSettings.password && automationSettings.password.trim() !== '') {
+      password = automationSettings.password;
+    } else {
+      password = await generatePassword(12);
+    }
+
+    if (automationSettings.withdrawPassword && automationSettings.withdrawPassword.trim() !== '') {
+      if (/^\d{6}$/.test(automationSettings.withdrawPassword)) {
+        withdrawPassword = automationSettings.withdrawPassword;
+      } else {
+        console.warn('Senha de saque invalida (deve ter 6 digitos), gerando nova:', automationSettings.withdrawPassword);
+        withdrawPassword = (await generateRandomNumbers(100000, 999999)).toString();
+      }
+    } else {
+      withdrawPassword = (await generateRandomNumbers(100000, 999999)).toString();
+    }
+  }
+
+  const profileData = {
+    usuario: userData.username,
+    nome_completo: userData.fullName,
+    senha: password,
+    senha_saque: withdrawPassword,
+    telefone: phone,
+    cpf: userData.cpf
+  };
+
+  return { profileData, automationSettings };
+}
+
+/**
+ * Gera um novo perfil de usu?rio com dados aleat?rios ou configurados
+ * @returns {Object} Perfil gerado com todos os dados necess?rios
  */
 async function generateProfile() {
-    try {
-        // Carregar configurações de automação
-        const automationSettings = loadAutomationSettings();
-        
-        // Gerar dados do usuário usando a fábrica de dados
-        const userData = await generateUser();
-        const phone = await generatePhoneNumber();
-        
-        // Determinar senhas baseado nas configurações
-        let password, withdrawPassword;
-        
-        // Se o toggle de senhas aleatórias estiver marcado, gerar ambas aleatoriamente
-        if (automationSettings.randomPasswords === true) {
-            password = await generatePassword(12);
-            withdrawPassword = (await generateRandomNumbers(100000, 999999)).toString();
-        } else {
-            // Verificar cada campo individualmente
-            // Senha principal: usar definida ou gerar aleatória
-            if (automationSettings.password && automationSettings.password.trim() !== '') {
-                password = automationSettings.password;
-            } else {
-                password = await generatePassword(12);
-            }
-            
-            // Senha de saque: usar definida ou gerar aleatória
-            if (automationSettings.withdrawPassword && automationSettings.withdrawPassword.trim() !== '') {
-                // Validar se tem 6 dígitos numéricos
-                if (/^\d{6}$/.test(automationSettings.withdrawPassword)) {
-                    withdrawPassword = automationSettings.withdrawPassword;
-                } else {
-                    console.warn('Senha de saque inválida (deve ter 6 dígitos), gerando nova:', automationSettings.withdrawPassword);
-                    withdrawPassword = (await generateRandomNumbers(100000, 999999)).toString();
-                }
-            } else {
-                withdrawPassword = (await generateRandomNumbers(100000, 999999)).toString();
-            }
-        }
-        
-        const profileId = generateProfileId();
-        const profile = {
-            navigatorId: null, // Será definido quando o navegador for lançado
-            profile: `profile_${profileId}`,
-            url: null,
-            usuario: userData.username,
-            nome_completo: userData.fullName,
-            senha: password,
-            senha_saque: withdrawPassword,
-            telefone: phone,
-            cpf: userData.cpf,
-            proxy: null,
-            pix: null,
-            created_at: new Date().toISOString()
-        };
-        
-        console.log('Perfil gerado:', {
-            profile: profile.profile,
-            usuario: profile.usuario,
-            nome_completo: profile.nome_completo,
-            telefone: profile.telefone,
-            cpf: profile.cpf,
-            usingRandomPasswords: automationSettings.randomPasswords
-        });
-        
-        return profile;
-    } catch (error) {
-        console.error('Erro ao gerar perfil:', error.message);
-        throw error;
-    }
+  try {
+    const { profileData, automationSettings } = await buildProfileCoreData();
+
+    const profileId = generateProfileId();
+    const profile = {
+      navigatorId: null,
+      profile: `profile_${profileId}`,
+      url: null,
+      ...profileData,
+      proxy: null,
+      pix: null,
+      created_at: new Date().toISOString()
+    };
+
+    console.log('Perfil gerado:', {
+      profile: profile.profile,
+      usuario: profile.usuario,
+      nome_completo: profile.nome_completo,
+      telefone: profile.telefone,
+      cpf: profile.cpf,
+      usingRandomPasswords: automationSettings.randomPasswords
+    });
+
+    return profile;
+  } catch (error) {
+    console.error('Erro ao gerar perfil:', error.message);
+    throw error;
+  }
 }
+
 
 /**
  * Adiciona um novo perfil à configuração
@@ -198,6 +206,91 @@ async function createNewProfile() {
     const profile = await generateProfile();
     addProfile(profile);
     return profile;
+}
+
+function profileHasUserData(profile) {
+  if (!profile) {
+    return false;
+  }
+  return Boolean(profile.usuario && profile.cpf && profile.senha && profile.senha_saque);
+}
+
+function createProfilePlaceholder(navigatorId = null) {
+  const config = loadConfig();
+  if (!config.profiles) {
+    config.profiles = [];
+  }
+
+  const profileId = generateProfileId();
+  const placeholder = {
+    navigatorId,
+    profile: `profile_${profileId}`,
+    url: null,
+    usuario: null,
+    nome_completo: null,
+    senha: null,
+    senha_saque: null,
+    telefone: null,
+    cpf: null,
+    proxy: null,
+    pix: null,
+    created_at: new Date().toISOString()
+  };
+
+  config.profiles.push(placeholder);
+  saveConfig(config);
+
+  console.log(`Perfil placeholder ${placeholder.profile} criado (navigatorId: ${navigatorId})`);
+  return placeholder;
+}
+
+async function regenerateProfileData(profileId) {
+  const config = loadConfig();
+  const profileIndex = config.profiles.findIndex((p) => p.profile === profileId);
+
+  if (profileIndex === -1) {
+    throw new Error(`Perfil ${profileId} nao encontrado`);
+  }
+
+  const { profileData, automationSettings } = await buildProfileCoreData();
+
+  const updatedProfile = {
+    ...config.profiles[profileIndex],
+    ...profileData,
+    updated_at: new Date().toISOString()
+  };
+
+  config.profiles[profileIndex] = updatedProfile;
+  saveConfig(config);
+
+  console.log(`Perfil ${profileId} regenerado com sucesso`);
+
+  return {
+    profile: updatedProfile,
+    metadata: {
+      usingRandomPasswords: automationSettings.randomPasswords
+    }
+  };
+}
+
+function getProfileByNavigatorId(navigatorId) {
+  const config = loadConfig();
+  if (!config.profiles) {
+    return null;
+  }
+
+  if (navigatorId === undefined || navigatorId === null) {
+    return null;
+  }
+
+  return (
+    config.profiles.find((profile) => {
+      if (profile.navigatorId === undefined || profile.navigatorId === null) {
+        return false;
+      }
+      return String(profile.navigatorId) === String(navigatorId);
+    }) || null
+  );
 }
 
 /**
@@ -339,18 +432,22 @@ function initializeProfileSystem() {
 
 // Exportar todas as funções
 module.exports = {
-    generateProfile,
-    addProfile,
-    createNewProfile,
-    getAllProfiles,
-    getProfileById,
-    removeProfile,
-    updateProfile,
-    initializeProfileSystem,
-    PROFILES_DIR,
-    CONFIG_FILE,
-    ensureProfilesDirectory,
-    loadConfig,
-    saveConfig,
-    syncProfilesWithFolders
+  generateProfile,
+  addProfile,
+  createNewProfile,
+  getAllProfiles,
+  getProfileById,
+  removeProfile,
+  updateProfile,
+  initializeProfileSystem,
+  PROFILES_DIR,
+  CONFIG_FILE,
+  ensureProfilesDirectory,
+  loadConfig,
+  saveConfig,
+  syncProfilesWithFolders,
+  createProfilePlaceholder,
+  regenerateProfileData,
+  profileHasUserData,
+  getProfileByNavigatorId
 };

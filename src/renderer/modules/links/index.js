@@ -421,21 +421,45 @@ async function executeAllLinksNavigation() {
 
     // Obter navegadores ativos com dados de perfil (filtrados pelos estados)
 
-    const activeBrowsersResult =
+    const profilesResult =
 
-      await window.electronAPI.getActiveBrowsersWithProfiles(syncStates);
+      await window.electronAPI.generateProfilesForBrowsers(
 
+        syncStates,
 
-
-    if (!activeBrowsersResult.success) {
-
-      showNotification(
-
-        'Erro ao verificar navegadores ativos: ' + activeBrowsersResult.error,
-
-        'error',
+        { regenerate: true },
 
       );
+
+
+
+    if (!profilesResult.success) {
+
+      if (profilesResult.error === 'Nenhum navegador ativo encontrado') {
+
+        showNotification(
+
+          'Nenhum navegador ativo encontrado. Abra os navegadores primeiro usando o botAo "Abrir Navegadores".',
+
+          'warning',
+
+        );
+
+      } else {
+
+        const errorMessage =
+
+          profilesResult.error || 'Nao foi possivel gerar dados de perfis.';
+
+        showNotification(
+
+          'Erro ao preparar perfis ativos: ' + errorMessage,
+
+          'error',
+
+        );
+
+      }
 
       return;
 
@@ -443,7 +467,19 @@ async function executeAllLinksNavigation() {
 
 
 
-    const activeBrowsersWithProfiles = activeBrowsersResult.browsers;
+    const activeBrowsersWithProfiles = profilesResult.browsers || [];
+
+    if (profilesResult.generatedProfiles > 0) {
+
+      console.log(
+
+        `[executeAllLinksNavigation] ${profilesResult.generatedProfiles} perfis regenerados.`,
+
+      );
+
+    }
+
+
 
     const activeBrowsers = activeBrowsersWithProfiles.map(
 
@@ -785,27 +821,51 @@ async function executeAccountCreation(link) {
 
     console.log(
 
-      '[executeAccountCreation] Chamando getActiveBrowsersWithProfiles com syncStates:',
+      '[executeAccountCreation] Chamando generateProfilesForBrowsers com syncStates:',
 
       syncStates,
 
     );
 
-    const activeBrowsersResult =
+    const profilesResult =
 
-      await window.electronAPI.getActiveBrowsersWithProfiles(syncStates);
+      await window.electronAPI.generateProfilesForBrowsers(
 
+        syncStates,
 
-
-    if (!activeBrowsersResult.success) {
-
-      showNotification(
-
-        'Erro ao verificar navegadores ativos: ' + activeBrowsersResult.error,
-
-        'error',
+        { regenerate: true },
 
       );
+
+
+
+    if (!profilesResult.success) {
+
+      if (profilesResult.error === 'Nenhum navegador ativo encontrado') {
+
+        showNotification(
+
+          'Nenhum navegador ativo encontrado. Abra os navegadores primeiro usando o botAo "Abrir Navegadores".',
+
+          'warning',
+
+        );
+
+      } else {
+
+        const errorMessage =
+
+          profilesResult.error || 'Nao foi possivel gerar dados de perfis.';
+
+        showNotification(
+
+          'Erro ao preparar perfis ativos: ' + errorMessage,
+
+          'error',
+
+        );
+
+      }
 
       return;
 
@@ -813,7 +873,17 @@ async function executeAccountCreation(link) {
 
 
 
-    const activeBrowsersWithProfiles = activeBrowsersResult.browsers;
+    const activeBrowsersWithProfiles = profilesResult.browsers || [];
+
+    if (profilesResult.generatedProfiles > 0) {
+
+      console.log(
+
+        `[executeAccountCreation] ${profilesResult.generatedProfiles} perfis regenerados.`,
+
+      );
+
+    }
 
 
 

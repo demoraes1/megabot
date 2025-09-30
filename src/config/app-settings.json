@@ -1,8 +1,7 @@
 {
   "links": [
-    "https://www.888bem.me/?id=559130207",
-    "https://888bem.com/?id=695725737",
-    "https://www.888bem.win/?id=657463849"
+    "https://voy-orbitpg.com",
+    "https://d34fzajib3i28x.cloudfront.net/?id=149965716"
   ],
   "proxies": [
     "proxy.tourosnet.com.br:6002",
@@ -208,25 +207,29 @@
     "0d27ebbd6013c62757e1__cr.br:2083cc334e54f30d@gw.dataimpulse.com:823"
   ],
   "pixKeys": [
-    { "id": 1, "tipo": "Telefone", "chave": "65920018963" },
-    { "id": 2, "tipo": "Telefone", "chave": "21920404232" },
-    { "id": 3, "tipo": "Telefone", "chave": "88933006558" },
-    { "id": 4, "tipo": "Telefone", "chave": "77920060812" },
-    { "id": 5, "tipo": "Telefone", "chave": "77920094838" },
-    { "id": 6, "tipo": "Telefone", "chave": "22920043037" },
-    { "id": 7, "tipo": "Telefone", "chave": "92920016871" },
-    { "id": 8, "tipo": "Telefone", "chave": "91920019773" },
-    { "id": 9, "tipo": "Telefone", "chave": "22920079208" },
-    { "id": 10, "tipo": "Telefone", "chave": "22920161340" },
-    { "id": 11, "tipo": "Telefone", "chave": "84933006045" },
-    { "id": 12, "tipo": "Telefone", "chave": "77920021026" },
-    { "id": 13, "tipo": "Telefone", "chave": "77933001979" },
-    { "id": 14, "tipo": "Telefone", "chave": "31933023539" }
+    { "id": 1, "tipo": "Telefone", "chave": "21920299824" },
+    { "id": 2, "tipo": "Telefone", "chave": "22920175289" },
+    { "id": 3, "tipo": "Telefone", "chave": "61920017634" },
+    { "id": 4, "tipo": "Telefone", "chave": "86933009668" },
+    { "id": 5, "tipo": "Telefone", "chave": "88933009943" },
+    { "id": 6, "tipo": "Telefone", "chave": "21920048348" },
+    { "id": 7, "tipo": "Telefone", "chave": "77920078449" },
+    { "id": 8, "tipo": "Telefone", "chave": "82933003246" },
+    { "id": 9, "tipo": "Telefone", "chave": "22920163261" },
+    { "id": 10, "tipo": "Telefone", "chave": "21920414801" },
+    { "id": 11, "tipo": "Telefone", "chave": "18981065223" },
+    { "id": 12, "tipo": "Telefone", "chave": "31920033819" },
+    { "id": 13, "tipo": "Telefone", "chave": "24920049725" },
+    { "id": 14, "tipo": "Telefone", "chave": "77920054029" },
+    { "id": 15, "tipo": "Telefone", "chave": "22920040843" },
+    { "id": 16, "tipo": "Telefone", "chave": "21920471585" },
+    { "id": 17, "tipo": "Telefone", "chave": "21920393932" },
+    { "id": 18, "tipo": "Telefone", "chave": "22920072427" }
   ],
   "extensions": [],
   "settings": {
     "delay": 5,
-    "openings": 1,
+    "openings": 14,
     "toggles": {
       "proxy-mode-list": false,
       "proxy-mode-rotating": true,
@@ -236,7 +239,7 @@
       "delay-toggle": false,
       "mute-audio-toggle": true
     },
-    "lastSaved": "2025-09-28T20:32:46.523Z"
+    "lastSaved": "2025-09-30T14:34:01.078Z"
   },
   "resolution": {
     "useDefault": true,
@@ -245,15 +248,15 @@
   },
   "automation": {
     "muteAudio": true,
-    "depositMin": 10,
-    "depositMax": 15,
+    "depositMin": 40,
+    "depositMax": 60,
     "delayEnabled": false,
     "delaySeconds": 5,
     "password": "",
     "withdrawPassword": "",
     "randomPasswords": false,
     "categoria": "slots",
-    "jogo": "",
+    "jogo": "gem saviour",
     "pixKeyType": "PHONE",
     "generateWithdraw": false
   },
