@@ -7,6 +7,7 @@ const extensionsState = [];
 let listElement = null;
 let counterElement = null;
 let eventsAttached = false;
+let metadataRefreshScheduled = false;
 
 function ensureElements() {
   if (!listElement) {
@@ -143,6 +144,7 @@ function setExtensions(extensions = []) {
   ensureElements();
   syncState(extensions);
   renderExtensions();
+  scheduleMetadataRefresh();
 }
 
 function getExtensions() {
@@ -203,15 +205,6 @@ function createExtensionElement(extension) {
     descriptionElement.className = 'text-xs text-app-gray-500 mt-1 break-all';
     descriptionElement.textContent = extension.description;
     infoContainer.appendChild(descriptionElement);
-  } else if (extension.directory) {
-    const dirLower = (extension.directory || '').toLowerCase();
-    const nameLower = displayName.toLowerCase();
-    if (dirLower !== nameLower) {
-      const directoryElement = document.createElement('p');
-      directoryElement.className = 'text-xs text-app-gray-500 mt-1 break-all';
-      directoryElement.textContent = extension.directory;
-      infoContainer.appendChild(directoryElement);
-    }
   }
 
   const actionsContainer = document.createElement('div');
@@ -357,6 +350,7 @@ async function handleExtensionUpload(event) {
     showNotification(error.message || 'Falha ao importar extensao.', 'error');
   } finally {
     clearFileInput(input);
+    scheduleMetadataRefresh();
   }
 }
 
@@ -383,6 +377,7 @@ function displayExtension(entry) {
 
   renderExtensions();
   debouncedSave();
+  scheduleMetadataRefresh();
 }
 
 function removeExtension(reference) {
@@ -399,6 +394,103 @@ function removeExtension(reference) {
   if (extensionId) {
     removeExtensionById(extensionId);
   }
+}
+
+function scheduleMetadataRefresh() {
+  if (metadataRefreshScheduled) {
+    return;
+  }
+
+  metadataRefreshScheduled = true;
+  setTimeout(() => {
+    refreshMetadataIfNeeded().catch((error) => {
+      console.warn('[Extensions] Erro ao atualizar metadados:', error);
+    });
+  }, 0);
+}
+
+async function refreshMetadataIfNeeded() {
+  metadataRefreshScheduled = false;
+
+  if (
+    !window.electronAPI ||
+    !window.electronAPI.extensions ||
+    typeof window.electronAPI.extensions.getMetadata !== 'function'
+  ) {
+    return;
+  }
+
+  let updated = false;
+
+  for (const extension of extensionsState) {
+    if (!shouldFetchMetadata(extension)) {
+      continue;
+    }
+
+    const identifier = extension.path || extension.directory;
+    if (!identifier) {
+      continue;
+    }
+
+    try {
+      const result = await window.electronAPI.extensions.getMetadata(identifier);
+      if (result?.success && result.manifest) {
+        const { name, description } = result.manifest;
+        let changed = false;
+
+        if (name && name !== extension.name) {
+          extension.name = name;
+          changed = true;
+        }
+
+        if (description && description !== extension.description) {
+          extension.description = description;
+          changed = true;
+        }
+
+        if (changed) {
+          updated = true;
+        }
+      }
+    } catch (error) {
+      console.warn('[Extensions] Falha ao obter metadados da extensao:', error);
+    }
+  }
+
+  if (updated) {
+    renderExtensions();
+    debouncedSave();
+  }
+}
+
+function shouldFetchMetadata(extension) {
+  if (!extension) {
+    return false;
+  }
+
+  const name = typeof extension.name === 'string' ? extension.name.trim() : '';
+  const directory = typeof extension.directory === 'string' ? extension.directory.trim() : '';
+
+  if (!name) {
+    return true;
+  }
+
+  const normalizedName = name.toLowerCase();
+  const normalizedDirectory = directory.toLowerCase();
+
+  if (normalizedDirectory && normalizedName === normalizedDirectory) {
+    return true;
+  }
+
+  if (normalizedName.endsWith('.json')) {
+    return true;
+  }
+
+  if (normalizedName === 'extension') {
+    return true;
+  }
+
+  return false;
 }
 
 export {

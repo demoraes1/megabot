@@ -377,6 +377,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
         throw error;
       }
     },
+    getMetadata: async (identifier) => {
+      try {
+        const result = await ipcRenderer.invoke('extensions:get-metadata', identifier);
+        return result;
+      } catch (error) {
+        console.error('Erro ao obter metadados da extensao via IPC:', error);
+        throw error;
+      }
+    },
   },
 
   // Função para salvar URL em perfis específicos ou todos

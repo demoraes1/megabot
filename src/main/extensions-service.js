@@ -1,70 +1,16 @@
+
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-const { EXTENSIONS_DIR } = require('../browser-logic/extensions-manager');
+const { getExtensionsRoot, readManifestData } = require('../common/extensions-utils');
+
+const EXTENSIONS_DIR = getExtensionsRoot();
 
 function ensureExtensionsDirectory() {
   if (!fs.existsSync(EXTENSIONS_DIR)) {
     fs.mkdirSync(EXTENSIONS_DIR, { recursive: true });
   }
-}
-
-function readManifestData(sourceDir) {
-  try {
-    const manifestPath = path.join(sourceDir, 'manifest.json');
-    if (!fs.existsSync(manifestPath)) {
-      return null;
-    }
-
-    const rawContent = fs.readFileSync(manifestPath, 'utf8');
-    const manifest = JSON.parse(rawContent);
-    return {
-      name: normalizeManifestValue(manifest.name),
-      description: normalizeManifestValue(manifest.description),
-    };
-  } catch (error) {
-    console.warn('[ExtensionsService] Falha ao ler manifest.json:', error.message);
-    return null;
-  }
-}
-
-function normalizeManifestValue(value) {
-  if (!value || typeof value !== 'string') {
-    return null;
-  }
-
-  if (/^__MSG_.*__$/.test(value)) {
-    return null;
-  }
-
-  return value.trim() || null;
-}
-
-function slugify(value) {
-  if (!value || typeof value !== 'string') {
-    return 'extension';
-  }
-
-  const normalized = value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-
-  return normalized || 'extension';
-}
-
-function createUniqueFolderName(baseName) {
-  const slug = slugify(baseName);
-  let candidate = slug;
-  let counter = 1;
-
-  while (fs.existsSync(path.join(EXTENSIONS_DIR, candidate))) {
-    counter += 1;
-    candidate = `${slug}-${counter}`;
-  }
-
-  return candidate;
 }
 
 async function copyDirectory(sourceDir, targetDir) {
@@ -117,23 +63,51 @@ async function importExtensionFolder(sourcePath) {
     return buildExtensionEntry(manifest, path.basename(resolvedSource), null);
   }
 
-  const manifest = readManifestData(resolvedSource);
-  const baseName = manifest?.name || path.basename(resolvedSource);
+  const manifestFromSource = readManifestData(resolvedSource);
+  const baseName = manifestFromSource?.name || path.basename(resolvedSource);
   const folderName = createUniqueFolderName(baseName);
   const targetDir = path.join(EXTENSIONS_DIR, folderName);
 
   await copyDirectory(resolvedSource, targetDir);
 
+  const manifest = readManifestData(targetDir) || manifestFromSource;
+
   return buildExtensionEntry(manifest, folderName, folderName);
 }
 
+function createUniqueFolderName(baseName) {
+  const slug = slugify(baseName);
+  let candidate = slug;
+  let counter = 1;
+
+  while (fs.existsSync(path.join(EXTENSIONS_DIR, candidate))) {
+    counter += 1;
+    candidate = `${slug}-${counter}`;
+  }
+
+  return candidate;
+}
+
+function slugify(value) {
+  if (!value || typeof value !== 'string') {
+    return 'extension';
+  }
+
+  const normalized = value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  return normalized || 'extension';
+}
+
 function buildExtensionEntry(manifest, directoryName, pathName) {
-  const manifestName = manifest?.name || directoryName;
+  const displayName = manifest?.name || directoryName;
   const description = manifest?.description || null;
 
   return {
     id: crypto.randomUUID ? crypto.randomUUID() : `extension-${Date.now()}`,
-    name: manifestName,
+    name: displayName,
     description,
     directory: directoryName,
     path: pathName || directoryName,

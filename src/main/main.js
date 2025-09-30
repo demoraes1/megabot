@@ -1,11 +1,13 @@
 ﻿const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs').promises;
+const fsSync = require('fs');
 const { detectarMonitores, calcularCapacidadeMonitor, salvarDadosMonitores, carregarDadosMonitores, configurarListenerMonitores } = require('./monitor-detector');
 const { launchInstances, navigateToUrl, navigateAllBrowsers, navigationEvents, launchEvents, browserStateEvents, getActiveBrowsers, getActiveBrowsersWithProfiles, updateActiveBrowserProfile, injectScriptInBrowser, injectScriptInAllBrowsers, saveLastBrowserId, generateProfilesForBrowsers } = require('./browser-manager');
 const ChromiumDownloader = require('../infrastructure/chromium-downloader');
 const scriptInjector = require('../automation/injection');
 const extensionsService = require('./extensions-service');
+const { getExtensionsRoot, readManifestData } = require('../common/extensions-utils');
 const { reserveAndAssignPixKeys, normalizePixKeyType, getDefaultLabel } = require('../automation/pix-key-manager');
 const { getAllProfiles, getProfileById, removeProfile, generateProfile, addProfile, updateProfile, loadConfig, saveConfig, PROFILES_DIR } = require('../automation/profile-manager');
 
@@ -858,6 +860,34 @@ ipcMain.handle('extensions:import', async (event, sourcePath) => {
     return { success: true, extension: result };
   } catch (error) {
     console.error('Erro ao importar extensao:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('extensions:get-metadata', async (event, identifier) => {
+  try {
+    if (!identifier || typeof identifier !== 'string') {
+      return { success: false, error: 'Identificador invalido' };
+    }
+
+    const extensionsRoot = getExtensionsRoot();
+    let targetPath = identifier;
+    if (!path.isAbsolute(targetPath)) {
+      targetPath = path.join(extensionsRoot, identifier);
+    }
+
+    if (!fsSync.existsSync(targetPath)) {
+      return { success: false, error: 'Extensao nao encontrada' };
+    }
+
+    const manifest = readManifestData(targetPath);
+    if (!manifest) {
+      return { success: false, error: 'Manifesto nao encontrado' };
+    }
+
+    return { success: true, manifest };
+  } catch (error) {
+    console.error('Erro ao obter metadados de extensao:', error);
     return { success: false, error: error.message };
   }
 });

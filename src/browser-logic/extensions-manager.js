@@ -1,9 +1,12 @@
-﻿const fs = require('fs');
+
+const fs = require('fs');
 const path = require('path');
 
-const ROOT_DIR = path.join(__dirname, '..', '..');
-const EXTENSIONS_DIR = path.join(ROOT_DIR, 'extensions');
+const { getExtensionsRoot, readManifestData } = require('../common/extensions-utils');
+
+const EXTENSIONS_DIR = getExtensionsRoot();
 const SETTINGS_PATH = path.join(__dirname, '..', 'config', 'app-settings.json');
+const manifestCache = new Map();
 
 function readSettings() {
   try {
@@ -28,8 +31,8 @@ function extractDirectoryName(value) {
     return null;
   }
 
-  const sanitized = value.replace(/[\\/]+$/, '');
-  const parts = sanitized.split(/[/\\]/).filter(Boolean);
+  const sanitized = value.replace(/[\/]+$/, '');
+  const parts = sanitized.split(/[\/]/).filter(Boolean);
   if (parts.length === 0) {
     return null;
   }
@@ -65,7 +68,7 @@ function normalizeEntry(entry) {
     const folderFallback = typeof entry.folder === 'string' && entry.folder.trim() ? entry.folder.trim() : null;
     const nameFallback = typeof entry.name === 'string' && entry.name.trim() ? entry.name.trim() : null;
 
-    const baseValue = rawDirectory || folderFallback || nameFallback || rawPath;
+    const baseValue = rawPath || rawDirectory || folderFallback || nameFallback;
     if (!baseValue) {
       return null;
     }
@@ -73,10 +76,10 @@ function normalizeEntry(entry) {
     const directoryName = extractDirectoryName(rawDirectory || baseValue) || (rawDirectory || baseValue);
 
     return {
-      id: entry.id || rawPath || baseValue,
+      id: entry.id || baseValue,
       name: entry.name || directoryName,
       directory: directoryName,
-      path: rawPath || baseValue,
+      path: rawPath || directoryName,
       enabled: entry.enabled !== false,
       description: entry.description || null,
     };
@@ -85,61 +88,50 @@ function normalizeEntry(entry) {
   return null;
 }
 
+function applyManifestMetadata(entry) {
+  const absolutePath = resolveEntryAbsolutePath(entry);
+  if (!absolutePath) {
+    return entry;
+  }
+
+  const manifest = getManifestData(absolutePath);
+  if (!manifest) {
+    return entry;
+  }
+
+  const enriched = { ...entry };
+  if (manifest.name) {
+    enriched.name = manifest.name;
+  }
+  if (manifest.description) {
+    enriched.description = manifest.description;
+  }
+
+  return enriched;
+}
+
+function getManifestData(absolutePath) {
+  if (!absolutePath) {
+    return null;
+  }
+
+  if (manifestCache.has(absolutePath)) {
+    return manifestCache.get(absolutePath);
+  }
+
+  const manifest = readManifestData(absolutePath);
+  manifestCache.set(absolutePath, manifest);
+  return manifest;
+}
+
 function listExtensions() {
   const settings = readSettings();
   const entries = Array.isArray(settings.extensions) ? settings.extensions : [];
+
   return entries
     .map(normalizeEntry)
-    .filter(Boolean);
-}
-
-function buildAbsolutePath(relativePath) {
-  if (!relativePath || typeof relativePath !== 'string') {
-    return null;
-  }
-
-  const normalized = path.normalize(relativePath).replace(/[\\/]+$/, '');
-
-  if (path.isAbsolute(normalized)) {
-    return normalized;
-  }
-
-  const resolved = path.resolve(EXTENSIONS_DIR, normalized);
-  if (!resolved.startsWith(EXTENSIONS_DIR)) {
-    return null;
-  }
-
-  return resolved;
-}
-
-function resolveEntryPath(entry) {
-  if (!entry) {
-    return null;
-  }
-
-  if (entry.path) {
-    if (path.isAbsolute(entry.path)) {
-      return entry.path;
-    }
-
-    const resolved = buildAbsolutePath(entry.path);
-    if (resolved) {
-      return resolved;
-    }
-  }
-
-  if (entry.directory) {
-    if (path.isAbsolute(entry.directory)) {
-      return entry.directory;
-    }
-
-    const resolved = buildAbsolutePath(entry.directory);
-    if (resolved) {
-      return resolved;
-    }
-  }
-
-  return null;
+    .filter(Boolean)
+    .map(applyManifestMetadata);
 }
 
 function listEnabledExtensions() {
@@ -151,13 +143,54 @@ function listEnabledExtensionPaths() {
   const paths = [];
 
   enabledExtensions.forEach((extension) => {
-    const resolvedPath = resolveEntryPath(extension);
+    const resolvedPath = resolveEntryAbsolutePath(extension);
     if (resolvedPath && fs.existsSync(resolvedPath)) {
       paths.push(resolvedPath);
     }
   });
 
   return paths;
+}
+
+function buildAbsolutePath(relativePath) {
+  if (!relativePath || typeof relativePath !== 'string') {
+    return null;
+  }
+
+  const normalized = path.normalize(relativePath).replace(/[\/]+$/, '');
+
+  if (path.isAbsolute(normalized)) {
+    return normalized;
+  }
+
+  const resolved = path.resolve(EXTENSIONS_DIR, normalized);
+  if (!resolved.startsWith(path.resolve(EXTENSIONS_DIR))) {
+    return null;
+  }
+
+  return resolved;
+}
+
+function resolveEntryAbsolutePath(entry) {
+  if (!entry) {
+    return null;
+  }
+
+  if (entry.path) {
+    const resolvedFromPath = buildAbsolutePath(entry.path);
+    if (resolvedFromPath) {
+      return resolvedFromPath;
+    }
+  }
+
+  if (entry.directory) {
+    const resolvedFromDirectory = buildAbsolutePath(entry.directory);
+    if (resolvedFromDirectory) {
+      return resolvedFromDirectory;
+    }
+  }
+
+  return null;
 }
 
 function listLocalExtensionDirectories() {
@@ -177,12 +210,12 @@ function listLocalExtensionDirectories() {
           }
           return fs.existsSync(path.join(entryPath, 'manifest.json'));
         } catch (error) {
-          console.warn('[ExtensionsManager] Falha ao inspecionar diretorio de extensao:', entryPath, error.message);
+          console.warn('[ExtensionsManager] Falha ao inspecionar diretório de extensão:', entryPath, error.message);
           return false;
         }
       });
   } catch (error) {
-    console.warn('[ExtensionsManager] Falha ao listar diretorio de extensoes:', error.message);
+    console.warn('[ExtensionsManager] Falha ao listar diretório de extensões:', error.message);
     return [];
   }
 }

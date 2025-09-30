@@ -228,12 +228,12 @@
   ],
   "extensions": [
     {
-      "id": "97f75750-6ada-46ff-a4f4-fb8e3ec477fb",
-      "name": "asset-manifest.json",
-      "directory": "asset-manifest.json",
-      "path": "C:\\Users\\Usuario\\Downloads\\HTML5-Universal-Speed-Hack-Chrome-Web-Store",
-      "enabled": false,
-      "description": null
+      "id": "05a797d5-87b6-476d-8060-1ef61494d782",
+      "name": "HTML5 Universal Speed Hack",
+      "directory": "html5-universal-speed-hack",
+      "path": "html5-universal-speed-hack",
+      "enabled": true,
+      "description": "Speeds up or slows down browser games, HTML5 and more..."
     }
   ],
   "settings": {
@@ -248,7 +248,7 @@
       "delay-toggle": false,
       "mute-audio-toggle": true
     },
-    "lastSaved": "2025-09-30T22:09:02.994Z"
+    "lastSaved": "2025-09-30T22:56:42.556Z"
   },
   "resolution": {
     "useDefault": true,
@@ -269,5 +269,5 @@
     "pixKeyType": "PHONE",
     "generateWithdraw": false
   },
-  "selectedMonitor": "1"
+  "selectedMonitor": "todos"
 }
