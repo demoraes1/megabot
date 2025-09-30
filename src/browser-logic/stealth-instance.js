@@ -1,6 +1,7 @@
 const puppeteer = require('rebrowser-puppeteer');
 const path = require('path');
 const fs = require('fs');
+const extensionsManager = require('./extensions-manager');
 
 const { getRandomDevice } = require('./mobile-devices');
 const ProxyManager = require('../infrastructure/proxy-manager');
@@ -40,24 +41,24 @@ const DELAY_PARA_REGISTRO_JANELAS = 10; // ms
 // --- FIM DAS CONFIGURAÇÕES ---
 
 function carregarExtensoes() {
-    const extensionsDir = path.join(__dirname, '..', '..', 'extensions');
-    if (!fs.existsSync(extensionsDir)) {
-      return [];
-    }
     try {
-        const items = fs.readdirSync(extensionsDir);
-        return items
-            .map(item => path.join(extensionsDir, item))
-            .filter(itemPath => {
-                const isDirectory = fs.statSync(itemPath).isDirectory();
-                const hasManifest = fs.existsSync(path.join(itemPath, 'manifest.json'));
-                return isDirectory && hasManifest;
-            });
+        const enabledExtensions = extensionsManager.listEnabledExtensionPaths();
+        if (enabledExtensions.length > 0) {
+            return enabledExtensions;
+        }
+
+        const fallbackExtensions = extensionsManager.listLocalExtensionDirectories();
+        if (fallbackExtensions.length > 0) {
+            console.warn('[Extensions] Nenhuma extensao explicitamente habilitada. Usando fallback com diretorio local.');
+        }
+        return fallbackExtensions;
     } catch (error) {
-        console.error('Erro ao carregar extensões:', error);
+        console.error('Erro ao carregar extensoes:', error);
         return [];
     }
 }
+
+
 
 async function detectChromePath() {
     try {

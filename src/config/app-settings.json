@@ -226,10 +226,18 @@
     { "id": 17, "tipo": "Telefone", "chave": "21920393932" },
     { "id": 18, "tipo": "Telefone", "chave": "22920072427" }
   ],
-  "extensions": [],
+  "extensions": [
+    {
+      "id": "97f75750-6ada-46ff-a4f4-fb8e3ec477fb",
+      "name": "asset-manifest.json",
+      "directory": "asset-manifest.json",
+      "path": "C:\\Users\\Usuario\\Downloads\\HTML5-Universal-Speed-Hack-Chrome-Web-Store",
+      "enabled": false
+    }
+  ],
   "settings": {
     "delay": 5,
-    "openings": 14,
+    "openings": 1,
     "toggles": {
       "proxy-mode-list": false,
       "proxy-mode-rotating": true,
@@ -239,7 +247,7 @@
       "delay-toggle": false,
       "mute-audio-toggle": true
     },
-    "lastSaved": "2025-09-30T14:34:01.078Z"
+    "lastSaved": "2025-09-30T19:19:49.787Z"
   },
   "resolution": {
     "useDefault": true,

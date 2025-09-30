@@ -1,7 +1,7 @@
 ﻿import { addNewLinkInput, updateCriarContasButton } from './link-inputs.js';
 import { updateProxyCount } from './proxies.js';
 import { updatePixCount } from './pix.js';
-import { updateExtensionCount } from './extensions.js';
+import { setExtensions, updateExtensionCount } from './extensions.js';
 
 function loadLinks(links = []) {
   const linksContainer = document.getElementById('links-container');
@@ -74,33 +74,7 @@ function loadPixKeys(pixKeys = []) {
 }
 
 function loadExtensions(extensions = []) {
-  const extensionsList = document.getElementById('extensions-list');
-  if (!extensionsList) return;
-
-  if (!extensions || extensions.length === 0) {
-    extensionsList.innerHTML = '';
-    updateExtensionCount();
-    return;
-  }
-
-  extensionsList.innerHTML = '';
-
-  extensions.forEach((extensionPath) => {
-    const extensionItem = document.createElement('div');
-    extensionItem.className =
-      'flex items-center justify-between p-2 bg-gray-50 rounded';
-    extensionItem.innerHTML = `
-            <span class="font-mono text-sm">${extensionPath}</span>
-            <button onclick="removeExtension(this)" class="text-red-500 hover:text-red-700">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-            </button>
-        `;
-
-    extensionsList.appendChild(extensionItem);
-  });
-
+  setExtensions(Array.isArray(extensions) ? extensions : []);
   updateExtensionCount();
 }
 
