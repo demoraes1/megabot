@@ -859,7 +859,17 @@ ipcMain.handle('extensions:import', async (event, sourcePath) => {
     const result = await extensionsService.importExtensionFolder(sourcePath);
     return { success: true, extension: result };
   } catch (error) {
-    console.error('Erro ao importar extensao:', error);
+    console.error('Erro ao importar extensão:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('extensions:remove', async (event, identifier) => {
+  try {
+    const result = await extensionsService.removeExtensionFolder(identifier);
+    return { success: result.removed === true, ...result };
+  } catch (error) {
+    console.error('Erro ao remover extensão:', error);
     return { success: false, error: error.message };
   }
 });
@@ -867,7 +877,7 @@ ipcMain.handle('extensions:import', async (event, sourcePath) => {
 ipcMain.handle('extensions:get-metadata', async (event, identifier) => {
   try {
     if (!identifier || typeof identifier !== 'string') {
-      return { success: false, error: 'Identificador invalido' };
+      return { success: false, error: 'Identificador inválido' };
     }
 
     const extensionsRoot = getExtensionsRoot();
@@ -877,17 +887,17 @@ ipcMain.handle('extensions:get-metadata', async (event, identifier) => {
     }
 
     if (!fsSync.existsSync(targetPath)) {
-      return { success: false, error: 'Extensao nao encontrada' };
+      return { success: false, error: 'Extensão não encontrada' };
     }
 
     const manifest = readManifestData(targetPath);
     if (!manifest) {
-      return { success: false, error: 'Manifesto nao encontrado' };
+      return { success: false, error: 'Manifesto não encontrado' };
     }
 
     return { success: true, manifest };
   } catch (error) {
-    console.error('Erro ao obter metadados de extensao:', error);
+    console.error('Erro ao obter metadados de extensão:', error);
     return { success: false, error: error.message };
   }
 });

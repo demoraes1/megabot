@@ -43,17 +43,17 @@ function isInsideExtensionsDir(sourcePath) {
 
 async function importExtensionFolder(sourcePath) {
   if (!sourcePath || typeof sourcePath !== 'string') {
-    throw new Error('Caminho de extensao invalido');
+    throw new Error('Caminho de extensão inválido');
   }
 
   const resolvedSource = path.resolve(sourcePath);
   if (!fs.existsSync(resolvedSource)) {
-    throw new Error('Pasta de extensao nao encontrada');
+    throw new Error('Pasta de extensão não encontrada');
   }
 
   const stats = fs.statSync(resolvedSource);
   if (!stats.isDirectory()) {
-    throw new Error('Selecione uma pasta de extensao valida');
+    throw new Error('Selecione uma pasta de extensão válida');
   }
 
   ensureExtensionsDirectory();
@@ -73,6 +73,32 @@ async function importExtensionFolder(sourcePath) {
   const manifest = readManifestData(targetDir) || manifestFromSource;
 
   return buildExtensionEntry(manifest, folderName, folderName);
+}
+
+async function removeExtensionFolder(identifier) {
+  if (!identifier || typeof identifier !== 'string') {
+    return { removed: false, reason: 'invalid' };
+  }
+
+  const rootDir = path.resolve(EXTENSIONS_DIR);
+  const targetPath = path.isAbsolute(identifier)
+    ? path.resolve(identifier)
+    : path.resolve(rootDir, identifier);
+
+  if (!targetPath.startsWith(rootDir)) {
+    return { removed: false, reason: 'outside-root' };
+  }
+
+  if (!fs.existsSync(targetPath)) {
+    return { removed: false, reason: 'not-found' };
+  }
+
+  try {
+    await fs.promises.rm(targetPath, { recursive: true, force: true });
+    return { removed: true };
+  } catch (error) {
+    return { removed: false, reason: 'error', error: error.message };
+  }
 }
 
 function createUniqueFolderName(baseName) {
@@ -118,4 +144,5 @@ function buildExtensionEntry(manifest, directoryName, pathName) {
 module.exports = {
   ensureExtensionsDirectory,
   importExtensionFolder,
+  removeExtensionFolder,
 };

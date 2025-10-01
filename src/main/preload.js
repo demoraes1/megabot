@@ -373,7 +373,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
         const result = await ipcRenderer.invoke('extensions:import', sourcePath);
         return result;
       } catch (error) {
-        console.error('Erro ao importar extensao via IPC:', error);
+        console.error('Erro ao importar extensão via IPC:', error);
         throw error;
       }
     },
@@ -382,7 +382,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
         const result = await ipcRenderer.invoke('extensions:get-metadata', identifier);
         return result;
       } catch (error) {
-        console.error('Erro ao obter metadados da extensao via IPC:', error);
+        console.error('Erro ao obter metadados da extensão via IPC:', error);
+        throw error;
+      }
+    },
+    removeExtension: async (identifier) => {
+      try {
+        const result = await ipcRenderer.invoke('extensions:remove', identifier);
+        return result;
+      } catch (error) {
+        console.error('Erro ao remover extensão via IPC:', error);
         throw error;
       }
     },

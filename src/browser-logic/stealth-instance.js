@@ -42,23 +42,23 @@ const DELAY_PARA_REGISTRO_JANELAS = 10; // ms
 
 function carregarExtensoes() {
     try {
+        const configuredExtensions = extensionsManager.listExtensions() || [];
         const enabledExtensions = extensionsManager.listEnabledExtensionPaths();
-        if (enabledExtensions.length > 0) {
+
+        if (configuredExtensions.length > 0) {
             return enabledExtensions;
         }
 
         const fallbackExtensions = extensionsManager.listLocalExtensionDirectories();
         if (fallbackExtensions.length > 0) {
-            console.warn('[Extensions] Nenhuma extensao explicitamente habilitada. Usando fallback com diretorio local.');
+            console.warn('[Extensions] Nenhuma extensão explicitamente habilitada. Usando fallback com diretório local.');
         }
         return fallbackExtensions;
     } catch (error) {
-        console.error('Erro ao carregar extensoes:', error);
+        console.error('Erro ao carregar extensões:', error);
         return [];
     }
 }
-
-
 
 async function detectChromePath() {
     try {

@@ -163,11 +163,11 @@ function updateExtensionCount() {
   if (counterElement) {
     const total = extensionsState.length;
     if (total === 0) {
-      counterElement.textContent = 'Nenhuma extensao cadastrada';
+      counterElement.textContent = 'Nenhuma extensão cadastrada';
     } else if (total === 1) {
-      counterElement.textContent = '1 extensao carregada';
+      counterElement.textContent = '1 extensão carregada';
     } else {
-      counterElement.textContent = `${total} extensoes carregadas`;
+      counterElement.textContent = `${total} extensões carregadas`;
     }
   }
 }
@@ -194,7 +194,7 @@ function createExtensionElement(extension) {
   const infoContainer = document.createElement('div');
   infoContainer.className = 'extension-info flex-1 min-w-0';
 
-  const displayName = extension.name || extension.directory || 'Extensao';
+  const displayName = extension.name || extension.directory || 'Extensão';
   const nameElement = document.createElement('p');
   nameElement.className = 'extension-name font-medium';
   nameElement.textContent = displayName;
@@ -305,9 +305,10 @@ function removeExtensionById(extensionId) {
     return;
   }
 
-  extensionsState.splice(index, 1);
+  const [removedExtension] = extensionsState.splice(index, 1);
   renderExtensions();
   debouncedSave();
+  requestExtensionRemoval(removedExtension);
 }
 
 function clearFileInput(input) {
@@ -334,20 +335,20 @@ async function handleExtensionUpload(event) {
 
   try {
     if (!window.electronAPI || !window.electronAPI.extensions || typeof window.electronAPI.extensions.importExtension !== 'function') {
-      throw new Error('Modulo de extensoes indisponivel.');
+      throw new Error('Módulo de extensões indisponível.');
     }
 
     const result = await window.electronAPI.extensions.importExtension(folderPath);
     if (!result || result.success !== true || !result.extension) {
-      const message = result && result.error ? result.error : 'Falha ao importar extensao.';
+      const message = result && result.error ? result.error : 'Falha ao importar extensão.';
       throw new Error(message);
     }
 
     displayExtension(result.extension);
-    showNotification('Extensao importada com sucesso!', 'success');
+    showNotification('Extensão importada com sucesso!', 'success');
   } catch (error) {
-    console.error('[Extensions] Erro ao importar extensao:', error);
-    showNotification(error.message || 'Falha ao importar extensao.', 'error');
+    console.error('[Extensions] Erro ao importar extensão:', error);
+    showNotification(error.message || 'Falha ao importar extensão.', 'error');
   } finally {
     clearFileInput(input);
     scheduleMetadataRefresh();
@@ -394,6 +395,32 @@ function removeExtension(reference) {
   if (extensionId) {
     removeExtensionById(extensionId);
   }
+}
+
+function requestExtensionRemoval(extension) {
+  if (!extension) {
+    return;
+  }
+
+  const identifier = extension.path || extension.directory;
+  if (!identifier) {
+    return;
+  }
+
+  if (!window.electronAPI || !window.electronAPI.extensions || typeof window.electronAPI.extensions.removeExtension !== 'function') {
+    return;
+  }
+
+  window.electronAPI.extensions
+    .removeExtension(identifier)
+    .then((response) => {
+      if (response && response.success === false && response.reason && response.reason !== 'not-found') {
+        console.warn(`[Extensions] Remoção de diretório ignorada: ${response.reason}`);
+      }
+    })
+    .catch((error) => {
+      console.warn('[Extensions] Falha ao remover diretório da extensão:', error);
+    });
 }
 
 function scheduleMetadataRefresh() {
@@ -453,7 +480,7 @@ async function refreshMetadataIfNeeded() {
         }
       }
     } catch (error) {
-      console.warn('[Extensions] Falha ao obter metadados da extensao:', error);
+      console.warn('[Extensions] Falha ao obter metadados da extensão:', error);
     }
   }
 
