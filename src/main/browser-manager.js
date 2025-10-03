@@ -473,41 +473,33 @@ const processarPosicoesMonitor = (monitorData, monitorId = null) => {
     // Variável para controlar se algum navegador usou perfil específico
     let hasSpecificProfile = false;
 
-    // 6. Lançar todos os navegadores em paralelo com movimento assíncrono
-    const launchPromises = posicoesParaLancar.map(async (posicao) => {
+    // 6. Lancar navegadores em sequencia para evitar corrida mantendo desempenho
+    const launchBrowserSequencial = async (posicao, browserIndex) => {
         let navegadorId;
-        let shouldUpdateLastBrowserId = true;
-
-        // Usar perfil existente se fornecido, caso contrário gerar novo
         let profile = null;
+
         if (options.profileId && profileManager) {
             try {
-                // Usar perfil específico passado nas opções
                 profile = profileManager.getProfileById(options.profileId);
                 if (profile) {
-                    // Usar o navigatorId do perfil existente, não gerar novo
                     navegadorId = profile.navigatorId;
-                    shouldUpdateLastBrowserId = false; // Não alterar lastBrowserId quando usar perfil específico
-                    hasSpecificProfile = true; // Marcar que um perfil específico foi usado
+                    hasSpecificProfile = true;
 
-                    logger.info(`Usando perfil existente com navigatorId ${navegadorId}:`, {
+                    logger.info('Usando perfil existente com navigatorId ' + navegadorId + ':', {
                         profileId: profile.profile,
                         navigatorId: profile.navigatorId,
                         usuario: profile.usuario,
                         nome: profile.nome_completo
                     });
                 } else {
-                    // Se perfil não encontrado, usar ID sequencial
                     navegadorId = idSequencial++;
-                    logger.warn(`Perfil ${options.profileId} não encontrado, usando ID sequencial ${navegadorId}`);
+                    logger.warn('Perfil ' + options.profileId + ' nao encontrado, usando ID sequencial ' + navegadorId);
                 }
             } catch (error) {
-                // Em caso de erro, usar ID sequencial
                 navegadorId = idSequencial++;
-                logger.error(`Erro ao buscar perfil ${options.profileId}, usando ID sequencial ${navegadorId}:`, error.message);
+                logger.error('Erro ao buscar perfil ' + options.profileId + ', usando ID sequencial ' + navegadorId + ':', error.message);
             }
         } else {
-            // Quando não há perfil específico, usar ID sequencial
             navegadorId = idSequencial++;
         }
 
@@ -515,12 +507,10 @@ const processarPosicoesMonitor = (monitorData, monitorId = null) => {
             navegadorId = posicao.id;
         }
 
-        // Manter o ID da posição alinhado com o ID real do navegador para moverJanelas
         posicao.id = navegadorId;
 
-        const urlIndex = navegadorId % (options.urls ? options.urls.length : 1); // Índice para URL baseado no ID
+        const urlIndex = navegadorId % (options.urls ? options.urls.length : 1);
 
-        // Gerar novo perfil se ainda não foi definido
         if (!profile && profileManager) {
             try {
                 profile = profileManager.getProfileByNavigatorId(navegadorId);
@@ -530,7 +520,7 @@ const processarPosicoesMonitor = (monitorData, monitorId = null) => {
                         profileManager.updateProfile(profile.profile, { navigatorId: navegadorId });
                         profile.navigatorId = navegadorId;
                     }
-                    logger.info(`Perfil existente reutilizado para navegador ${navegadorId}:`, {
+                    logger.info('Perfil existente reutilizado para navegador ' + navegadorId + ':', {
                         profileId: profile.profile,
                         navigatorId: profile.navigatorId,
                         usuario: profile.usuario,
@@ -538,27 +528,24 @@ const processarPosicoesMonitor = (monitorData, monitorId = null) => {
                     });
                 } else {
                     profile = profileManager.createProfilePlaceholder(navegadorId);
-                    logger.info(`Perfil placeholder criado para navegador ${navegadorId}:`, {
+                    logger.info('Perfil placeholder criado para navegador ' + navegadorId + ':', {
                         profileId: profile.profile,
                         navigatorId: profile.navigatorId
                     });
                 }
             } catch (error) {
-                logger.error(`Erro ao preparar perfil para navegador ${navegadorId}:`, error.message);
-                // Continuar sem perfil se houver erro
-                profile = null;
+                logger.error('Erro ao preparar perfil para navegador ' + navegadorId + ':', error.message);
             }
         }
 
-        // Se ainda não há perfil, gerar um básico
         if (!profile) {
             profile = {
+                profile: 'navigator_' + navegadorId,
                 navigatorId: navegadorId,
-                profile: `temp_profile_${navegadorId}`,
-                usuario: `user_${navegadorId}`,
-                nome_completo: `Usuário ${navegadorId}`
+                usuario: 'usuario_' + navegadorId,
+                nome_completo: 'Usuario ' + navegadorId
             };
-            logger.info(`Perfil temporário criado para navegador ${navegadorId}`);
+            logger.info('Perfil temporario criado para navegador ' + navegadorId);
         }
 
         const instanceOptions = {
@@ -566,7 +553,7 @@ const processarPosicoesMonitor = (monitorData, monitorId = null) => {
             navigatorId: navegadorId,
             url: options.urls ? options.urls[urlIndex] : 'about:blank',
             position: posicao,
-            profile: profile, // Adicionar o perfil às opções
+            profile,
             windowConfig: {
                 LARGURA_LOGICA,
                 ALTURA_LOGICA,
@@ -575,63 +562,59 @@ const processarPosicoesMonitor = (monitorData, monitorId = null) => {
         };
 
         try {
-            console.log(`[DEBUG] Iniciando stealth.startBrowser para navegador ${navegadorId}`);
+            console.log('[DEBUG] Iniciando stealth.startBrowser para navegador ' + navegadorId);
             const { browser, page } = await stealth.startBrowser(instanceOptions);
-            console.log(`[DEBUG] stealth.startBrowser concluído para navegador ${navegadorId}`);
-            activeBrowsers.set(String(navegadorId), { browser, page, profile: profile });
+            console.log('[DEBUG] stealth.startBrowser concluido para navegador ' + navegadorId);
+            activeBrowsers.set(String(navegadorId), { browser, page, profile });
             browserStateEvents.emit('active-browsers-changed', getActiveBrowsersWithProfiles());
 
             browser.on('disconnected', () => {
-                console.log(`Navegador ${navegadorId} foi fechado.`);
+                console.log('Navegador ' + navegadorId + ' foi fechado.');
                 activeBrowsers.delete(String(navegadorId));
                 browserStateEvents.emit('active-browsers-changed', getActiveBrowsersWithProfiles());
             });
 
-            logger.info(`Navegador ID_${navegadorId} lançado com sucesso em single-process.`);
+            logger.info('Navegador ID_' + navegadorId + ' lancado com sucesso em single-process.');
             launchedBrowsers.push({ browser, page });
 
-            // Mover a janela deste navegador assim que for lançado (assíncrono)
-            // Verificar se moverJanelas está desabilitado
             if (!options.disableMoverJanelas) {
                 moverJanelas([posicao], configMovimentacao).then((janelasMovidas) => {
                     if (janelasMovidas > 0) {
                         totalJanelasMovidas += janelasMovidas;
                         const movidasReportadas = Math.min(totalJanelasMovidas, numNavegadores);
-                        logger.info(`Janela do navegador ${navegadorId} reposicionada com sucesso (${movidasReportadas}/${numNavegadores})`);
+                        logger.info('Janela do navegador ' + navegadorId + ' reposicionada com sucesso (' + movidasReportadas + '/' + numNavegadores + ')');
                     } else {
-                        logger.warn(`Falha ao reposicionar janela do navegador ${navegadorId}`);
+                        logger.warn('Falha ao reposicionar janela do navegador ' + navegadorId);
                     }
                 }).catch((error) => {
-                    logger.error(`Erro ao mover janela do navegador ${navegadorId}:`, error.message);
+                    logger.error('Erro ao mover janela do navegador ' + navegadorId + ':', error.message);
                 });
             } else {
-                logger.info(`Movimento de janela desabilitado para navegador ${navegadorId}`);
+                logger.info('Movimento de janela desabilitado para navegador ' + navegadorId);
             }
 
-            runPostLaunchScripts(navegadorId, index, profile).catch((error) => {
-                logger.error(`Erro durante processamento pós-lançamento do navegador ${navegadorId}:`, error.message);
+            runPostLaunchScripts(navegadorId, browserIndex, profile).catch((error) => {
+                logger.error('Erro durante processamento pos-lancamento do navegador ' + navegadorId + ':', error.message);
             });
 
             return { browser, page };
         } catch (error) {
-            logger.error(`Falha ao lançar o navegador ID_${navegadorId}:`, error.message);
+            logger.error('Falha ao lancar o navegador ID_' + navegadorId + ':', error.message);
             return null;
         }
-    });
+    };
 
-    // Aguardar o lançamento de todos os navegadores (reposicionamento contínuo)
-    await Promise.all(launchPromises);
-    logger.info('Todos os navegadores foram lançados. Scripts pós-lançamento serão processados de forma assíncrona.');
+    for (let index = 0; index < posicoesParaLancar.length; index += 1) {
+        const posicao = posicoesParaLancar[index];
+        await launchBrowserSequencial(posicao, index);
+    }
+
+    logger.info('Todos os navegadores foram lancados em sequencia. Scripts pos-lancamento serao processados de forma assincrona.');
 
     const movidasReportadas = Math.min(totalJanelasMovidas, numNavegadores);
-    logger.info(`
-Operação concluída. ${movidasReportadas} de ${numNavegadores} janelas foram reposicionadas com sucesso!`);
+    logger.info('\nOperacao concluida. ' + movidasReportadas + ' de ' + numNavegadores + ' janelas foram reposicionadas com sucesso!');
 
-    // Aguardar o lanÃ§amento de todos os navegadores
-    await Promise.all(launchPromises);
-    logger.info('Todos os navegadores foram lanÃ§ados. Movimento das janelas em andamento...');
-
-    logger.info(`\nOperação concluída. ${totalJanelasMovidas} de ${numNavegadores} janelas foram reposicionadas com sucesso!`);
+    logger.info('Movimento das janelas continua em segundo plano enquanto as instancias sao ajustadas.');
 
     // Aguardar 2 segundos antes de injetar scripts pós-reposicionamento
     logger.info('Aguardando 2 segundos antes de injetar scripts pós-reposicionamento...');

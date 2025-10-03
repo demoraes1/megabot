@@ -4,47 +4,6 @@
     "https://cacaopg.com/?id=739183528"
   ],
   "proxies": [
-    "proxy.tourosnet.com.br:6079",
-    "proxy.tourosnet.com.br:6080",
-    "proxy.tourosnet.com.br:6081",
-    "proxy.tourosnet.com.br:6082",
-    "proxy.tourosnet.com.br:6083",
-    "proxy.tourosnet.com.br:6084",
-    "proxy.tourosnet.com.br:6085",
-    "proxy.tourosnet.com.br:6086",
-    "proxy.tourosnet.com.br:6087",
-    "proxy.tourosnet.com.br:6088",
-    "proxy.tourosnet.com.br:6089",
-    "proxy.tourosnet.com.br:6090",
-    "proxy.tourosnet.com.br:6091",
-    "proxy.tourosnet.com.br:6092",
-    "proxy.tourosnet.com.br:6093",
-    "proxy.tourosnet.com.br:6094",
-    "proxy.tourosnet.com.br:6095",
-    "proxy.tourosnet.com.br:6096",
-    "proxy.tourosnet.com.br:6097",
-    "proxy.tourosnet.com.br:6098",
-    "proxy.tourosnet.com.br:6099",
-    "proxy.tourosnet.com.br:6100",
-    "proxy.tourosnet.com.br:6101",
-    "proxy.tourosnet.com.br:6102",
-    "proxy.tourosnet.com.br:6103",
-    "proxy.tourosnet.com.br:6104",
-    "proxy.tourosnet.com.br:6105",
-    "proxy.tourosnet.com.br:6106",
-    "proxy.tourosnet.com.br:6107",
-    "proxy.tourosnet.com.br:6108",
-    "proxy.tourosnet.com.br:6109",
-    "proxy.tourosnet.com.br:6110",
-    "proxy.tourosnet.com.br:6111",
-    "proxy.tourosnet.com.br:6112",
-    "proxy.tourosnet.com.br:6113",
-    "proxy.tourosnet.com.br:6114",
-    "proxy.tourosnet.com.br:6115",
-    "proxy.tourosnet.com.br:6116",
-    "proxy.tourosnet.com.br:6117",
-    "proxy.tourosnet.com.br:6118",
-    "proxy.tourosnet.com.br:6119",
     "proxy.tourosnet.com.br:6120",
     "proxy.tourosnet.com.br:6121",
     "proxy.tourosnet.com.br:6122",
@@ -152,7 +111,7 @@
   ],
   "settings": {
     "delay": 5,
-    "openings": 1,
+    "openings": 24,
     "toggles": {
       "proxy-mode-list": true,
       "proxy-mode-rotating": false,
@@ -162,7 +121,7 @@
       "delay-toggle": false,
       "mute-audio-toggle": true
     },
-    "lastSaved": "2025-10-03T19:30:13.407Z"
+    "lastSaved": "2025-10-03T20:40:48.074Z"
   },
   "resolution": {
     "useDefault": true,
@@ -183,5 +142,5 @@
     "pixKeyType": "PHONE",
     "generateWithdraw": false
   },
-  "selectedMonitor": "1"
+  "selectedMonitor": "todos"
 }
