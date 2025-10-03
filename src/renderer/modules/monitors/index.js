@@ -5,7 +5,7 @@ import {
   loadSettingsAsync,
   registerSettingsLoaders,
 } from '../settings/storage.js';
-import { LinkProxiesAPI } from '../links/index.js';
+import { LinkProxiesAPI, LinkData } from '../links/index.js';
 
 const { consumeProxy, getRotatingProxy } = LinkProxiesAPI;
 
@@ -950,13 +950,33 @@ async function abrirNavegadores() {
     // Obter nAmero de aberturas simultAneas
     const simultaneousOpenings = settings.settings?.openings || 1;
 
-    // Obter modo de proxy
-    const proxyMode = getProxyMode(settings.settings?.toggles);
+    // Obter estado atual dos toggles diretamente da UI
+    const liveToggleStates =
+      LinkData && typeof LinkData.getToggleStates === 'function'
+        ? LinkData.getToggleStates()
+        : null;
+
+    // Determinar modo de proxy priorizando o estado atual da interface
+    const proxyMode = getProxyMode(
+      liveToggleStates || settings.settings?.toggles,
+    );
+
+    const runtimeSettings = {
+      ...settings,
+      settings: {
+        ...(settings.settings || {}),
+        toggles: liveToggleStates || settings.settings?.toggles || {},
+      },
+    };
+
+    if (proxyMode === 'list') {
+      runtimeSettings.proxies = LinkProxiesAPI.getAddedProxies();
+    }
 
     // Validar configuraAAo de proxy usando funAAo centralizada
     const proxyValidation = validateProxyConfiguration(
       proxyMode,
-      settings,
+      runtimeSettings,
       simultaneousOpenings,
     );
 
@@ -966,7 +986,6 @@ async function abrirNavegadores() {
     }
 
     const proxyList = proxyValidation.proxyList;
-
     // Log e notificaAAo de sucesso
     if (proxyMode === 'none') {
       console.log(`Abrindo ${simultaneousOpenings} navegadores sem proxy`);
@@ -1169,5 +1188,6 @@ export {
   abrirNavegadores,
   updateSyncPopupLocalStorage,
 };
+
 
 

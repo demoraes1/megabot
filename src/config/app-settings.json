@@ -4,7 +4,6 @@
     "https://cacaopg.com/?id=739183528"
   ],
   "proxies": [
-    "proxy.tourosnet.com.br:6002",
     "proxy.tourosnet.com.br:6003",
     "proxy.tourosnet.com.br:6004",
     "proxy.tourosnet.com.br:6005",
@@ -229,17 +228,17 @@
   ],
   "settings": {
     "delay": 5,
-    "openings": 14,
+    "openings": 1,
     "toggles": {
-      "proxy-mode-list": false,
-      "proxy-mode-rotating": true,
+      "proxy-mode-list": true,
+      "proxy-mode-rotating": false,
       "proxy-mode-none": false,
       "default-resolution-checkbox": true,
       "random-passwords-toggle": false,
       "delay-toggle": false,
       "mute-audio-toggle": true
     },
-    "lastSaved": "2025-10-02T21:09:02.421Z"
+    "lastSaved": "2025-10-03T15:20:09.015Z"
   },
   "resolution": {
     "useDefault": true,
