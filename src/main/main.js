@@ -769,7 +769,7 @@ ipcMain.handle('start-browser-with-profile', async (event, profileId) => {
       profileId: profileId,
       proxy: profile.proxy || null,
       urls: profile.url ? [profile.url] : ['about:blank'], // Usar URL salva no perfil
-      disableMoverJanelas: true // Desabilitar moverJanelas para navegadores iniciados pelo botão play
+      disableMoverJanelas: false // Permitir moverJanelas para navegadores iniciados pelos cards
     };
     
     console.log(`Iniciando navegador com URL: ${profile.url || 'about:blank'}`);

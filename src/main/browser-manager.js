@@ -511,6 +511,13 @@ const processarPosicoesMonitor = (monitorData, monitorId = null) => {
             navegadorId = idSequencial++;
         }
 
+        if (navegadorId === undefined || navegadorId === null) {
+            navegadorId = posicao.id;
+        }
+
+        // Manter o ID da posição alinhado com o ID real do navegador para moverJanelas
+        posicao.id = navegadorId;
+
         const urlIndex = navegadorId % (options.urls ? options.urls.length : 1); // Índice para URL baseado no ID
 
         // Gerar novo perfil se ainda não foi definido

@@ -1,4 +1,4 @@
-const puppeteer = require('rebrowser-puppeteer');
+﻿const puppeteer = require('rebrowser-puppeteer');
 const path = require('path');
 const fs = require('fs');
 const extensionsManager = require('./extensions-manager');
@@ -171,13 +171,15 @@ async function startBrowser(options) {
             windowHeight = windowConfig.ALTURA_LOGICA || windowHeight;
         }
         
-        const deviceScaleFactor = 0.65; // Escala sempre fixa em 0.65
+        const deviceScaleFactor = 0.65 // Escala sempre fixa em 0.65
         
         logger.info(navigatorId, `Configurações finais de janela: ${windowWidth}x${windowHeight}, escala: ${deviceScaleFactor}`);
 
         const chromeArgs = [
             `--user-data-dir=${profilePath}`,
             `--window-size=${windowWidth},${windowHeight}`,
+            // Inicia fora da tela para evitar flash antes do reposicionamento
+            '--window-position=-5000,-5000',
             `--force-device-scale-factor=${deviceScaleFactor}`,
             '--exclude-switches=enable-automation',
             '--no-first-run',
