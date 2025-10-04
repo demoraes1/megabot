@@ -356,6 +356,42 @@ function updateProfile(profileId, updates) {
     return true;
 }
 
+function normalizeWindowPosition(position = {}) {
+    if (!position || typeof position !== 'object') {
+        return null;
+    }
+
+    const toNumber = (value) => {
+        const num = Number(value);
+        return Number.isFinite(num) ? Math.round(num) : null;
+    };
+
+    const normalized = {
+        x: toNumber(position.x),
+        y: toNumber(position.y),
+        largura: toNumber(position.largura !== undefined ? position.largura : position.width),
+        altura: toNumber(position.altura !== undefined ? position.altura : position.height),
+        monitorId: position.monitorId !== undefined ? position.monitorId : null,
+        originalPositionId: position.originalPositionId !== undefined ? position.originalPositionId : null,
+        updatedAt: new Date().toISOString()
+    };
+
+    if (normalized.x === null || normalized.y === null) {
+        return null;
+    }
+
+    return normalized;
+}
+
+function updateProfilePosition(profileId, position) {
+    const normalized = normalizeWindowPosition(position);
+    if (!profileId || !normalized) {
+        return false;
+    }
+
+    return updateProfile(profileId, { 'window-position': normalized });
+}
+
 /**
  * Sincroniza IDs dos perfis no config.json com as pastas físicas existentes
  */
@@ -439,6 +475,7 @@ module.exports = {
   getProfileById,
   removeProfile,
   updateProfile,
+  updateProfilePosition,
   initializeProfileSystem,
   PROFILES_DIR,
   CONFIG_FILE,

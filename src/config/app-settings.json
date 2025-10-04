@@ -1,11 +1,11 @@
 {
   "links": [
-    "https://d2fk6j21dlblyb.cloudfront.net/?id=600390475",
-    "https://cacaopg.com/?id=739183528"
+    "https://lawnpg.com/?id=393228917",
+    "https://www.we-lawnpg.com/?id=760174163",
+    "https://dsmiiljrok12a.cloudfront.net/?id=142674772",
+    "https://d3s41b8baqupkv.cloudfront.net/?id=981756400"
   ],
   "proxies": [
-    "proxy.tourosnet.com.br:6120",
-    "proxy.tourosnet.com.br:6121",
     "proxy.tourosnet.com.br:6122",
     "proxy.tourosnet.com.br:6123",
     "proxy.tourosnet.com.br:6124",
@@ -89,15 +89,50 @@
     "0d27ebbd6013c62757e1__cr.br:2083cc334e54f30d@gw.dataimpulse.com:823"
   ],
   "pixKeys": [
-    { "id": 1, "tipo": "Telefone", "chave": "22920043037" },
-    { "id": 2, "tipo": "Telefone", "chave": "92920016871" },
-    { "id": 3, "tipo": "Telefone", "chave": "91920019773" },
-    { "id": 4, "tipo": "Telefone", "chave": "22920079208" },
-    { "id": 5, "tipo": "Telefone", "chave": "22920161340" },
-    { "id": 6, "tipo": "Telefone", "chave": "84933006045" },
-    { "id": 7, "tipo": "Telefone", "chave": "77920021026" },
-    { "id": 8, "tipo": "Telefone", "chave": "77933001979" },
-    { "id": 9, "tipo": "Telefone", "chave": "31933023539" }
+    { "id": 1, "tipo": "Telefone", "chave": "22920161340" },
+    { "id": 2, "tipo": "Telefone", "chave": "84933006045" },
+    { "id": 3, "tipo": "Telefone", "chave": "77920021026" },
+    { "id": 4, "tipo": "Telefone", "chave": "77933001979" },
+    { "id": 5, "tipo": "Telefone", "chave": "31933023539" },
+    { "id": 6, "tipo": "Telefone", "chave": "77920024387" },
+    { "id": 7, "tipo": "Telefone", "chave": "21920299824" },
+    { "id": 8, "tipo": "Telefone", "chave": "22920175289" },
+    { "id": 9, "tipo": "Telefone", "chave": "61920017634" },
+    { "id": 10, "tipo": "Telefone", "chave": "86933009668" },
+    { "id": 11, "tipo": "Telefone", "chave": "88933009943" },
+    { "id": 12, "tipo": "Telefone", "chave": "21920048348" },
+    { "id": 13, "tipo": "Telefone", "chave": "77920078449" },
+    { "id": 14, "tipo": "Telefone", "chave": "82933003246" },
+    { "id": 15, "tipo": "Telefone", "chave": "22920163261" },
+    { "id": 16, "tipo": "Telefone", "chave": "21920414801" },
+    { "id": 17, "tipo": "Telefone", "chave": "18981065223" },
+    { "id": 18, "tipo": "Telefone", "chave": "31920033819" },
+    { "id": 19, "tipo": "Telefone", "chave": "24920049725" },
+    { "id": 20, "tipo": "Telefone", "chave": "77920054029" },
+    { "id": 21, "tipo": "Telefone", "chave": "22920040843" },
+    { "id": 22, "tipo": "Telefone", "chave": "21920471585" },
+    { "id": 23, "tipo": "Telefone", "chave": "21920393932" },
+    { "id": 24, "tipo": "Telefone", "chave": "22920072427" },
+    { "id": 25, "tipo": "Telefone", "chave": "31920027869" },
+    { "id": 26, "tipo": "Telefone", "chave": "77920093727" },
+    { "id": 27, "tipo": "Telefone", "chave": "77920086028" },
+    { "id": 28, "tipo": "Telefone", "chave": "21920442320" },
+    { "id": 29, "tipo": "Telefone", "chave": "69920016326" },
+    { "id": 30, "tipo": "Telefone", "chave": "88933009008" },
+    { "id": 31, "tipo": "Telefone", "chave": "99920005506" },
+    { "id": 32, "tipo": "Telefone", "chave": "69933001249" },
+    { "id": 33, "tipo": "Telefone", "chave": "96920016492" },
+    { "id": 34, "tipo": "Telefone", "chave": "21920386527" },
+    { "id": 35, "tipo": "Telefone", "chave": "21920346689" },
+    { "id": 36, "tipo": "Telefone", "chave": "77920023422" },
+    { "id": 37, "tipo": "Telefone", "chave": "77920059138" },
+    { "id": 38, "tipo": "Telefone", "chave": "31933043400" },
+    { "id": 39, "tipo": "Telefone", "chave": "21920441954" },
+    { "id": 40, "tipo": "Telefone", "chave": "98920017204" },
+    { "id": 41, "tipo": "Telefone", "chave": "82933003985" },
+    { "id": 42, "tipo": "Telefone", "chave": "21920404260" },
+    { "id": 43, "tipo": "Telefone", "chave": "95920017424" },
+    { "id": 44, "tipo": "Telefone", "chave": "92920016919" }
   ],
   "extensions": [
     {
@@ -111,17 +146,17 @@
   ],
   "settings": {
     "delay": 5,
-    "openings": 24,
+    "openings": 1,
     "toggles": {
-      "proxy-mode-list": true,
-      "proxy-mode-rotating": false,
+      "proxy-mode-list": false,
+      "proxy-mode-rotating": true,
       "proxy-mode-none": false,
       "default-resolution-checkbox": true,
       "random-passwords-toggle": false,
       "delay-toggle": false,
       "mute-audio-toggle": true
     },
-    "lastSaved": "2025-10-03T20:40:48.074Z"
+    "lastSaved": "2025-10-04T17:32:51.146Z"
   },
   "resolution": {
     "useDefault": true,
@@ -138,9 +173,9 @@
     "withdrawPassword": "",
     "randomPasswords": false,
     "categoria": "slots",
-    "jogo": "gem saviour",
+    "jogo": "gem salviour",
     "pixKeyType": "PHONE",
     "generateWithdraw": false
   },
-  "selectedMonitor": "todos"
+  "selectedMonitor": "1"
 }

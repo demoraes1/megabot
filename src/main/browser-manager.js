@@ -477,6 +477,7 @@ const processarPosicoesMonitor = (monitorData, monitorId = null) => {
     const launchBrowserSequencial = async (posicao, browserIndex) => {
         let navegadorId;
         let profile = null;
+        let storedWindowPosition = null;
 
         if (options.profileId && profileManager) {
             try {
@@ -484,6 +485,7 @@ const processarPosicoesMonitor = (monitorData, monitorId = null) => {
                 if (profile) {
                     navegadorId = profile.navigatorId;
                     hasSpecificProfile = true;
+                    storedWindowPosition = profile['window-position'] || profile.windowPosition || null;
 
                     logger.info('Usando perfil existente com navigatorId ' + navegadorId + ':', {
                         profileId: profile.profile,
@@ -509,6 +511,30 @@ const processarPosicoesMonitor = (monitorData, monitorId = null) => {
 
         posicao.id = navegadorId;
 
+        if (options.profileId && storedWindowPosition && typeof storedWindowPosition === 'object') {
+            const ensureNumber = (value, fallback) => {
+                const num = Number(value);
+                return Number.isFinite(num) ? num : fallback;
+            };
+
+            const previousPosition = { ...posicao };
+            posicao.x = ensureNumber(storedWindowPosition.x, posicao.x);
+            posicao.y = ensureNumber(storedWindowPosition.y, posicao.y);
+            posicao.largura = ensureNumber(storedWindowPosition.largura, posicao.largura);
+            posicao.altura = ensureNumber(storedWindowPosition.altura, posicao.altura);
+            if (storedWindowPosition.monitorId !== undefined) {
+                posicao.monitorId = storedWindowPosition.monitorId;
+            }
+            if (storedWindowPosition.originalPositionId !== undefined) {
+                posicao.originalPositionId = storedWindowPosition.originalPositionId;
+            }
+
+            logger.info('Aplicando posicao salva para navegador ' + navegadorId + ':', {
+                anterior: previousPosition,
+                aplicada: posicao
+            });
+        }
+
         const urlIndex = navegadorId % (options.urls ? options.urls.length : 1);
 
         if (!profile && profileManager) {
@@ -526,6 +552,9 @@ const processarPosicoesMonitor = (monitorData, monitorId = null) => {
                         usuario: profile.usuario,
                         nome: profile.nome_completo
                     });
+                    if (!storedWindowPosition) {
+                        storedWindowPosition = profile['window-position'] || profile.windowPosition || null;
+                    }
                 } else {
                     profile = profileManager.createProfilePlaceholder(navegadorId);
                     logger.info('Perfil placeholder criado para navegador ' + navegadorId + ':', {
@@ -583,6 +612,26 @@ const processarPosicoesMonitor = (monitorData, monitorId = null) => {
                         totalJanelasMovidas += janelasMovidas;
                         const movidasReportadas = Math.min(totalJanelasMovidas, numNavegadores);
                         logger.info('Janela do navegador ' + navegadorId + ' reposicionada com sucesso (' + movidasReportadas + '/' + numNavegadores + ')');
+
+                        if (profile && profile.profile) {
+                            profileManager.updateProfilePosition(profile.profile, {
+                                x: posicao.x,
+                                y: posicao.y,
+                                largura: posicao.largura,
+                                altura: posicao.altura,
+                                monitorId: posicao.monitorId !== undefined ? posicao.monitorId : null,
+                                originalPositionId: posicao.originalPositionId !== undefined ? posicao.originalPositionId : null
+                            });
+                            profile['window-position'] = {
+                                x: posicao.x,
+                                y: posicao.y,
+                                largura: posicao.largura,
+                                altura: posicao.altura,
+                                monitorId: posicao.monitorId !== undefined ? posicao.monitorId : null,
+                                originalPositionId: posicao.originalPositionId !== undefined ? posicao.originalPositionId : null,
+                                updatedAt: new Date().toISOString()
+                            };
+                        }
                     } else {
                         logger.warn('Falha ao reposicionar janela do navegador ' + navegadorId);
                     }
@@ -591,6 +640,25 @@ const processarPosicoesMonitor = (monitorData, monitorId = null) => {
                 });
             } else {
                 logger.info('Movimento de janela desabilitado para navegador ' + navegadorId);
+                if (profile && profile.profile) {
+                    profileManager.updateProfilePosition(profile.profile, {
+                        x: posicao.x,
+                        y: posicao.y,
+                        largura: posicao.largura,
+                        altura: posicao.altura,
+                        monitorId: posicao.monitorId !== undefined ? posicao.monitorId : null,
+                        originalPositionId: posicao.originalPositionId !== undefined ? posicao.originalPositionId : null
+                    });
+                    profile['window-position'] = {
+                        x: posicao.x,
+                        y: posicao.y,
+                        largura: posicao.largura,
+                        altura: posicao.altura,
+                        monitorId: posicao.monitorId !== undefined ? posicao.monitorId : null,
+                        originalPositionId: posicao.originalPositionId !== undefined ? posicao.originalPositionId : null,
+                        updatedAt: new Date().toISOString()
+                    };
+                }
             }
 
             runPostLaunchScripts(navegadorId, browserIndex, profile).catch((error) => {
