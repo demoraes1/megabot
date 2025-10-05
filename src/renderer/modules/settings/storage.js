@@ -126,13 +126,13 @@ export function saveSettings() {
   try {
     if (window.electronAPI && window.electronAPI.saveSettings) {
       window.electronAPI.saveSettings(settings, true);
-      console.log('Configuracoes salvas automaticamente:', settings);
+      console.log('Configurações salvas automaticamente:', settings);
     } else {
       localStorage.setItem('app-settings', JSON.stringify(settings, null, 2));
-      console.log('Configuracoes salvas no localStorage (fallback):', settings);
+      console.log('Configurações salvas no localStorage (fallback):', settings);
     }
   } catch (error) {
-    console.error('Erro ao salvar configuracoes:', error);
+    console.error('Erro ao salvar configurações:', error);
   }
 }
 
@@ -146,7 +146,7 @@ export async function loadSettingsAsync() {
       }
     }
   } catch (error) {
-    console.error('Erro ao carregar configuracoes (async):', error);
+    console.error('Erro ao carregar configurações (async):', error);
   }
 
   const fallbackSettings = loadSettingsFromLocalStorage();
@@ -165,12 +165,12 @@ export function loadSettings() {
         .loadSettings()
         .then((settings) => {
           if (settings) {
-            console.log('Carregando configuracoes salvas:', settings);
+            console.log('Carregando configurações salvas:', settings);
             applyLoadedSettings(settings);
           }
         })
         .catch((error) => {
-          console.error('Erro ao carregar configuracoes via Electron:', error);
+          console.error('Erro ao carregar configurações via Electron:', error);
           const fallbackSettings = loadSettingsFromLocalStorage();
           if (fallbackSettings) {
             applyLoadedSettings(fallbackSettings);
@@ -179,7 +179,7 @@ export function loadSettings() {
       return;
     }
   } catch (error) {
-    console.error('Erro ao carregar configuracoes:', error);
+    console.error('Erro ao carregar configurações:', error);
   }
 
   const fallbackSettings = loadSettingsFromLocalStorage();
@@ -193,11 +193,11 @@ export function loadSettingsFromLocalStorage() {
     const storedSettings = localStorage.getItem('app-settings');
     if (storedSettings) {
       const parsed = JSON.parse(storedSettings);
-      console.log('Configuracoes carregadas do localStorage:', parsed);
+      console.log('Configurações carregadas do localStorage:', parsed);
       return parsed;
     }
   } catch (error) {
-    console.error('Erro ao carregar configuracoes do localStorage:', error);
+    console.error('Erro ao carregar configurações do localStorage:', error);
   }
   return null;
 }

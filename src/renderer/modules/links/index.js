@@ -1,4 +1,4 @@
-﻿import { showNotification, showCustomConfirm } from '../ui/notifications.js';
+import { showNotification, showCustomConfirm } from '../ui/notifications.js';
 
 import { debouncedSave } from '../settings/autosave.js';
 
@@ -50,7 +50,7 @@ import {
 
 function initializeLinkManagement() {
 
-  // BotAo principal adicionar links (abre popup de URLs)
+  // Botão principal adicionar links (abre popup de URLs)
 
   const linksBtn = document.getElementById('links-btn');
 
@@ -68,7 +68,7 @@ function initializeLinkManagement() {
 
 
 
-  // BotAo adicionar link dentro do popup
+  // Botão adicionar link dentro do popup
 
   const addItemBtn = document.getElementById('add-item-btn');
 
@@ -102,7 +102,7 @@ function initializeLinkManagement() {
 
 
 
-  // Atualizar o botAo na inicializaAAo
+  // Atualizar o botão na inicialização
 
   updateCriarContasButton();
 
@@ -114,7 +114,7 @@ function initializeLinkManagement() {
 
 
 
-  // BotAo adicionar extensAo
+  // Botão adicionar extensão
 
   const uploadExtensionBtn = document.getElementById('upload-extension-btn');
 
@@ -148,7 +148,7 @@ function initializeLinkManagement() {
 
 
 
-  // Input de extensAo
+  // Input de extensão
 
   const extensionInput = document.getElementById('extension-folder-input');
 
@@ -168,7 +168,7 @@ function initializeLinkManagement() {
 
 
 
-// FunAAes auxiliares
+// Funções auxiliares
 
 
 
@@ -190,7 +190,7 @@ function toggleLinksDropdown() {
 
 
 
-  // Se nAo hA links, mostrar mensagem
+  // Se não há links, mostrar mensagem
 
   if (links.length === 0) {
 
@@ -208,11 +208,11 @@ function toggleLinksDropdown() {
 
 
 
-  // Se hA apenas um link, executar diretamente
+  // Se há apenas um link, executar diretamente
 
   if (links.length === 1) {
 
-    console.log('Executando criaAAo de contas com link Anico:', links[0]);
+    console.log('Executando criação de contas com link único:', links[0]);
 
     executeAccountCreation(links[0]);
 
@@ -222,11 +222,11 @@ function toggleLinksDropdown() {
 
 
 
-  // Se hA mAltiplos links, mostrar dropdown
+  // Se há múltiplos links, mostrar dropdown
 
   if (dropdown && arrow && criarContasBtn) {
 
-    // Atualizar conteAdo do dropdown
+    // Atualizar conteúdo do dropdown
 
     updateLinksDropdownContent(links);
 
@@ -272,30 +272,30 @@ function toggleLinksDropdown() {
 
 
 
-// FunAAo para obter chaves PIX adicionadas
+// Função para obter chaves PIX adicionadas
 
 
 
 
 
 
-// FunAAo para atualizar contador de chaves PIX
+// Função para atualizar contador de chaves PIX
 
 
 
 
-// FunAAo para atualizar contadores por tipo de chave PIX
+// Função para atualizar contadores por tipo de chave PIX
 
 
 
 
-// FunAAo para atualizar contador de extensAes
+// Função para atualizar contador de extensões
 
 
 
 
 
-// FunAAo para aplicar estados dos toggles
+// Função para aplicar estados dos toggles
 
 function applyToggleStates(toggleStates) {
 
@@ -339,21 +339,21 @@ function applyToggleStates(toggleStates) {
 
 
 
-// FunAAo para atualizar conteAdo do dropdown
+// Função para atualizar conteúdo do dropdown
 
 
 
 
-// FunAAo para esconder dropdown
+// Função para esconder dropdown
 
 
 
 
-// FunAAo para executar navegaAAo com todos os links
+// Função para executar navegação com todos os links
 
 async function executeAllLinksNavigation() {
 
-  console.log('Iniciando navegaAAo com todos os links...');
+  console.log('Iniciando navegação com todos os links...');
 
 
 
@@ -439,7 +439,7 @@ async function executeAllLinksNavigation() {
 
         showNotification(
 
-          'Nenhum navegador ativo encontrado. Abra os navegadores primeiro usando o botAo "Abrir Navegadores".',
+          'Nenhum navegador ativo encontrado. Abra os navegadores primeiro usando o botão "Abrir Navegadores".',
 
           'warning',
 
@@ -449,7 +449,7 @@ async function executeAllLinksNavigation() {
 
         const errorMessage =
 
-          profilesResult.error || 'Nao foi possivel gerar dados de perfis.';
+          profilesResult.error || 'Não foi possível gerar dados de perfis.';
 
         showNotification(
 
@@ -493,7 +493,7 @@ async function executeAllLinksNavigation() {
 
       showNotification(
 
-        'Nenhum navegador ativo encontrado. Abra os navegadores primeiro usando o botAo "Abrir Navegadores".',
+        'Nenhum navegador ativo encontrado. Abra os navegadores primeiro usando o botão "Abrir Navegadores".',
 
         'warning',
 
@@ -505,13 +505,13 @@ async function executeAllLinksNavigation() {
 
 
 
-    // Verificar se hA pelo menos o mesmo nAmero de navegadores para os links
+    // Verificar se há pelo menos o mesmo número de navegadores para os links
 
     if (activeBrowsers.length < links.length) {
 
       showNotification(
 
-        `NAmero insuficiente de navegadores. VocA tem ${links.length} links mas apenas ${activeBrowsers.length} navegador(es) ativo(s). Abra mais navegadores.`,
+        `Número insuficiente de navegadores. Você tem ${links.length} links mas apenas ${activeBrowsers.length} navegador(es) ativo(s). Abra mais navegadores.`,
 
         'warning',
 
@@ -531,7 +531,7 @@ async function executeAllLinksNavigation() {
 
 
 
-    // Criar array de URLs distribuAdas de forma sequencial natural
+    // Criar array de URLs distribuídas de forma sequencial natural
 
     const distributedUrls = [];
 
@@ -549,78 +549,47 @@ async function executeAllLinksNavigation() {
 
 
 
-    console.log('DistribuiAAo de URLs:', distributedUrls);
+    console.log('Distribuição de URLs:', distributedUrls);
 
 
 
-    // Salvar URLs especAficas nos perfis dos navegadores correspondentes
+    // Salvar URLs específicas nos perfis dos navegadores correspondentes
 
-    console.log('Salvando URLs especAficas para cada navegador...');
+    console.log('Salvando URLs específicas para cada navegador...');
 
 
 
-    // Salvar a URL especAfica para cada navegador baseado na distribuiAAo
-
+    // Salvar a URL específica para cada navegador baseado na distribuição
     for (let i = 0; i < activeBrowsersWithProfiles.length; i++) {
-
       const browser = activeBrowsersWithProfiles[i];
-
       const urlForThisBrowser = distributedUrls[i];
 
-
-
       if (browser.profileId !== null) {
-
         try {
-
           const saveUrlResult = await window.electronAPI.saveUrlToProfiles(
-
             urlForThisBrowser,
-
             [browser.profileId],
-
           );
-
           if (saveUrlResult.success) {
-
             console.log(
-
               `URL ${urlForThisBrowser} salva no perfil ${browser.profileId} (navegador ${browser.navigatorId}) com sucesso:`,
-
               saveUrlResult.message,
-
             );
-
           } else {
-
             console.warn(
-
               `Falha ao salvar URL ${urlForThisBrowser} no perfil ${browser.profileId}:`,
-
               saveUrlResult.error,
-
             );
-
           }
-
         } catch (urlSaveError) {
-
           console.error(
-
             `Erro ao salvar URL ${urlForThisBrowser} no perfil ${browser.profileId}:`,
-
             urlSaveError,
-
           );
-
         }
-
       } else {
-
         console.log(
-
-          `Navegador ${browser.navigatorId} nAo possui perfil associado, URL ${urlForThisBrowser} nAo serA salva.`,
-
+          `Navegador ${browser.navigatorId} não possui perfil associado, URL ${urlForThisBrowser} não será salva.`,
         );
 
       }
@@ -629,7 +598,7 @@ async function executeAllLinksNavigation() {
 
 
 
-    // Navegar todos os navegadores com as URLs distribuAdas
+    // Navegar todos os navegadores com as URLs distribuídas
 
     const navigationResult = await window.electronAPI.navigateAllBrowsers(
 
@@ -679,7 +648,7 @@ async function executeAllLinksNavigation() {
 
       showNotification(
 
-        `Navegacao iniciada com sucesso em ${successCount} navegador(es) com ${links.length} link(s) distribuido(s). URLs salvas nos perfis.`,
+        `Navegação iniciada com sucesso em ${successCount} navegador(es) com ${links.length} link(s) distribuído(s). URLs salvas nos perfis.`,
 
         'success',
 
@@ -691,7 +660,7 @@ async function executeAllLinksNavigation() {
 
         console.log(
 
-          `[Navegacao] Injecao automatica concluida em ${injectionSuccessCount}/${navigationDetails.length || activeBrowsers.length} navegador(es).`,
+          `[Navegação] Injeção automática concluída em ${injectionSuccessCount}/${navigationDetails.length || activeBrowsers.length} navegador(es).`,
 
         );
 
@@ -703,7 +672,7 @@ async function executeAllLinksNavigation() {
 
         showNotification(
 
-          `Aviso: ${injectionFailureCount} navegador(es) falharam na injecao automatica. Consulte o console para detalhes.`,
+          `Aviso: ${injectionFailureCount} navegador(es) falharam na injeção automática. Consulte o console para detalhes.`,
 
           'warning',
 
@@ -721,7 +690,7 @@ async function executeAllLinksNavigation() {
 
             console.log(
 
-              `[Navegacao] Navegador ${result.browserId}: Navegando para ${result.url}`,
+              `[Navegação] Navegador ${result.browserId}: Navegando para ${result.url}`,
 
             );
 
@@ -729,7 +698,7 @@ async function executeAllLinksNavigation() {
 
             console.error(
 
-              `[Navegacao] Navegador ${result.browserId} falhou: ${result.error || 'Falha desconhecida'}`,
+              `[Navegação] Navegador ${result.browserId} falhou: ${result.error || 'Falha desconhecida'}`,
 
             );
 
@@ -755,7 +724,7 @@ async function executeAllLinksNavigation() {
 
     console.error(
 
-      'Erro na execuAAo da navegaAAo com todos os links:',
+      'Erro na execução da navegação com todos os links:',
 
       error,
 
@@ -763,7 +732,7 @@ async function executeAllLinksNavigation() {
 
     showNotification(
 
-      'Erro inesperado ao executar navegaAAo: ' + error.message,
+      'Erro inesperado ao executar navegação: ' + error.message,
 
       'error',
 
@@ -775,11 +744,11 @@ async function executeAllLinksNavigation() {
 
 
 
-// FunAAo para executar criaAAo de contas
+// Função para executar criação de contas
 
 async function executeAccountCreation(link) {
 
-  console.log('Iniciando criaAAo de contas para:', link);
+  console.log('Iniciando criação de contas para:', link);
 
 
 
@@ -845,7 +814,7 @@ async function executeAccountCreation(link) {
 
         showNotification(
 
-          'Nenhum navegador ativo encontrado. Abra os navegadores primeiro usando o botAo "Abrir Navegadores".',
+          'Nenhum navegador ativo encontrado. Abra os navegadores primeiro usando o botão "Abrir Navegadores".',
 
           'warning',
 
@@ -855,7 +824,7 @@ async function executeAccountCreation(link) {
 
         const errorMessage =
 
-          profilesResult.error || 'Nao foi possivel gerar dados de perfis.';
+          profilesResult.error || 'Não foi possível gerar dados de perfis.';
 
         showNotification(
 
@@ -937,7 +906,7 @@ async function executeAccountCreation(link) {
 
 
 
-    // Usar os IDs dos navegadores para verificaAAo
+    // Usar os IDs dos navegadores para verificação
 
     const activeBrowsers = activeBrowsersWithProfiles.map(
 
@@ -951,7 +920,7 @@ async function executeAccountCreation(link) {
 
       showNotification(
 
-        'Nenhum navegador ativo encontrado. Abra os navegadores primeiro usando o botAo "Abrir Navegadores".',
+        'Nenhum navegador ativo encontrado. Abra os navegadores primeiro usando o botão "Abrir Navegadores".',
 
         'warning',
 
@@ -1021,7 +990,7 @@ async function executeAccountCreation(link) {
 
       showNotification(
 
-        `Navegacao iniciada com sucesso em ${successCount} navegador(es) para: ${link}`,
+        `Navegação iniciada com sucesso em ${successCount} navegador(es) para: ${link}`,
 
         'success',
 
@@ -1033,7 +1002,7 @@ async function executeAccountCreation(link) {
 
         console.log(
 
-          `[Navegacao] Injecao automatica concluida em ${injectionSuccessCount}/${navigationDetails.length || successCount} navegador(es).`,
+          `[Navegação] Injeção automática concluída em ${injectionSuccessCount}/${navigationDetails.length || successCount} navegador(es).`,
 
         );
 
@@ -1045,7 +1014,7 @@ async function executeAccountCreation(link) {
 
         showNotification(
 
-          `Aviso: ${injectionFailureCount} navegador(es) falharam na injecao automatica. Consulte o console para detalhes.`,
+          `Aviso: ${injectionFailureCount} navegador(es) falharam na injeção automática. Consulte o console para detalhes.`,
 
           'warning',
 
@@ -1063,7 +1032,7 @@ async function executeAccountCreation(link) {
 
             console.log(
 
-              `[Navegacao] Navegador ${result.browserId}: Navegando para ${result.url}`,
+              `[Navegação] Navegador ${result.browserId}: Navegando para ${result.url}`,
 
             );
 
@@ -1071,7 +1040,7 @@ async function executeAccountCreation(link) {
 
             console.error(
 
-              `[Navegacao] Navegador ${result.browserId} falhou: ${result.error || 'Falha desconhecida'}`,
+              `[Navegação] Navegador ${result.browserId} falhou: ${result.error || 'Falha desconhecida'}`,
 
             );
 
@@ -1095,11 +1064,11 @@ async function executeAccountCreation(link) {
 
   } catch (error) {
 
-    console.error('Erro na execuAAo da criaAAo de contas:', error);
+    console.error('Erro na execução da criação de contas:', error);
 
     showNotification(
 
-      'Erro inesperado ao executar criaAAo de contas: ' + error.message,
+      'Erro inesperado ao executar criação de contas: ' + error.message,
 
       'error',
 
@@ -1111,17 +1080,17 @@ async function executeAccountCreation(link) {
 
 
 
-// FunAAo para normalizar URLs no frontend (similar A do backend)
+// Função para normalizar URLs no frontend (similar à do backend)
 
 
 
 
-// FunAAo para validar e normalizar URL quando o usuArio digita
+// Função para validar e normalizar URL quando o usuário digita
 
 
 
 
-// FunAAo global para remoAAo de links (chamada pelo HTML)
+// Função global para remoção de links (chamada pelo HTML)
 
 if (typeof window !== 'undefined') {
   window.removeLinkInputGlobal = removeLinkInput;

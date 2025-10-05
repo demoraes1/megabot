@@ -67,7 +67,7 @@ export function showCustomConfirm(message, onConfirm, onCancel = null) {
           <div class="w-8 h-8 bg-yellow-800 rounded-full flex items-center justify-center">
             <span class="text-yellow-300 text-lg">!</span>
           </div>
-          <h3 class="text-white font-semibold text-lg">Confirmacao</h3>
+          <h3 class="text-white font-semibold text-lg">Confirmação</h3>
         </div>
         <p class="text-gray-300 text-sm leading-relaxed">${message}</p>
       </div>

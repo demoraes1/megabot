@@ -25,7 +25,7 @@ function generateProfileId() {
 }
 
 
-// Disparar pre-aquecimento do Faker em background
+// Disparar pré-aquecimento do Faker em background
 initializeFaker({ background: true });
 
 
@@ -93,7 +93,7 @@ function loadAutomationSettings() {
 }
 
 /**
- * Gera dados principais de usuario e senhas com base nas configuracoes de automacao
+ * Gera dados principais de usuário e senhas com base nas configurações de automação
  * @returns {Promise<{ profileData: Object, automationSettings: Object }>}
  */
 async function buildProfileCoreData() {
@@ -119,7 +119,7 @@ async function buildProfileCoreData() {
       if (/^\d{6}$/.test(automationSettings.withdrawPassword)) {
         withdrawPassword = automationSettings.withdrawPassword;
       } else {
-        console.warn('Senha de saque invalida (deve ter 6 digitos), gerando nova:', automationSettings.withdrawPassword);
+        console.warn('Senha de saque inválida (deve ter 6 dígitos), gerando nova:', automationSettings.withdrawPassword);
         withdrawPassword = (await generateRandomNumbers(100000, 999999)).toString();
       }
     } else {
@@ -140,8 +140,8 @@ async function buildProfileCoreData() {
 }
 
 /**
- * Gera um novo perfil de usu?rio com dados aleat?rios ou configurados
- * @returns {Object} Perfil gerado com todos os dados necess?rios
+ * Gera um novo perfil de usuário com dados aleatórios ou configurados
+ * @returns {Object} Perfil gerado com todos os dados necessários
  */
 async function generateProfile() {
   try {

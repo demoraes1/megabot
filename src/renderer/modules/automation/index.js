@@ -1,4 +1,4 @@
-﻿import { showNotification, showCustomConfirm } from '../ui/notifications.js';
+import { showNotification, showCustomConfirm } from '../ui/notifications.js';
 import { debouncedSave } from '../settings/autosave.js';
 import { mapPixKeyTypeToFile } from '../settings/storage.js';
 import { LinkPopups, LinkNavigation, LinkPixAPI } from '../links/index.js';
@@ -26,18 +26,18 @@ function initializeButtons() {
     {
       id: 'sync-btn',
       action: () => {
-        console.log('BotAo de sincronizaAAo clicado');
+        console.log('Botão de sincronização clicado');
         if (window.syncPopup) {
           console.log('window.syncPopup encontrado, abrindo popup...');
           window.syncPopup.open();
         } else {
-          console.error('window.syncPopup nAo encontrado!');
+          console.error('window.syncPopup não encontrado!');
         }
       },
     },
     { id: 'pix-btn', action: () => showPopup('pix-popup-overlay') },
     { id: 'add-proxies-btn', action: () => showPopup('proxy-popup-overlay') },
-    // Nota: home-btn e reports-btn agora usam o sistema padronizado de injeAAo
+    // Nota: home-btn e reports-btn agora usam o sistema padronizado de injeção
   ];
 
   mainButtons.forEach(({ id, action }) => {
@@ -47,10 +47,10 @@ function initializeButtons() {
     }
   });
 
-  // Sistema padronizado de injeAAo de scripts
+  // Sistema padronizado de injeção de scripts
   initializeScriptInjectionButtons();
 
-  // BotAo Criar Contas (funcionalidade especial)
+  // Botão Criar Contas (funcionalidade especial)
   const criarContasBtn = document.getElementById('criar-contas-btn');
   if (criarContasBtn) {
     criarContasBtn.addEventListener('click', () => {
@@ -59,16 +59,16 @@ function initializeButtons() {
     });
   }
 
-  // BotAo All (carregar todos os links sequencialmente)
+  // Botão All (carregar todos os links sequencialmente)
   const allBtn = document.getElementById('all-btn');
   if (allBtn) {
     allBtn.addEventListener('click', () => {
-      console.log('BotAo All clicado');
+      console.log('Botão All clicado');
       executeAllLinksNavigation();
     });
   }
 
-  // BotAo Abrir Navegadores
+  // Botão Abrir Navegadores
   const openBrowsersBtn = document.getElementById('open-browsers-btn');
   if (openBrowsersBtn) {
     openBrowsersBtn.addEventListener('click', async () => {
@@ -76,18 +76,18 @@ function initializeButtons() {
     });
   }
 
-  // BotAo Excluir Todos os Perfis
+  // Botão Excluir Todos os Perfis
   const deleteAllProfilesBtn = document.getElementById(
     'delete-all-profiles-btn',
   );
   if (deleteAllProfilesBtn) {
     deleteAllProfilesBtn.addEventListener('click', async () => {
       const confirmed = await showCustomConfirm(
-        'Tem certeza que deseja excluir TODOS os perfis? Esta aAAo nAo pode ser desfeita e irA apagar todas as pastas de perfis e limpar o config.json.',
+        'Tem certeza que deseja excluir TODOS os perfis? Esta ação não pode ser desfeita e irá apagar todas as pastas de perfis e limpar o config.json.',
       );
       if (confirmed) {
         try {
-          // Mostrar barra de progressAo
+          // Mostrar barra de progressão
           showDeleteProgress();
 
           // Configurar listener para progresso
@@ -98,11 +98,11 @@ function initializeButtons() {
           const result = await window.electronAPI.deleteAllProfiles();
 
           if (result.success) {
-            // Aguardar um pouco para mostrar conclusAo
+            // Aguardar um pouco para mostrar conclusão
             setTimeout(() => {
               hideDeleteProgress();
               showNotification(
-                'Todos os perfis foram excluAdos com sucesso',
+                'Todos os perfis foram excluídos com sucesso',
                 'success',
               );
               // Limpar dados locais imediatamente
@@ -131,8 +131,8 @@ function initializeButtons() {
   }
 }
 
-// Sistema padronizado de injeAAo de scripts
-// FunAAo para verificar se hA chaves PIX do tipo selecionado
+// Sistema padronizado de injeção de scripts
+// Função para verificar se há chaves PIX do tipo selecionado
 function hasPixKeysOfSelectedType() {
   const selectedType = document.getElementById('pix-key-type')?.value || 'cpf';
   const mappedType = mapPixKeyTypeToFile(selectedType);
@@ -152,7 +152,7 @@ function hasPixKeysOfSelectedType() {
         CNPJ: 'CNPJ',
         'E-mail': 'EMAIL',
         Telefone: 'PHONE',
-        'Chave AleatAria': 'EVP',
+        'Chave Aleatória': 'EVP',
       };
 
       return typeMapping[identifiedType] === mappedType;
@@ -164,7 +164,7 @@ function hasPixKeysOfSelectedType() {
 }
 
 function initializeScriptInjectionButtons() {
-  // Busca todos os botAes com data-inject-script
+  // Busca todos os botões com data-inject-script
   const scriptButtons = document.querySelectorAll('[data-inject-script]');
 
   scriptButtons.forEach((button) => {
@@ -217,7 +217,7 @@ function initializeScriptInjectionButtons() {
                 ? ` Perfis sem chave: ${missingProfiles.join(', ')}`
                 : '';
             showNotification(
-              `Erro: Nao ha chaves PIX do tipo "${selectedTypeText}" disponAveis.` +
+              `Erro: Não há chaves PIX do tipo "${selectedTypeText}" disponíveis.` +
                 missingInfo,
               'error',
             );
@@ -247,7 +247,7 @@ function initializeScriptInjectionButtons() {
 
         await window.electronAPI.injectScript(scriptName, syncStates);
 
-        // Mostra notificaAAo de sucesso
+        // Mostra notificação de sucesso
         showNotification(notificationMessage, 'success');
 
         console.log(
@@ -261,7 +261,7 @@ function initializeScriptInjectionButtons() {
   });
 }
 
-// FunAAo para injetar script customizado
+// Função para injetar script customizado
 async function injectCustomScript(
   scriptCode,
   notificationMessage = 'Script customizado executado',
@@ -324,7 +324,7 @@ function initializePopups() {
   });
 }
 
-// Contadores (delay, instAncias)
+// Contadores (delay, instâncias)
 function initializeCounters() {
   // Contador de delay
   const decreaseDelay = document.getElementById('decrease-delay');
@@ -349,7 +349,7 @@ function initializeCounters() {
     });
   }
 
-  // Contador de aberturas simultAneas
+  // Contador de aberturas simultâneas
   const decreaseOpenings = document.getElementById('decrease-openings');
   const increaseOpenings = document.getElementById('increase-openings');
   const openingsCount = document.getElementById('openings-count');

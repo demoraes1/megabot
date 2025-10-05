@@ -9,7 +9,7 @@ class PixValidator {
             CNPJ: 'CNPJ',
             EMAIL: 'E-mail',
             PHONE: 'Telefone',
-            RANDOM: 'Chave Aleatória'
+            RANDOM: 'Chave Aleatoria'
         };
     }
 
@@ -192,7 +192,7 @@ class PixValidator {
             [this.pixTypes.EMAIL]: 0,
             [this.pixTypes.PHONE]: 0,
             [this.pixTypes.RANDOM]: 0,
-            'Inválidas': 0
+            'INVALID': 0
         };
 
         if (!Array.isArray(pixKeys)) {
@@ -204,7 +204,7 @@ class PixValidator {
             if (type) {
                 counts[type]++;
             } else {
-                counts['Inválidas']++;
+                counts['INVALID']++;
             }
         });
 
@@ -230,7 +230,7 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = PixValidator;
 }
 
-console.log('Módulo PixValidator carregado com sucesso');
+console.log('PixValidator module loaded successfully');
 
 
 

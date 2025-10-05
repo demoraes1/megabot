@@ -1,4 +1,4 @@
-﻿let removeEmptyLinkInputsHook = () => {};
+let removeEmptyLinkInputsHook = () => {};
 let executeAccountCreationHook = (link) => {
   console.warn('executeAccountCreation hook not configured', link);
 };
@@ -64,7 +64,7 @@ export function updateLinksDropdownContent(links) {
         `;
 
     linkItem.addEventListener('click', () => {
-      console.log('Executando criacao de contas com link selecionado:', link);
+      console.log('Executando criação de contas com link selecionado:', link);
       executeAccountCreationHook(link);
       hideLinksDropdown();
     });

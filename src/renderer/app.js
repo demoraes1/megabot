@@ -1,4 +1,4 @@
-﻿import { initializeNavigationEvents } from './modules/navigation/events.js';
+import { initializeNavigationEvents } from './modules/navigation/events.js';
 import { initializeTabSystem } from './modules/ui/tabs.js';
 import { loadSettingsAsync } from './modules/settings/storage.js';
 import { initializeAutoSave } from './modules/settings/autosave.js';
