@@ -140,13 +140,13 @@
       "name": "HTML5 Universal Speed Hack",
       "directory": "html5-universal-speed-hack",
       "path": "html5-universal-speed-hack",
-      "enabled": true,
+      "enabled": false,
       "description": "Speeds up or slows down browser games, HTML5 and more..."
     }
   ],
   "settings": {
     "delay": 5,
-    "openings": 1,
+    "openings": 5,
     "toggles": {
       "proxy-mode-list": false,
       "proxy-mode-rotating": true,
@@ -156,7 +156,7 @@
       "delay-toggle": false,
       "mute-audio-toggle": true
     },
-    "lastSaved": "2025-10-06T18:48:58.116Z"
+    "lastSaved": "2025-10-06T19:16:27.265Z"
   },
   "resolution": {
     "useDefault": true,

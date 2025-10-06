@@ -38,8 +38,133 @@ const logger = {
 
 logger.info('Profile Manager carregado com sucesso');
 
+function calculateWindowBounds(position, config) {
+    const fallbackWidth = Math.round(config.LARGURA_LOGICA * config.FATOR_ESCALA);
+    const fallbackHeight = Math.round(config.ALTURA_LOGICA * config.FATOR_ESCALA);
+
+    return {
+        x: Math.round(position?.x ?? 0),
+        y: Math.round(position?.y ?? 0),
+        width: Math.round(position?.largura ?? fallbackWidth),
+        height: Math.round(position?.altura ?? fallbackHeight)
+    };
+}
+
+function getBrowserConnection(browser) {
+    if (!browser) {
+        return null;
+    }
+
+    if (browser._connection && typeof browser._connection.send === 'function') {
+        return browser._connection;
+    }
+
+    if (browser.connection && typeof browser.connection.send === 'function') {
+        return browser.connection;
+    }
+
+    return null;
+}
+
+function resolveTargetId(page) {
+    if (!page || typeof page.target !== 'function') {
+        return null;
+    }
+
+    const target = page.target();
+    if (!target) {
+        return null;
+    }
+
+    if (typeof target._targetId === 'string') {
+        return target._targetId;
+    }
+
+    if (target._targetInfo && typeof target._targetInfo.targetId === 'string') {
+        return target._targetInfo.targetId;
+    }
+
+    if (typeof target._id === 'string') {
+        return target._id;
+    }
+
+    return null;
+}
+
+async function moveWindowUsingInstance(browser, page, position, config) {
+    let windowId = null;
+
+    try {
+        const connection = getBrowserConnection(browser);
+        if (!connection) {
+            throw new Error('Conexao CDP indisponivel');
+        }
+
+        const targetId = resolveTargetId(page);
+        if (!targetId) {
+            throw new Error('Target da pagina indisponivel');
+        }
+
+        const response = await connection.send('Browser.getWindowForTarget', { targetId });
+        windowId = response?.windowId ?? null;
+        if (windowId === null || windowId === undefined) {
+            throw new Error('WindowId nao retornado pelo Chrome');
+        }
+
+        const bounds = calculateWindowBounds(position, config);
+
+        await connection.send('Browser.setWindowBounds', {
+            windowId,
+            bounds: {
+                left: bounds.x,
+                top: bounds.y,
+                width: bounds.width,
+                height: bounds.height,
+                windowState: 'normal'
+            }
+        });
+
+        try {
+            await connection.send('Browser.bringToFront', { windowId });
+        } catch (bringError) {
+            logger.debug('Falha ao trazer janela ' + windowId + ' para frente: ' + bringError.message);
+        }
+
+        return { success: true, windowId };
+    } catch (error) {
+        logger.warn('Reposicionamento via instancia falhou para navegador ' + (position?.id ?? 'desconhecido') + ': ' + error.message);
+        return { success: false, error: error.message, windowId };
+    }
+}
+
+function updateProfileWindowData(profile, position) {
+    if (!profile || !profile.profile) {
+        return;
+    }
+
+    const payload = {
+        x: position?.x ?? null,
+        y: position?.y ?? null,
+        largura: position?.largura ?? null,
+        altura: position?.altura ?? null,
+        monitorId: position && position.monitorId !== undefined ? position.monitorId : null,
+        originalPositionId: position && position.originalPositionId !== undefined ? position.originalPositionId : null
+    };
+
+    try {
+        profileManager.updateProfilePosition(profile.profile, payload);
+    } catch (error) {
+        logger.warn('Falha ao atualizar posicao do perfil ' + profile.profile + ': ' + error.message);
+    }
+
+    profile['window-position'] = {
+        ...payload,
+        updatedAt: new Date().toISOString()
+    };
+}
+
 // Sistema de rastreamento de navegadores
-const activeBrowsers = new Map(); // Map<navigatorId, { browser, page }>
+const activeBrowsers = new Map(); // Map<navigatorId, { browser, page, profile, windowId }>
 const navigationEvents = new EventEmitter();
 navigationEvents.setMaxListeners(100);
 const launchEvents = new EventEmitter();
@@ -594,7 +719,19 @@ const processarPosicoesMonitor = (monitorData, monitorId = null) => {
             console.log('[DEBUG] Iniciando stealth.startBrowser para navegador ' + navegadorId);
             const { browser, page } = await stealth.startBrowser(instanceOptions);
             console.log('[DEBUG] stealth.startBrowser concluido para navegador ' + navegadorId);
-            activeBrowsers.set(String(navegadorId), { browser, page, profile });
+
+            let moveResult = { success: false, windowId: null };
+            if (!options.disableMoverJanelas) {
+                moveResult = await moveWindowUsingInstance(browser, page, posicao, configMovimentacao);
+                if (moveResult.success) {
+                    totalJanelasMovidas += 1;
+                    const movidasReportadas = Math.min(totalJanelasMovidas, numNavegadores);
+                    logger.info('Janela do navegador ' + navegadorId + ' reposicionada via instancia (' + movidasReportadas + '/' + numNavegadores + ')');
+                    updateProfileWindowData(profile, posicao);
+                }
+            }
+
+            activeBrowsers.set(String(navegadorId), { browser, page, profile, windowId: moveResult.windowId ?? null });
             browserStateEvents.emit('active-browsers-changed', getActiveBrowsersWithProfiles());
 
             browser.on('disconnected', () => {
@@ -606,59 +743,22 @@ const processarPosicoesMonitor = (monitorData, monitorId = null) => {
             logger.info('Navegador ID_' + navegadorId + ' lancado com sucesso em single-process.');
             launchedBrowsers.push({ browser, page });
 
-            if (!options.disableMoverJanelas) {
+            if (!options.disableMoverJanelas && !moveResult.success) {
                 moverJanelas([posicao], configMovimentacao).then((janelasMovidas) => {
                     if (janelasMovidas > 0) {
                         totalJanelasMovidas += janelasMovidas;
                         const movidasReportadas = Math.min(totalJanelasMovidas, numNavegadores);
                         logger.info('Janela do navegador ' + navegadorId + ' reposicionada com sucesso (' + movidasReportadas + '/' + numNavegadores + ')');
-
-                        if (profile && profile.profile) {
-                            profileManager.updateProfilePosition(profile.profile, {
-                                x: posicao.x,
-                                y: posicao.y,
-                                largura: posicao.largura,
-                                altura: posicao.altura,
-                                monitorId: posicao.monitorId !== undefined ? posicao.monitorId : null,
-                                originalPositionId: posicao.originalPositionId !== undefined ? posicao.originalPositionId : null
-                            });
-                            profile['window-position'] = {
-                                x: posicao.x,
-                                y: posicao.y,
-                                largura: posicao.largura,
-                                altura: posicao.altura,
-                                monitorId: posicao.monitorId !== undefined ? posicao.monitorId : null,
-                                originalPositionId: posicao.originalPositionId !== undefined ? posicao.originalPositionId : null,
-                                updatedAt: new Date().toISOString()
-                            };
-                        }
+                        updateProfileWindowData(profile, posicao);
                     } else {
                         logger.warn('Falha ao reposicionar janela do navegador ' + navegadorId);
                     }
                 }).catch((error) => {
                     logger.error('Erro ao mover janela do navegador ' + navegadorId + ':', error.message);
                 });
-            } else {
+            } else if (options.disableMoverJanelas) {
                 logger.info('Movimento de janela desabilitado para navegador ' + navegadorId);
-                if (profile && profile.profile) {
-                    profileManager.updateProfilePosition(profile.profile, {
-                        x: posicao.x,
-                        y: posicao.y,
-                        largura: posicao.largura,
-                        altura: posicao.altura,
-                        monitorId: posicao.monitorId !== undefined ? posicao.monitorId : null,
-                        originalPositionId: posicao.originalPositionId !== undefined ? posicao.originalPositionId : null
-                    });
-                    profile['window-position'] = {
-                        x: posicao.x,
-                        y: posicao.y,
-                        largura: posicao.largura,
-                        altura: posicao.altura,
-                        monitorId: posicao.monitorId !== undefined ? posicao.monitorId : null,
-                        originalPositionId: posicao.originalPositionId !== undefined ? posicao.originalPositionId : null,
-                        updatedAt: new Date().toISOString()
-                    };
-                }
+                updateProfileWindowData(profile, posicao);
             }
 
             runPostLaunchScripts(navegadorId, browserIndex, profile).catch((error) => {
