@@ -5,6 +5,7 @@
   displayExtension as managerDisplayExtension,
   removeExtension as managerRemoveExtension,
   updateExtensionCount as managerUpdateCount,
+  openExtensionSelector as managerOpenSelector,
 } from '../../extensions/manager.js';
 
 function getAddedExtensions() {
@@ -13,6 +14,10 @@ function getAddedExtensions() {
 
 function handleExtensionUpload(event) {
   managerHandleUpload(event);
+}
+
+function openExtensionSelector() {
+  managerOpenSelector();
 }
 
 function displayExtension(entry) {
@@ -31,7 +36,11 @@ export {
   setExtensions,
   getAddedExtensions,
   handleExtensionUpload,
+  openExtensionSelector,
   displayExtension,
   removeExtension,
   updateExtensionCount,
 };
+
+
+

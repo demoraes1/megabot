@@ -136,11 +136,11 @@
   ],
   "extensions": [
     {
-      "id": "16858fd5-e84e-45bf-9e7e-e60cbb546010",
+      "id": "32b07b3b-a947-40df-a6ac-a94b38955fbc",
       "name": "HTML5 Universal Speed Hack",
       "directory": "html5-universal-speed-hack",
       "path": "html5-universal-speed-hack",
-      "enabled": false,
+      "enabled": true,
       "description": "Speeds up or slows down browser games, HTML5 and more..."
     }
   ],
@@ -156,7 +156,7 @@
       "delay-toggle": false,
       "mute-audio-toggle": true
     },
-    "lastSaved": "2025-10-04T17:32:51.146Z"
+    "lastSaved": "2025-10-06T18:48:58.116Z"
   },
   "resolution": {
     "useDefault": true,

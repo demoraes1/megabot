@@ -16,6 +16,7 @@ import { getAddedLinks, getToggleStates } from './groups/link-data.js';
 import {
   getAddedExtensions,
   handleExtensionUpload,
+  openExtensionSelector,
   displayExtension,
   removeExtension,
   updateExtensionCount,
@@ -122,13 +123,7 @@ function initializeLinkManagement() {
 
     uploadExtensionBtn.addEventListener('click', () => {
 
-      const extensionInput = document.getElementById('extension-folder-input');
-
-      if (extensionInput) {
-
-        extensionInput.click();
-
-      }
+      openExtensionSelector();
 
     });
 
@@ -1217,6 +1212,7 @@ const LinkPixAPI = {
 const LinkExtensionsAPI = {
   getAddedExtensions,
   handleExtensionUpload,
+  openExtensionSelector,
   displayExtension,
   removeExtension,
   updateExtensionCount,
@@ -1268,3 +1264,5 @@ export {
   LinkNavigation,
   LinkUtils,
 };
+
+

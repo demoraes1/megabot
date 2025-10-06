@@ -368,6 +368,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
    },
 
   extensions: {
+    selectDirectory: async () => {
+      try {
+        const result = await ipcRenderer.invoke('extensions:select-directory');
+        return result;
+      } catch (error) {
+        console.error('Erro ao selecionar pasta de extensão via IPC:', error);
+        throw error;
+      }
+    },
     importExtension: async (sourcePath) => {
       try {
         const result = await ipcRenderer.invoke('extensions:import', sourcePath);

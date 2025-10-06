@@ -317,24 +317,19 @@ function clearFileInput(input) {
   }
 }
 
-async function handleExtensionUpload(event) {
-  const input = event?.target;
-  const files = Array.from(input?.files || []);
-  if (files.length === 0) {
-    return;
-  }
-
-  const firstFile = files[0];
-  const folderPath = extractFolderPathFromFile(firstFile);
-
-  if (!folderPath) {
+async function importExtensionFromPath(folderPath) {
+  if (!folderPath || typeof folderPath !== 'string') {
     showNotification('Nao foi possivel localizar a pasta selecionada.', 'error');
-    clearFileInput(input);
+    scheduleMetadataRefresh();
     return;
   }
 
   try {
-    if (!window.electronAPI || !window.electronAPI.extensions || typeof window.electronAPI.extensions.importExtension !== 'function') {
+    if (
+      !window.electronAPI ||
+      !window.electronAPI.extensions ||
+      typeof window.electronAPI.extensions.importExtension !== 'function'
+    ) {
       throw new Error('Módulo de extensões indisponível.');
     }
 
@@ -350,9 +345,69 @@ async function handleExtensionUpload(event) {
     console.error('[Extensions] Erro ao importar extensão:', error);
     showNotification(error.message || 'Falha ao importar extensão.', 'error');
   } finally {
-    clearFileInput(input);
     scheduleMetadataRefresh();
   }
+}
+
+async function handleExtensionUpload(event) {
+  if (typeof event === 'string') {
+    await importExtensionFromPath(event);
+    return;
+  }
+
+  if (event && typeof event.folderPath === 'string') {
+    await importExtensionFromPath(event.folderPath);
+    return;
+  }
+
+  const input = event?.target;
+  const files = Array.from(input?.files || []);
+  if (files.length === 0) {
+    return;
+  }
+
+  const firstFile = files[0];
+  const folderPath = extractFolderPathFromFile(firstFile);
+
+  if (!folderPath) {
+    showNotification('Nao foi possivel localizar a pasta selecionada.', 'error');
+    clearFileInput(input);
+    return;
+  }
+
+  await importExtensionFromPath(folderPath);
+  clearFileInput(input);
+}
+
+async function openExtensionSelector() {
+  const api = window.electronAPI?.extensions;
+
+  if (api && typeof api.selectDirectory === 'function') {
+    try {
+      const result = await api.selectDirectory();
+      if (!result || result.canceled || !result.path) {
+        if (result && result.error) {
+          showNotification(result.error, 'error');
+        }
+        return;
+      }
+
+      await importExtensionFromPath(result.path);
+      return;
+    } catch (error) {
+      console.error('[Extensions] Erro ao selecionar pasta de extensão:', error);
+      showNotification(error.message || 'Falha ao selecionar pasta de extensão.', 'error');
+      return;
+    }
+  }
+
+  const input = document.getElementById('extension-folder-input');
+  if (input) {
+    input.click();
+    return;
+  }
+
+  showNotification('Entrada de extensao nao encontrada.', 'error');
 }
 
 function displayExtension(entry) {
@@ -524,6 +579,7 @@ export {
   setExtensions,
   getExtensions,
   handleExtensionUpload,
+  openExtensionSelector,
   displayExtension,
   removeExtension,
   updateExtensionCount,

@@ -1,4 +1,4 @@
-﻿const { app, BrowserWindow, ipcMain } = require('electron');
+﻿const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs').promises;
 const fsSync = require('fs');
@@ -871,6 +871,38 @@ ipcMain.handle('extensions:remove', async (event, identifier) => {
   } catch (error) {
     console.error('Erro ao remover extensão:', error);
     return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('extensions:select-directory', async () => {
+  try {
+    const result = await dialog.showOpenDialog({
+      title: 'Selecione a pasta da extensão',
+      properties: ['openDirectory'],
+    });
+
+    if (result.canceled || !Array.isArray(result.filePaths) || result.filePaths.length === 0) {
+      return { canceled: true };
+    }
+
+    const folderPath = result.filePaths[0];
+    if (!folderPath) {
+      return { canceled: true };
+    }
+
+    try {
+      const stats = fsSync.statSync(folderPath);
+      if (!stats.isDirectory()) {
+        return { canceled: true, error: 'Selecione uma pasta válida.' };
+      }
+    } catch (error) {
+      return { canceled: true, error: error.message };
+    }
+
+    return { canceled: false, path: folderPath };
+  } catch (error) {
+    console.error('Erro ao selecionar pasta de extensão:', error);
+    return { canceled: true, error: error.message };
   }
 });
 
