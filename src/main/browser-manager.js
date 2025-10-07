@@ -4,6 +4,7 @@ const { EventEmitter } = require('events');
 const { moverJanelas } = require('../browser-logic/moverjanelas.js');
 const { carregarDadosMonitores } = require('./monitor-detector.js');
 const stealth = require('../browser-logic/stealth-instance.js');
+const taskbarOverlay = require('./taskbar-overlay');
 
 // Importar o profile-manager
 const profileManager = require('../automation/profile-manager.js');
@@ -203,7 +204,7 @@ function updateProfileWindowData(profile, position) {
     };
 }
 
-function setupWindowRepositionListeners(browser, navigatorId, position, config) {
+function setupWindowRepositionListeners(browser, navigatorId, position, config, browserPid = null, allowReposition = true) {
     const scheduledTargets = new Set();
 
     const scheduleReposition = (target) => {
@@ -223,7 +224,11 @@ function setupWindowRepositionListeners(browser, navigatorId, position, config) 
 
         scheduledTargets.add(targetId);
         setTimeout(() => {
-            moveWindowByTargetId(browser, targetId, position, config)
+            const repositionPromise = allowReposition
+                ? moveWindowByTargetId(browser, targetId, position, config)
+                : Promise.resolve({ success: false, windowId: null });
+
+            repositionPromise
                 .then((result) => {
                     if (result.success) {
                         logger.debug('Alvo reposicionado para navegador ' + navigatorId + ' (tipo: ' + targetType + ').');
@@ -235,9 +240,31 @@ function setupWindowRepositionListeners(browser, navigatorId, position, config) 
                             }
                         }
                     }
+
+                    if (taskbarOverlay.isSupported()) {
+                        taskbarOverlay.applyOverlayForNavigator({
+                            navigatorId,
+                            browserPid,
+                        }).then((overlayResult) => {
+                            if (overlayResult?.success && overlayResult.hwnd) {
+                                const entry = activeBrowsers.get(String(navigatorId));
+                                if (entry) {
+                                    entry.overlay = {
+                                        hwnd: overlayResult.hwnd,
+                                        iconPath: overlayResult.iconPath,
+                                    };
+                                    activeBrowsers.set(String(navigatorId), entry);
+                                }
+                            }
+                        }).catch((error) => {
+                            logger.warn('Falha ao reaplicar overlay do navegador ' + navigatorId + ': ' + error.message);
+                        });
+                    }
                 })
                 .catch((error) => {
-                    logger.debug('Falha ao reposicionar alvo adicional do navegador ' + navigatorId + ': ' + error.message);
+                    if (allowReposition) {
+                        logger.debug('Falha ao reposicionar alvo adicional do navegador ' + navigatorId + ': ' + error.message);
+                    }
                 })
                 .finally(() => {
                     scheduledTargets.delete(targetId);
@@ -269,7 +296,7 @@ function setupWindowRepositionListeners(browser, navigatorId, position, config) 
 }
 
 // Sistema de rastreamento de navegadores
-const activeBrowsers = new Map(); // Map<navigatorId, { browser, page, profile, windowId }>
+const activeBrowsers = new Map(); // Map<navigatorId, { browser, page, profile, windowId, position, pid, windowConfig, overlay }>
 const navigationEvents = new EventEmitter();
 navigationEvents.setMaxListeners(100);
 const launchEvents = new EventEmitter();
@@ -825,6 +852,9 @@ const processarPosicoesMonitor = (monitorData, monitorId = null) => {
             const { browser, page } = await stealth.startBrowser(instanceOptions);
             console.log('[DEBUG] stealth.startBrowser concluido para navegador ' + navegadorId);
 
+            const browserProcess = typeof browser.process === 'function' ? browser.process() : null;
+            const browserPid = browserProcess ? browserProcess.pid : null;
+
             const storedPosition = {
                 id: posicao.id,
                 x: posicao.x,
@@ -852,18 +882,42 @@ const processarPosicoesMonitor = (monitorData, monitorId = null) => {
                 profile,
                 windowId: moveResult.windowId ?? null,
                 position: storedPosition,
+                pid: browserPid,
                 windowConfig: {
                     ...configMovimentacao
-                }
+                },
+                overlay: null
             });
-            if (!options.disableMoverJanelas) {
-                setupWindowRepositionListeners(browser, navegadorId, storedPosition, configMovimentacao);
-            }
+            setupWindowRepositionListeners(
+                browser,
+                navegadorId,
+                storedPosition,
+                configMovimentacao,
+                browserPid,
+                options.disableMoverJanelas !== true
+            );
             browserStateEvents.emit('active-browsers-changed', getActiveBrowsersWithProfiles());
 
             browser.on('disconnected', () => {
                 console.log('Navegador ' + navegadorId + ' foi fechado.');
-                activeBrowsers.delete(String(navegadorId));
+                const key = String(navegadorId);
+                const entry = activeBrowsers.get(key);
+
+                if (taskbarOverlay.isSupported()) {
+                    const overlayInfo = entry?.overlay;
+                    if (overlayInfo?.hwnd) {
+                        taskbarOverlay.clearOverlayByHandle(overlayInfo.hwnd).catch((error) => {
+                            logger.warn('Falha ao limpar overlay do navegador ' + navegadorId + ': ' + error.message);
+                        });
+                    } else {
+                        taskbarOverlay.clearOverlayForNavigator(navegadorId, browserPid).catch((error) => {
+                            logger.warn('Falha ao limpar overlay do navegador ' + navegadorId + ': ' + error.message);
+                        });
+                    }
+                    taskbarOverlay.forgetNavigatorOverlay(navegadorId);
+                }
+
+                activeBrowsers.delete(key);
                 browserStateEvents.emit('active-browsers-changed', getActiveBrowsersWithProfiles());
             });
 
@@ -896,6 +950,26 @@ const processarPosicoesMonitor = (monitorData, monitorId = null) => {
                 storedPosition.largura = posicao.largura;
                 storedPosition.altura = posicao.altura;
                 updateProfileWindowData(profile, storedPosition);
+            }
+
+            if (taskbarOverlay.isSupported()) {
+                taskbarOverlay.applyOverlayForNavigator({
+                    navigatorId,
+                    browserPid,
+                }).then((overlayResult) => {
+                    if (overlayResult?.success && overlayResult.hwnd) {
+                        const entry = activeBrowsers.get(String(navegadorId));
+                        if (entry) {
+                            entry.overlay = {
+                                hwnd: overlayResult.hwnd,
+                                iconPath: overlayResult.iconPath,
+                            };
+                            activeBrowsers.set(String(navegadorId), entry);
+                        }
+                    }
+                }).catch((error) => {
+                    logger.warn('Falha ao aplicar overlay do navegador ' + navegadorId + ': ' + error.message);
+                });
             }
 
             runPostLaunchScripts(navegadorId, browserIndex, profile).catch((error) => {
