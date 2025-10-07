@@ -5,7 +5,7 @@ const { app } = require('electron');
 const { windowManager } = require('node-window-manager');
 
 const OVERLAY_ICON_SIZE = 32;
-const ICON_VERSION = 'v2';
+const ICON_VERSION = 'v3';
 const DIGIT_HEIGHT = 7;
 const DIGIT_WIDTH = 5;
 const DIGIT_SPACING = 1;
@@ -253,9 +253,9 @@ function createDigitIcon(label) {
   const buffer = createPixelBuffer();
 
   const textColor = { r: 255, g: 255, b: 255, a: 255 };
-  const shadowColor = { r: 15, g: 23, b: 42, a: 180 };
-  const circleColor = { r: 59, g: 130, b: 246, a: 255 };
-  const ringColor = { r: 29, g: 78, b: 216, a: 255 };
+  const highlightColor = { r: 255, g: 255, b: 255, a: 220 };
+  const circleColor = { r: 220, g: 38, b: 38, a: 255 };
+  const ringColor = { r: 153, g: 27, b: 27, a: 255 };
 
   const center = (OVERLAY_ICON_SIZE - 1) / 2;
   const radius = (OVERLAY_ICON_SIZE / 2) - 2;
@@ -291,7 +291,7 @@ function createDigitIcon(label) {
     }
   };
 
-  paintGlyph(shadowColor, 1, 1);
+  paintGlyph(highlightColor, -1, -1);
   paintGlyph(textColor, 0, 0);
 
   return buffer;
