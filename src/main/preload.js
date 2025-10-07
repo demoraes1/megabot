@@ -133,6 +133,41 @@ contextBridge.exposeInMainWorld('electronAPI', {
     }
   },
 
+  mirrorMode: {
+    getStatus: async () => {
+      try {
+        const result = await ipcRenderer.invoke('mirror-mode:status');
+        if (result && result.success) {
+          return result.status;
+        }
+        throw new Error(result?.error || 'Falha ao obter status do modo espelho');
+      } catch (error) {
+        console.error('Erro ao consultar status do modo espelho via IPC:', error);
+        throw error;
+      }
+    },
+    toggle: async (options = {}) => {
+      try {
+        const result = await ipcRenderer.invoke('mirror-mode:toggle', options);
+        return result;
+      } catch (error) {
+        console.error('Erro ao alternar modo espelho via IPC:', error);
+        throw error;
+      }
+    },
+    onStatusChange: (callback) => {
+      if (typeof callback !== 'function') {
+        return () => {};
+      }
+      const channel = 'mirror-mode-status';
+      const listener = (_event, status) => callback(status);
+      ipcRenderer.on(channel, listener);
+      return () => {
+        ipcRenderer.removeListener(channel, listener);
+      };
+    },
+  },
+
   onActiveBrowsersUpdated: (callback) => {
     ipcRenderer.on('active-browsers-updated', (event, data) => callback(data));
   },

@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs').promises;
 const fsSync = require('fs');
 const { detectarMonitores, calcularCapacidadeMonitor, salvarDadosMonitores, carregarDadosMonitores, configurarListenerMonitores } = require('./monitor-detector');
-const { launchInstances, navigateToUrl, navigateAllBrowsers, navigationEvents, launchEvents, browserStateEvents, getActiveBrowsers, getActiveBrowsersWithProfiles, updateActiveBrowserProfile, injectScriptInBrowser, injectScriptInAllBrowsers, saveLastBrowserId, generateProfilesForBrowsers } = require('./browser-manager');
+const { launchInstances, navigateToUrl, navigateAllBrowsers, navigationEvents, launchEvents, browserStateEvents, getActiveBrowsers, getActiveBrowsersWithProfiles, updateActiveBrowserProfile, injectScriptInBrowser, injectScriptInAllBrowsers, saveLastBrowserId, generateProfilesForBrowsers, enableMirrorMode, disableMirrorMode, getMirrorStatus, mirrorEvents } = require('./browser-manager');
 const ChromiumDownloader = require('../infrastructure/chromium-downloader');
 const scriptInjector = require('../automation/injection');
 const extensionsService = require('./extensions-service');
@@ -50,6 +50,10 @@ launchEvents.on('browser-launch-injection', (payload) => {
 
 browserStateEvents.on('active-browsers-changed', (payload) => {
   broadcastNavigationEvent('active-browsers-updated', payload);
+});
+
+mirrorEvents.on('status-changed', (status) => {
+  broadcastNavigationEvent('mirror-mode-status', status);
 });
 
 // Configuração de zoom da interface
@@ -387,6 +391,48 @@ ipcMain.handle('get-active-browsers-with-profiles', async (event, syncStates = n
     };
   } catch (error) {
     console.error('Erro ao obter navegadores ativos com perfis:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+});
+
+ipcMain.handle('mirror-mode:status', async () => {
+  try {
+    return {
+      success: true,
+      status: getMirrorStatus()
+    };
+  } catch (error) {
+    console.error('Erro ao consultar status do modo espelho:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+});
+
+ipcMain.handle('mirror-mode:toggle', async (event, options = {}) => {
+  try {
+    const { syncStates = null, desiredState = null } = options || {};
+    const currentStatus = getMirrorStatus();
+    let action = desiredState;
+
+    if (action !== 'enable' && action !== 'disable') {
+      action = currentStatus.enabled ? 'disable' : 'enable';
+    }
+
+    let result;
+    if (action === 'enable') {
+      result = await enableMirrorMode(syncStates);
+    } else {
+      result = await disableMirrorMode();
+    }
+
+    return result;
+  } catch (error) {
+    console.error('Erro ao alternar modo espelho:', error);
     return {
       success: false,
       error: error.message

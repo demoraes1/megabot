@@ -18,7 +18,6 @@ function initializeButtons() {
     { id: 'deposit-btn', action: () => console.log('Depositar') },
     { id: 'play-btn', action: () => console.log('Jogar') },
     { id: 'refresh-pages-btn', action: () => atualizarPaginas() },
-    { id: 'mirror-mode-btn', action: () => console.log('Modo Espelho') },
     {
       id: 'manage-extensions-btn',
       action: () => showPopup('extensions-popup-overlay'),

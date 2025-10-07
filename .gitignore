@@ -80,6 +80,7 @@ profiles/
 
 #config
 src/config/
+src/config/app-config.json
 
 #modelo
 modelo/

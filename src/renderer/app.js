@@ -15,6 +15,7 @@ import {
 } from './modules/chrome/download.js';
 import { inicializarSistemaMonitores } from './modules/monitors/index.js';
 import { initializeProfilesTab } from './modules/profiles/index.js';
+import { initializeMirrorMode } from './modules/mirror/index.js';
 
 async function initializeApplication() {
   console.log('Aplicação iniciada');
@@ -28,6 +29,7 @@ async function initializeApplication() {
     initializeAutomationSettingsControls();
     initializeLinkManagement();
     initializeProfilesTab();
+    initializeMirrorMode();
     initializeAutoSave();
     initializeChromeDownloadModal();
     initializeChromeDownloadSystem();

@@ -5,6 +5,7 @@ const { moverJanelas } = require('../browser-logic/moverjanelas.js');
 const { carregarDadosMonitores } = require('./monitor-detector.js');
 const stealth = require('../browser-logic/stealth-instance.js');
 const taskbarOverlay = require('./taskbar-overlay');
+const mirrorManager = require('./mirror-manager');
 
 // Importar o profile-manager
 const profileManager = require('../automation/profile-manager.js');
@@ -303,6 +304,16 @@ const launchEvents = new EventEmitter();
 launchEvents.setMaxListeners(100);
 const browserStateEvents = new EventEmitter();
 browserStateEvents.setMaxListeners(100);
+
+mirrorManager.configure({
+    logger,
+    getActiveBrowserIds: (syncStates) => getActiveBrowsers(syncStates),
+    resolveBrowserEntry: (navigatorId) => activeBrowsers.get(String(navigatorId))
+});
+
+browserStateEvents.on('active-browsers-changed', () => {
+    mirrorManager.handleActiveBrowsersChanged('active-browsers-changed');
+});
 
 // Configurações baseadas no teste.js
 // Valores padrão de resolução (serão sobrescritos pelas opções se fornecidas)
@@ -1498,6 +1509,20 @@ function getAllProfiles() {
     }
 }
 
+async function enableMirrorMode(syncStates = null) {
+    return mirrorManager.enable(syncStates);
+}
+
+async function disableMirrorMode() {
+    return mirrorManager.disable();
+}
+
+function getMirrorStatus() {
+    return mirrorManager.getStatus();
+}
+
+const mirrorEvents = mirrorManager;
+
 module.exports = { 
     launchInstances, 
     navigateToUrl, 
@@ -1508,6 +1533,7 @@ module.exports = {
     navigationEvents,
     launchEvents,
     browserStateEvents,
+    mirrorEvents,
     injectScriptInBrowser,
     injectScriptInAllBrowsers,
     injectScriptInAllBrowsersPostNavigation,
@@ -1515,5 +1541,8 @@ module.exports = {
     getAllProfiles,
     loadLastBrowserId,
     saveLastBrowserId,
-    generateProfilesForBrowsers
+    generateProfilesForBrowsers,
+    enableMirrorMode,
+    disableMirrorMode,
+    getMirrorStatus
 };
