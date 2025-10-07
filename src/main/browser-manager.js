@@ -91,18 +91,49 @@ function resolveTargetId(page) {
     return null;
 }
 
-async function moveWindowUsingInstance(browser, page, position, config) {
+function getTargetType(target) {
+    if (!target) {
+        return null;
+    }
+
+    if (typeof target.type === 'function') {
+        try {
+            return target.type();
+        } catch (error) {
+            return null;
+        }
+    }
+
+    return target._targetInfo ? target._targetInfo.type || null : null;
+}
+
+function extractTargetId(target) {
+    if (!target) {
+        return null;
+    }
+
+    if (typeof target._targetId === 'string') {
+        return target._targetId;
+    }
+
+    if (target._targetInfo && typeof target._targetInfo.targetId === 'string') {
+        return target._targetInfo.targetId;
+    }
+
+    if (typeof target.targetId === 'string') {
+        return target.targetId;
+    }
+
+    return null;
+}
+
+async function moveWindowByTargetId(browser, targetId, position, config) {
     let windowId = null;
 
     try {
         const connection = getBrowserConnection(browser);
         if (!connection) {
             throw new Error('Conexao CDP indisponivel');
-        }
-
-        const targetId = resolveTargetId(page);
-        if (!targetId) {
-            throw new Error('Target da pagina indisponivel');
         }
 
         const response = await connection.send('Browser.getWindowForTarget', { targetId });
@@ -137,6 +168,15 @@ async function moveWindowUsingInstance(browser, page, position, config) {
     }
 }
 
+async function moveWindowUsingInstance(browser, page, position, config) {
+    const targetId = resolveTargetId(page);
+    if (!targetId) {
+        return { success: false, error: 'Target da pagina indisponivel', windowId: null };
+    }
+
+    return moveWindowByTargetId(browser, targetId, position, config);
+}
+
 function updateProfileWindowData(profile, position) {
     if (!profile || !profile.profile) {
         return;
@@ -161,6 +201,71 @@ function updateProfileWindowData(profile, position) {
         ...payload,
         updatedAt: new Date().toISOString()
     };
+}
+
+function setupWindowRepositionListeners(browser, navigatorId, position, config) {
+    const scheduledTargets = new Set();
+
+    const scheduleReposition = (target) => {
+        if (!target) {
+            return;
+        }
+
+        const targetType = getTargetType(target);
+        if (!targetType || (targetType !== 'page' && targetType !== 'webview' && targetType !== 'other')) {
+            return;
+        }
+
+        const targetId = extractTargetId(target);
+        if (!targetId || scheduledTargets.has(targetId)) {
+            return;
+        }
+
+        scheduledTargets.add(targetId);
+        setTimeout(() => {
+            moveWindowByTargetId(browser, targetId, position, config)
+                .then((result) => {
+                    if (result.success) {
+                        logger.debug('Alvo reposicionado para navegador ' + navigatorId + ' (tipo: ' + targetType + ').');
+                        if (result.windowId !== undefined && result.windowId !== null) {
+                            const entry = activeBrowsers.get(String(navigatorId));
+                            if (entry) {
+                                entry.windowId = result.windowId;
+                                activeBrowsers.set(String(navigatorId), entry);
+                            }
+                        }
+                    }
+                })
+                .catch((error) => {
+                    logger.debug('Falha ao reposicionar alvo adicional do navegador ' + navigatorId + ': ' + error.message);
+                })
+                .finally(() => {
+                    scheduledTargets.delete(targetId);
+                });
+        }, 250);
+    };
+
+    const handleTargetCreated = (target) => scheduleReposition(target);
+    const handleTargetChanged = (target) => scheduleReposition(target);
+
+    browser.on('targetcreated', handleTargetCreated);
+    browser.on('targetchanged', handleTargetChanged);
+
+    browser.on('disconnected', () => {
+        try {
+            browser.removeListener('targetcreated', handleTargetCreated);
+            browser.removeListener('targetchanged', handleTargetChanged);
+        } catch (error) {
+            logger.debug('Falha ao remover listeners de reposicionamento para navegador ' + navigatorId + ': ' + error.message);
+        }
+    });
+
+    try {
+        const targets = browser.targets ? browser.targets() : [];
+        targets.forEach(scheduleReposition);
+    } catch (error) {
+        logger.debug('Falha ao agendar reposicionamento inicial para navegador ' + navigatorId + ': ' + error.message);
+    }
 }
 
 // Sistema de rastreamento de navegadores
@@ -720,18 +825,40 @@ const processarPosicoesMonitor = (monitorData, monitorId = null) => {
             const { browser, page } = await stealth.startBrowser(instanceOptions);
             console.log('[DEBUG] stealth.startBrowser concluido para navegador ' + navegadorId);
 
+            const storedPosition = {
+                id: posicao.id,
+                x: posicao.x,
+                y: posicao.y,
+                largura: posicao.largura,
+                altura: posicao.altura,
+                monitorId: posicao.monitorId !== undefined ? posicao.monitorId : null,
+                originalPositionId: posicao.originalPositionId !== undefined ? posicao.originalPositionId : null
+            };
+
             let moveResult = { success: false, windowId: null };
             if (!options.disableMoverJanelas) {
-                moveResult = await moveWindowUsingInstance(browser, page, posicao, configMovimentacao);
+                moveResult = await moveWindowUsingInstance(browser, page, storedPosition, configMovimentacao);
                 if (moveResult.success) {
                     totalJanelasMovidas += 1;
                     const movidasReportadas = Math.min(totalJanelasMovidas, numNavegadores);
                     logger.info('Janela do navegador ' + navegadorId + ' reposicionada via instancia (' + movidasReportadas + '/' + numNavegadores + ')');
-                    updateProfileWindowData(profile, posicao);
+                    updateProfileWindowData(profile, storedPosition);
                 }
             }
 
-            activeBrowsers.set(String(navegadorId), { browser, page, profile, windowId: moveResult.windowId ?? null });
+            activeBrowsers.set(String(navegadorId), {
+                browser,
+                page,
+                profile,
+                windowId: moveResult.windowId ?? null,
+                position: storedPosition,
+                windowConfig: {
+                    ...configMovimentacao
+                }
+            });
+            if (!options.disableMoverJanelas) {
+                setupWindowRepositionListeners(browser, navegadorId, storedPosition, configMovimentacao);
+            }
             browserStateEvents.emit('active-browsers-changed', getActiveBrowsersWithProfiles());
 
             browser.on('disconnected', () => {
@@ -749,7 +876,13 @@ const processarPosicoesMonitor = (monitorData, monitorId = null) => {
                         totalJanelasMovidas += janelasMovidas;
                         const movidasReportadas = Math.min(totalJanelasMovidas, numNavegadores);
                         logger.info('Janela do navegador ' + navegadorId + ' reposicionada com sucesso (' + movidasReportadas + '/' + numNavegadores + ')');
-                        updateProfileWindowData(profile, posicao);
+                        storedPosition.x = posicao.x;
+                        storedPosition.y = posicao.y;
+                        storedPosition.largura = posicao.largura;
+                        storedPosition.altura = posicao.altura;
+                        storedPosition.monitorId = posicao.monitorId !== undefined ? posicao.monitorId : storedPosition.monitorId;
+                        storedPosition.originalPositionId = posicao.originalPositionId !== undefined ? posicao.originalPositionId : storedPosition.originalPositionId;
+                        updateProfileWindowData(profile, storedPosition);
                     } else {
                         logger.warn('Falha ao reposicionar janela do navegador ' + navegadorId);
                     }
@@ -758,7 +891,11 @@ const processarPosicoesMonitor = (monitorData, monitorId = null) => {
                 });
             } else if (options.disableMoverJanelas) {
                 logger.info('Movimento de janela desabilitado para navegador ' + navegadorId);
-                updateProfileWindowData(profile, posicao);
+                storedPosition.x = posicao.x;
+                storedPosition.y = posicao.y;
+                storedPosition.largura = posicao.largura;
+                storedPosition.altura = posicao.altura;
+                updateProfileWindowData(profile, storedPosition);
             }
 
             runPostLaunchScripts(navegadorId, browserIndex, profile).catch((error) => {

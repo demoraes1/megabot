@@ -179,7 +179,7 @@ async function startBrowser(options) {
             `--user-data-dir=${profilePath}`,
             `--window-size=${windowWidth},${windowHeight}`,
             // Inicia fora da tela para evitar flash antes do reposicionamento
-            '--window-position=-5000,-5000',
+            //'--window-position=-5000,-5000',
             `--force-device-scale-factor=${deviceScaleFactor}`,
             '--exclude-switches=enable-automation',
             '--no-first-run',

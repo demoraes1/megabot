@@ -1,9 +1,6 @@
 {
   "links": [
-    "https://lawnpg.com/?id=393228917",
-    "https://www.we-lawnpg.com/?id=760174163",
-    "https://dsmiiljrok12a.cloudfront.net/?id=142674772",
-    "https://d3s41b8baqupkv.cloudfront.net/?id=981756400"
+    "https://browserscan.net"
   ],
   "proxies": [
     "proxy.tourosnet.com.br:6122",
@@ -156,7 +153,7 @@
       "delay-toggle": false,
       "mute-audio-toggle": true
     },
-    "lastSaved": "2025-10-06T19:16:27.265Z"
+    "lastSaved": "2025-10-06T21:41:33.721Z"
   },
   "resolution": {
     "useDefault": true,
