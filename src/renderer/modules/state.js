@@ -1,4 +1,4 @@
-// Estado compartilhado entre os modulos do renderer
+// Estado compartilhado entre os módulos do renderer
 
 export const state = {
   defaults: {

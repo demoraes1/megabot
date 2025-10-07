@@ -1,4 +1,4 @@
-﻿import { debouncedSave } from '../../settings/autosave.js';
+import { debouncedSave } from '../../settings/autosave.js';
 import { validateAndNormalizeUrl } from './utils.js';
 import { getAddedLinks } from './link-data.js';
 
@@ -16,9 +16,9 @@ function addNewLinkInput() {
         <div class="flex items-center gap-2">
             <div class="flex-1">
                 <label for="link-input-${linkCount}" class="block text-white font-medium text-sm mb-1">Link ${linkCount}:</label>
-                <input type="text" id="link-input-${linkCount}" class="w-full px-3 py-2 bg-app-gray-800 border border-app-gray-700 rounded-lg text-white placeholder-app-gray-400 focus:outline-none focus:ring-2 focus:ring-app-blue-600 focus:border-transparent transition-all duration-200" placeholder="exemplo.com (https:// serA adicionado automaticamente)">
+                <input type="text" id="link-input-${linkCount}" class="w-full px-3 py-2 bg-app-gray-800 border border-app-gray-700 rounded-lg text-white placeholder-app-gray-400 focus:outline-none focus:ring-2 focus:ring-app-blue-600 focus:border-transparent transition-all duration-200" placeholder="exemplo.com (https:// será adicionado automaticamente)">
             </div>
-            <button class="w-8 h-8 bg-app-red-600 hover:bg-app-red-500 rounded-lg text-white text-sm font-bold transition-colors duration-200 mt-5" onclick="console.log('BOTAO X CLICADO LINK ${linkCount} (JS)'); window.removeLinkInputGlobal(${linkCount})" title="Remover este campo">A</button>
+            <button class="w-8 h-8 bg-app-red-600 hover:bg-app-red-500 rounded-lg text-white text-sm font-bold transition-colors duration-200 mt-5" onclick="console.log('BOTÃO X CLICADO LINK ${linkCount} (JS)'); window.removeLinkInputGlobal(${linkCount})" title="Remover este campo">×</button>
         </div>
     `;
 
@@ -54,7 +54,7 @@ function removeLinkInput(linkNumber) {
     updateCriarContasButton();
     debouncedSave();
   } else {
-    console.log(`Link group ${linkNumber} nAo encontrado`);
+    console.log(`Link group ${linkNumber} não encontrado`);
   }
 }
 

@@ -13,7 +13,7 @@ function getAddedPixKeys() {
     lines.forEach((line) => {
       const pixKey = line.trim();
       if (pixKey !== '') {
-        let tipo = 'Invalida';
+        let tipo = 'Inválida';
         if (typeof PixValidator !== 'undefined') {
           const validator = new PixValidator();
           const identifiedType = validator.identifyPixKeyType(pixKey);
@@ -47,7 +47,7 @@ function updatePixCount() {
 
   const pixCounter = document.getElementById('pix-counter-text');
   if (pixCounter) {
-    pixCounter.textContent = `${totalPixKeys} chaves PIX disponiveis`;
+    pixCounter.textContent = `${totalPixKeys} chaves PIX disponíveis`;
   }
 
   updatePixCountsByType(pixKeys);
@@ -56,7 +56,7 @@ function updatePixCount() {
 
 function updatePixCountsByType(pixKeys) {
   if (typeof PixValidator === 'undefined') {
-    console.warn('PixValidator nao esta disponivel');
+    console.warn('PixValidator não está disponível');
     return;
   }
 
@@ -66,8 +66,8 @@ function updatePixCountsByType(pixKeys) {
     CNPJ: 0,
     'E-mail': 0,
     Telefone: 0,
-    'Chave Aleatoria': 0,
-    Invalidas: 0,
+    'Chave Aleatória': 0,
+    Inválidas: 0,
   };
 
   pixKeys.forEach((pixKey) => {

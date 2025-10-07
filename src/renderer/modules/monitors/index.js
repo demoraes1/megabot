@@ -1,4 +1,4 @@
-﻿import { showNotification } from '../ui/notifications.js';
+import { showNotification } from '../ui/notifications.js';
 import { state } from '../state.js';
 import {
   saveSettings,
@@ -11,19 +11,19 @@ const { consumeProxy, getRotatingProxy } = LinkProxiesAPI;
 
 // Log para debug
 
-// === SISTEMA DE DETECAAO DE MONITORES ===
+// === SISTEMA DE DETECÇÃO DE MONITORES ===
 
-// VariAveis globais para monitores
+// Variáveis globais para monitores
 
 /**
  * Detecta automaticamente os monitores e atualiza a interface
  */
 async function detectarEAtualizarMonitores() {
   try {
-    console.log('Iniciando detecAAo de monitores...');
+    console.log('Iniciando detecção de monitores...');
 
     if (!window.electronAPI || !window.electronAPI.detectMonitors) {
-      console.warn('API de detecAAo de monitores nAo disponAvel');
+      console.warn('API de detecção de monitores não disponível');
       return;
     }
 
@@ -39,12 +39,12 @@ async function detectarEAtualizarMonitores() {
       // Atualizar o select de monitores
       atualizarSelectMonitores(state.monitors.detected);
 
-      // Verificar se hA uma configuraAAo salva antes de selecionar automaticamente
+      // Verificar se há uma configuração salva antes de selecionar automaticamente
       const settings = await loadSettingsAsync();
       let monitorParaSelecionar = null;
 
       if (settings && settings.selectedMonitor) {
-        // Se hA configuraAAo salva, usar ela
+        // Se há configuração salva, usar ela
         if (settings.selectedMonitor === 'todos') {
           monitorParaSelecionar = 'todos';
         } else {
@@ -58,7 +58,7 @@ async function detectarEAtualizarMonitores() {
         }
       }
 
-      // Se nAo hA configuraAAo vAlida, usar o monitor primArio ou primeiro
+      // Se não há configuração válida, usar o monitor primário ou primeiro
       if (monitorParaSelecionar === null) {
         const indiceMonitorPrimario = state.monitors.detected.findIndex(
           (m) => m.ehPrimario,
@@ -70,7 +70,7 @@ async function detectarEAtualizarMonitores() {
         }
       }
 
-      // Aplicar a seleAAo apenas se nAo hA um monitor jA selecionado
+      // Aplicar a seleção apenas se não há um monitor já selecionado
       const monitorSelect = document.getElementById('monitor-select');
       const jaTemSelecao =
         monitorSelect && monitorSelect.value && monitorSelect.value !== '';
@@ -90,20 +90,20 @@ async function detectarEAtualizarMonitores() {
         );
       } else if (jaTemSelecao) {
         console.log(
-          'Monitor jA estava selecionado, mantendo configuraAAo:',
+          'Monitor já estava selecionado, mantendo configuração:',
           monitorSelect.value,
         );
       }
     } else {
-      console.error('Erro na detecAAo de monitores:', result.error);
+      console.error('Erro na detecção de monitores:', result.error);
       console.warn(
-        'Sistema nAo conseguiu detectar monitores. Verifique as permissAes do sistema.',
+        'Sistema não conseguiu detectar monitores. Verifique as permissões do sistema.',
       );
     }
   } catch (error) {
     console.error('Erro ao detectar monitores:', error);
     console.warn(
-      'Sistema nAo conseguiu detectar monitores. Verifique as permissAes do sistema.',
+      'Sistema não conseguiu detectar monitores. Verifique as permissões do sistema.',
     );
   }
 }
@@ -115,10 +115,10 @@ function atualizarSelectMonitores(monitores) {
   const monitorSelect = document.getElementById('monitor-select');
   if (!monitorSelect) return;
 
-  // Limpar opAAes existentes
+  // Limpar opções existentes
   monitorSelect.innerHTML = '';
 
-  // Adicionar opAAes para cada monitor
+  // Adicionar opções para cada monitor
   monitores.forEach((monitor, index) => {
     const option = document.createElement('option');
     option.value = index;
@@ -126,19 +126,19 @@ function atualizarSelectMonitores(monitores) {
     monitorSelect.appendChild(option);
   });
 
-  // Adicionar opAAo "Todos os monitores"
+  // Adicionar opção "Todos os monitores"
   const allMonitorsOption = document.createElement('option');
-  allMonitorsOption.value = monitores.length; // Usar o Andice apAs o Altimo monitor
+  allMonitorsOption.value = monitores.length; // Usar o índice após o último monitor
   allMonitorsOption.textContent = 'Todos os Monitores';
   monitorSelect.appendChild(allMonitorsOption);
 
-  // Remover listeners anteriores e adicionar novo evento de mudanAa
+  // Remover listeners anteriores e adicionar novo evento de mudança
   monitorSelect.removeEventListener('change', handleMonitorChange);
   monitorSelect.addEventListener('change', handleMonitorChange);
 }
 
 /**
- * Handler para mudanAa de seleAAo de monitor
+ * Handler para mudança de seleção de monitor
  */
 function handleMonitorChange(e) {
   selecionarMonitor(parseInt(e.target.value, 10), { shouldSave: true });
@@ -151,7 +151,7 @@ async function selecionarMonitor(indice, options = {}) {
   const { shouldSave = true } = options;
   if (indice < 0 || indice > state.monitors.detected.length) return;
 
-  // Se o Andice A igual ao nAmero de monitores, significa "Todos os monitores"
+  // Se o índice é igual ao número de monitores, significa "Todos os monitores"
   if (indice === state.monitors.detected.length) {
     state.monitors.selected = null; // Indica que todos os monitores foram selecionados
     console.log('Selecionado: Todos os monitores');
@@ -166,7 +166,7 @@ async function selecionarMonitor(indice, options = {}) {
     await calcularCapacidadeMonitor(state.monitors.selected);
   }
 
-  // Salvar configuraAAes automaticamente quando o monitor for selecionado
+  // Salvar configurações automaticamente quando o monitor for selecionado
   if (shouldSave) {
     saveSettings();
   }
@@ -243,14 +243,14 @@ async function carregarDadosMonitores() {
 async function calcularCapacidadeBase(monitor, config) {
   try {
     if (!window.electronAPI || !window.electronAPI.calculateMonitorCapacity) {
-      throw new Error('API de cAlculo de capacidade nAo disponAvel');
+      throw new Error('API de cálculo de capacidade não disponível');
     }
 
-    // Usar configuraAAo fornecida ou obter valores da interface
+    // Usar configuração fornecida ou obter valores da interface
     let configCalculo = config;
 
     if (!configCalculo) {
-      // Obter valores da interface ou usar padrAes
+      // Obter valores da interface ou usar padrões
       const defaultCheckbox = document.getElementById(
         'default-resolution-checkbox',
       );
@@ -260,7 +260,7 @@ async function calcularCapacidadeBase(monitor, config) {
       let larguraLogica, alturaLogica;
 
       if (defaultCheckbox && defaultCheckbox.checked) {
-        // Usar valores padrAo
+        // Usar valores padrão
         larguraLogica = state.defaults.fallbackWidth;
         alturaLogica = state.defaults.fallbackHeight;
       } else {
@@ -283,7 +283,7 @@ async function calcularCapacidadeBase(monitor, config) {
     );
 
     if (!result.success) {
-      throw new Error(result.error || 'Erro desconhecido no cAlculo');
+      throw new Error(result.error || 'Erro desconhecido no cálculo');
     }
 
     return {
@@ -294,7 +294,7 @@ async function calcularCapacidadeBase(monitor, config) {
       config: configCalculo,
     };
   } catch (error) {
-    console.error('Erro no cAlculo de capacidade:', error);
+    console.error('Erro no cálculo de capacidade:', error);
     return {
       success: false,
       error: error.message,
@@ -304,13 +304,13 @@ async function calcularCapacidadeBase(monitor, config) {
 }
 
 async function calcularCapacidadeMonitor(monitor) {
-  // Verificar se jA existem dados salvos para este monitor
+  // Verificar se já existem dados salvos para este monitor
   const monitorId = `monitor_${monitor.id || Date.now()}`;
   const dadosExistentes = state.monitors.positioning.find(
     (item) => item.id === monitorId,
   );
 
-  // Se existem dados salvos e a configuraAAo nAo mudou, usar os dados existentes
+  // Se existem dados salvos e a configuração não mudou, usar os dados existentes
   if (dadosExistentes && dadosExistentes.config) {
     const configAtual = {
       larguraLogica:
@@ -330,7 +330,7 @@ async function calcularCapacidadeMonitor(monitor) {
 
     if (configIgual) {
       console.log(
-        'Usando posiAAes salvas para o monitor:',
+        'Usando posições salvas para o monitor:',
         dadosExistentes.capacidade,
       );
 
@@ -404,11 +404,11 @@ async function calcularCapacidadeMonitor(monitor) {
       capacityElement.textContent = `${result.capacidade} navegadores`;
     }
 
-    // Atualizar o mAximo de aberturas simultAneas
+    // Atualizar o máximo de aberturas simultâneas
     const openingsCount = document.getElementById('openings-count');
     const openingsSlider = document.querySelector('input[type="range"]');
 
-    // Atualizar a capacidade mAxima global
+    // Atualizar a capacidade máxima global
     state.monitors.maxCapacity = result.capacidade;
 
     if (openingsSlider) {
@@ -426,10 +426,10 @@ async function calcularCapacidadeMonitor(monitor) {
   } else {
     console.error('Erro ao calcular capacidade:', result.error);
 
-    // Valor padrAo em caso de erro
+    // Valor padrão em caso de erro
     const capacityElement = document.getElementById('monitor-capacity');
     if (capacityElement) {
-      capacityElement.textContent = 'Erro no cAlculo';
+      capacityElement.textContent = 'Erro no cálculo';
     }
   }
 }
@@ -444,12 +444,12 @@ async function calcularCapacidadeTodosMonitores() {
       return;
     }
 
-    // Verificar se jA existem dados salvos para todos os monitores
+    // Verificar se já existem dados salvos para todos os monitores
     const dadosExistentes = state.monitors.positioning.find(
       (item) => item.id === 'todos_monitores',
     );
 
-    // Se existem dados salvos e a configuraAAo nAo mudou, usar os dados existentes
+    // Se existem dados salvos e a configuração não mudou, usar os dados existentes
     if (dadosExistentes && dadosExistentes.config) {
       const configAtual = {
         larguraLogica:
@@ -469,7 +469,7 @@ async function calcularCapacidadeTodosMonitores() {
 
       if (configIgual) {
         console.log(
-          'Usando posiAAes salvas para todos os monitores:',
+          'Usando posições salvas para todos os monitores:',
           dadosExistentes.capacidade,
         );
 
@@ -498,12 +498,12 @@ async function calcularCapacidadeTodosMonitores() {
       }
     }
 
-    // SA recalcular se nAo existem dados ou se a configuraAAo mudou
+    // Só recalcular se não existem dados ou se a configuração mudou
     let capacidadeTotal = 0;
     let todasPosicoes = [];
-    let proximoId = 0; // Contador global para IDs Anicos
+    let proximoId = 0; // Contador global para IDs únicos
 
-    // Calcular capacidade para cada monitor usando a funAAo base
+    // Calcular capacidade para cada monitor usando a função base
     for (const monitor of state.monitors.detected) {
       try {
         const configAtual = {
@@ -520,7 +520,7 @@ async function calcularCapacidadeTodosMonitores() {
         if (result && result.success) {
           capacidadeTotal += result.capacidade;
 
-          // Corrigir IDs para serem sequenciais e Anicos
+          // Corrigir IDs para serem sequenciais e únicos
           const posicoesComIdCorrigido = result.posicoes.map((pos) => ({
             ...pos,
             id: proximoId++,
@@ -534,7 +534,7 @@ async function calcularCapacidadeTodosMonitores() {
         } else {
           console.error(
             `Erro ao calcular capacidade do monitor ${monitor.nome}:`,
-            result?.error || 'Resultado invAlido',
+            result?.error || 'Resultado inválido',
           );
         }
       } catch (error) {
@@ -549,7 +549,7 @@ async function calcularCapacidadeTodosMonitores() {
       'Capacidade total recalculada de todos os monitores:',
       capacidadeTotal,
     );
-    console.log('Total de posiAAes disponAveis:', todasPosicoes.length);
+    console.log('Total de posições disponíveis:', todasPosicoes.length);
 
     // Obter configuraAAo da interface para armazenamento
     const defaultCheckbox = document.getElementById(
@@ -605,11 +605,11 @@ async function calcularCapacidadeTodosMonitores() {
       capacityElement.textContent = `${capacidadeTotal} navegadores (todos os monitores)`;
     }
 
-    // Atualizar o mAximo de aberturas simultAneas
+    // Atualizar o máximo de aberturas simultâneas
     const openingsCount = document.getElementById('openings-count');
     const openingsSlider = document.querySelector('input[type="range"]');
 
-    // Atualizar a capacidade mAxima global
+    // Atualizar a capacidade máxima global
     state.monitors.maxCapacity = capacidadeTotal;
 
     if (openingsSlider) {
@@ -627,16 +627,16 @@ async function calcularCapacidadeTodosMonitores() {
   } catch (error) {
     console.error('Erro ao calcular capacidade de todos os monitores:', error);
 
-    // Valor padrAo em caso de erro
+    // Valor padrão em caso de erro
     const capacityElement = document.getElementById('monitor-capacity');
     if (capacityElement) {
-      capacityElement.textContent = 'Erro no cAlculo';
+      capacityElement.textContent = 'Erro no cálculo';
     }
   }
 }
 
 /**
- * Inicializa o sistema de detecAAo de monitores
+ * Inicializa o sistema de detecção de monitores
  */
 async function inicializarSistemaMonitores() {
   console.log('Inicializando sistema de monitores...');
@@ -657,24 +657,24 @@ async function inicializarSistemaMonitores() {
     }
   }
 
-  // Detectar monitores automaticamente quando a aplicaAAo carregar (sempre atualizar)
+  // Detectar monitores automaticamente quando a aplicação carregar (sempre atualizar)
   await detectarEAtualizarMonitores();
 
-  // Inicializar controles de resoluAAo
+  // Inicializar controles de resolução
   inicializarControlesResolucao();
 }
 
 /**
- * Inicializa os controles de resoluAAo (checkbox padrAo e campos de largura/altura)
+ * Inicializa os controles de resolução (checkbox padrão e campos de largura/altura)
  */
 /**
- * Configura event listeners para campos de resoluAAo
+ * Configura event listeners para campos de resolução
  * @param {HTMLInputElement} widthInput - Campo de largura
  * @param {HTMLInputElement} heightInput - Campo de altura
- * @param {HTMLInputElement} defaultCheckbox - Checkbox de resoluAAo padrAo
+ * @param {HTMLInputElement} defaultCheckbox - Checkbox de resolução padrão
  */
 function setupResolutionListeners(widthInput, heightInput, defaultCheckbox) {
-  // FunAAo compartilhada para recAlculo de capacidade
+  // Função compartilhada para recálculo de capacidade
   function recalcularCapacidade() {
     if (!defaultCheckbox.checked) {
       if (state.monitors.selected) {
@@ -686,7 +686,7 @@ function setupResolutionListeners(widthInput, heightInput, defaultCheckbox) {
         calcularCapacidadeTodosMonitores();
       }
     }
-    // Salvar configuraAAes automaticamente apAs mudanAa
+    // Salvar configurações automaticamente após mudança
     debouncedSave();
   }
 
@@ -703,7 +703,7 @@ function inicializarControlesResolucao() {
   const heightInput = document.getElementById('height-input');
 
   if (defaultCheckbox && widthInput && heightInput) {
-    // FunAAo para atualizar estado dos campos
+    // Função para atualizar estado dos campos
     function atualizarEstadoCampos() {
       const isDefault = defaultCheckbox.checked;
       widthInput.disabled = isDefault;
@@ -714,7 +714,7 @@ function inicializarControlesResolucao() {
         heightInput.value = state.defaults.fallbackHeight.toString();
       }
 
-      // Recalcular capacidade quando houver mudanAa
+      // Recalcular capacidade quando houver mudança
       if (state.monitors.selected) {
         calcularCapacidadeMonitor(state.monitors.selected);
       } else if (
@@ -729,17 +729,17 @@ function inicializarControlesResolucao() {
     // Event listener para checkbox
     defaultCheckbox.addEventListener('change', () => {
       atualizarEstadoCampos();
-      // Salvar configuraAAes automaticamente apAs mudanAa
+      // Salvar configurações automaticamente após mudança
       debouncedSave();
     });
 
     // Aguardar um pouco antes de configurar os event listeners para evitar
-    // que sejam disparados durante o carregamento inicial das configuraAAes
+    // que sejam disparados durante o carregamento inicial das configurações
     setTimeout(() => {
       setupResolutionListeners(widthInput, heightInput, defaultCheckbox);
     }, 1000);
 
-    // Inicializar estado apenas se nAo hA valores jA definidos
+    // Inicializar estado apenas se não há valores já definidos
     if (!widthInput.value || !heightInput.value) {
       atualizarEstadoCampos();
     } else {

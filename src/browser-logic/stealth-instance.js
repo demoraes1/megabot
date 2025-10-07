@@ -1,4 +1,4 @@
-﻿const puppeteer = require('rebrowser-puppeteer');
+const puppeteer = require('rebrowser-puppeteer');
 const path = require('path');
 const fs = require('fs');
 const extensionsManager = require('./extensions-manager');
@@ -89,7 +89,7 @@ async function injectAutomationScript(page, navigatorId, scriptFileName, options
     try {
         console.log(`[Navegador ${navigatorId}] Lendo script ${logLabel} de: ${scriptPath}`);
         if (!fs.existsSync(scriptPath)) {
-            console.warn(`[Navegador ${navigatorId}] Arquivo ${logLabel} nao encontrado em: ${scriptPath}`);
+            console.warn(`[Navegador ${navigatorId}] Arquivo ${logLabel} não encontrado em: ${scriptPath}`);
             return false;
         }
 
@@ -103,7 +103,7 @@ async function injectAutomationScript(page, navigatorId, scriptFileName, options
                     window.megabotConfig = window.megabotConfig || {};
                     Object.assign(window.megabotConfig, ${serializedConfig});
                     window.dispatchEvent(new CustomEvent('megabot-config-ready', { detail: window.megabotConfig }));
-                    console.log('Configuracao MegaBot injetada para ${logLabel}:', window.megabotConfig);
+                    console.log('Configuração MegaBot injetada para ${logLabel}:', window.megabotConfig);
                 })();
             `;
         }
