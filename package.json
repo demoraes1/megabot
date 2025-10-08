@@ -47,6 +47,7 @@
     "@faker-js/faker": "^10.0.0",
     "node-window-manager": "^2.2.4",
     "rebrowser-puppeteer": "^24.8.1",
-    "unidecode": "^1.1.0"
+    "unidecode": "^1.1.0",
+    "ws": "^8.17.0"
   }
 }
