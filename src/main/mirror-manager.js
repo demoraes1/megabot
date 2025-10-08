@@ -1,6 +1,5 @@
 const { EventEmitter } = require('events');
 
-const MIRROR_ALLOWED_KEYS = new Set(['Enter', 'Tab', 'Escape']);
 const MIRROR_BUTTON_MAP = {
   0: 'left',
   1: 'middle',
@@ -18,6 +17,157 @@ const mirrorControllerInjection = `
 
   window.__megabotMirrorInjected = true;
   window.__megabotMirrorEnabled = true;
+
+  const TEXTUAL_EXCLUDED_TYPES = new Set([
+    'button',
+    'checkbox',
+    'color',
+    'file',
+    'hidden',
+    'image',
+    'radio',
+    'range',
+    'reset',
+    'submit'
+  ]);
+  const fieldStates = new WeakMap();
+  const beforeInputStates = new WeakMap();
+  const KEY_ALWAYS_RELAY = new Set([
+    'Enter',
+    'Tab',
+    'Escape',
+    'ArrowUp',
+    'ArrowDown',
+    'ArrowLeft',
+    'ArrowRight',
+    'PageUp',
+    'PageDown',
+    'Home',
+    'End',
+    'Insert',
+    'Backspace',
+    'Delete'
+  ]);
+  const MODIFIER_KEYS = new Set(['Shift', 'Control', 'Alt', 'Meta']);
+  const SKIP_TEXT_INPUT_TYPES = new Set([
+    'deleteContentBackward',
+    'deleteContentForward',
+    'deleteSoftLineBackward',
+    'deleteSoftLineForward',
+    'deleteHardLineBackward',
+    'deleteHardLineForward',
+    'deleteWordBackward',
+    'deleteWordForward',
+    'deleteEntireSoftLine',
+    'deleteEntireHardLine',
+    'deleteByCut',
+    'deleteByDrag',
+    'insertLineBreak',
+    'insertParagraph'
+  ]);
+
+  const isTextualField = (tagName, fieldType, isContentEditable) => {
+    if (isContentEditable) {
+      return true;
+    }
+
+    if (!tagName) {
+      return false;
+    }
+
+    if (tagName === 'textarea') {
+      return true;
+    }
+
+    if (tagName === 'input') {
+      const normalized = String(fieldType || 'text').toLowerCase();
+      return !TEXTUAL_EXCLUDED_TYPES.has(normalized);
+    }
+
+    return false;
+  };
+
+  const readFieldValue = (element, isContentEditable) => {
+    if (!element) {
+      return '';
+    }
+
+    if (isContentEditable) {
+      return element.innerText || '';
+    }
+
+    if (typeof element.value === 'string') {
+      return element.value;
+    }
+
+    if (typeof element.value === 'number') {
+      return String(element.value);
+    }
+
+    return '';
+  };
+
+  const captureSelectionState = (element) => {
+    if (!element) {
+      return {
+        selectionStart: null,
+        selectionEnd: null,
+        selectionDirection: null
+      };
+    }
+
+    const result = {
+      selectionStart: null,
+      selectionEnd: null,
+      selectionDirection: null
+    };
+
+    if (typeof element.selectionStart === 'number') {
+      result.selectionStart = element.selectionStart;
+    }
+
+    if (typeof element.selectionEnd === 'number') {
+      result.selectionEnd = element.selectionEnd;
+    }
+
+    if (typeof element.selectionDirection === 'string') {
+      result.selectionDirection = element.selectionDirection;
+    }
+
+    return result;
+  };
+
+  const diffTextContent = (previous, current) => {
+    if (previous === current) {
+      return {
+        start: current.length,
+        deleteCount: 0,
+        insertedText: '',
+        removedText: ''
+      };
+    }
+
+    const prevLength = previous.length;
+    const currentLength = current.length;
+    let start = 0;
+    while (start < prevLength && start < currentLength && previous[start] === current[start]) {
+      start += 1;
+    }
+
+    let prevEnd = prevLength;
+    let currentEnd = currentLength;
+    while (prevEnd > start && currentEnd > start && previous[prevEnd - 1] === current[currentEnd - 1]) {
+      prevEnd -= 1;
+      currentEnd -= 1;
+    }
+
+    return {
+      start,
+      deleteCount: prevEnd - start,
+      insertedText: current.slice(start, currentEnd),
+      removedText: previous.slice(start, prevEnd)
+    };
+  };
 
   const getCssSelector = (element) => {
     if (!(element instanceof Element)) {
@@ -114,6 +264,34 @@ const mirrorControllerInjection = `
     window.addEventListener('touchstart', pointerHandler, true);
   }
 
+  const shouldRelayKeyEvent = (event) => {
+    if (!event) {
+      return false;
+    }
+
+    if (MODIFIER_KEYS.has(event.key)) {
+      return true;
+    }
+
+    if (event.ctrlKey || event.metaKey || event.altKey) {
+      return true;
+    }
+
+    if (KEY_ALWAYS_RELAY.has(event.key)) {
+      return true;
+    }
+
+    if (typeof event.key === 'string' && /^F(\\d{1,2})$/.test(event.key)) {
+      return true;
+    }
+
+    if (event.key === 'ContextMenu') {
+      return true;
+    }
+
+    return false;
+  };
+
   const captureInputState = (target) => {
     const tagName = target && target.tagName ? target.tagName.toLowerCase() : '';
     const fieldType = target && target.type ? String(target.type).toLowerCase() : '';
@@ -131,12 +309,43 @@ const mirrorControllerInjection = `
       payload.value = target.innerText;
     }
 
+    payload.isTextual = isTextualField(tagName, fieldType, payload.isContentEditable);
+
     if (typeof target?.selectionStart === 'number' && typeof target?.selectionEnd === 'number') {
       payload.selectionStart = target.selectionStart;
       payload.selectionEnd = target.selectionEnd;
     }
 
+    if (typeof target?.selectionDirection === 'string') {
+      payload.selectionDirection = target.selectionDirection;
+    }
+
     return payload;
+  };
+
+  const beforeInputHandler = (event) => {
+    if (!window.__megabotMirrorEnabled) {
+      return;
+    }
+
+    const target = event.target;
+    if (!(target instanceof Element)) {
+      return;
+    }
+
+    const tagName = target && target.tagName ? target.tagName.toLowerCase() : '';
+    const fieldType = target && target.type ? String(target.type).toLowerCase() : '';
+    const isContentEditable = !!(target && target.isContentEditable);
+    const isTextual = isTextualField(tagName, fieldType, isContentEditable);
+
+    const selectionState = captureSelectionState(target);
+
+    beforeInputStates.set(target, {
+      value: isTextual ? readFieldValue(target, isContentEditable) : target && target.value !== undefined ? target.value : '',
+      selectionStart: selectionState.selectionStart,
+      selectionEnd: selectionState.selectionEnd,
+      selectionDirection: selectionState.selectionDirection
+    });
   };
 
   const inputHandler = (event) => {
@@ -151,33 +360,108 @@ const mirrorControllerInjection = `
 
     const payload = captureInputState(target);
     payload.inputType = event.inputType || null;
+    payload.inputTimestamp = Date.now();
+    payload.data = typeof event.data === 'string' ? event.data : null;
+
+    const previousState =
+      beforeInputStates.get(target) ||
+      fieldStates.get(target) || {
+        value: payload.isTextual ? '' : payload.value,
+        selectionStart: typeof payload.selectionStart === 'number' ? payload.selectionStart : null,
+        selectionEnd: typeof payload.selectionEnd === 'number' ? payload.selectionEnd : null,
+        selectionDirection: payload.selectionDirection || null
+      };
+
+    beforeInputStates.delete(target);
+
+    if (payload.isTextual) {
+      const currentValue = readFieldValue(target, payload.isContentEditable);
+      const prevValue = typeof previousState?.value === 'string' ? previousState.value : '';
+      const diff = diffTextContent(prevValue, currentValue);
+
+      payload.rangeStart = diff.start;
+      payload.rangeEnd = diff.start + diff.deleteCount;
+      payload.insertedText = diff.insertedText;
+      payload.removedText = diff.removedText;
+
+      payload.previousSelectionStart =
+        typeof previousState?.selectionStart === 'number' ? previousState.selectionStart : null;
+      payload.previousSelectionEnd =
+        typeof previousState?.selectionEnd === 'number' ? previousState.selectionEnd : null;
+      payload.previousSelectionDirection =
+        typeof previousState?.selectionDirection === 'string' ? previousState.selectionDirection : null;
+
+      payload.finalSelectionStart =
+        typeof target.selectionStart === 'number' ? target.selectionStart : null;
+      payload.finalSelectionEnd =
+        typeof target.selectionEnd === 'number' ? target.selectionEnd : null;
+      payload.finalSelectionDirection =
+        typeof target.selectionDirection === 'string' ? target.selectionDirection : null;
+
+      delete payload.value;
+      payload.skipTextSync = Boolean(payload.inputType && SKIP_TEXT_INPUT_TYPES.has(payload.inputType));
+
+      fieldStates.set(target, {
+        value: currentValue,
+        selectionStart: payload.finalSelectionStart,
+        selectionEnd: payload.finalSelectionEnd,
+        selectionDirection: payload.finalSelectionDirection
+      });
+    } else {
+      fieldStates.set(target, {
+        value: payload.value,
+        selectionStart: typeof payload.selectionStart === 'number' ? payload.selectionStart : null,
+        selectionEnd: typeof payload.selectionEnd === 'number' ? payload.selectionEnd : null,
+        selectionDirection: payload.selectionDirection || null
+      });
+    }
+
     relay('input', payload);
   };
 
+  document.addEventListener('beforeinput', beforeInputHandler, true);
   document.addEventListener('input', inputHandler, true);
   document.addEventListener('change', inputHandler, true);
 
-  window.addEventListener('keydown', (event) => {
+  const keyRelayHandler = (event) => {
     if (!window.__megabotMirrorEnabled) {
       return;
     }
 
-    const allowed = ['Enter', 'Tab', 'Escape'];
-    if (!allowed.includes(event.key)) {
+    if (!event || event.isTrusted === false) {
       return;
     }
 
-    const selector = getCssSelector(document.activeElement);
+    if (!shouldRelayKeyEvent(event)) {
+      return;
+    }
+
+    const activeElement = document.activeElement;
+    const selector = getCssSelector(activeElement);
+    const tagName = activeElement && activeElement.tagName ? activeElement.tagName.toLowerCase() : '';
+    const fieldType = activeElement && activeElement.type ? String(activeElement.type).toLowerCase() : '';
+    const isContentEditable = !!(activeElement && activeElement.isContentEditable);
+
     relay('key', {
       selector,
       key: event.key,
       code: event.code || '',
+      keyCode: typeof event.keyCode === 'number' ? event.keyCode : 0,
       altKey: !!event.altKey,
       ctrlKey: !!event.ctrlKey,
       metaKey: !!event.metaKey,
-      shiftKey: !!event.shiftKey
+      shiftKey: !!event.shiftKey,
+      repeat: !!event.repeat,
+      eventType: event.type,
+      targetTagName: tagName,
+      targetFieldType: fieldType,
+      targetIsContentEditable: isContentEditable,
+      targetIsTextual: isTextualField(tagName, fieldType, isContentEditable)
     });
-  }, true);
+  };
+
+  window.addEventListener('keydown', keyRelayHandler, true);
+  window.addEventListener('keyup', keyRelayHandler, true);
 
   const scrollHandler = (event) => {
     if (!window.__megabotMirrorEnabled) {
@@ -522,7 +806,8 @@ class MirrorManager extends EventEmitter {
         key: Promise.resolve(),
         scroll: Promise.resolve()
       },
-      closeHandler: null
+      closeHandler: null,
+      pressedKeys: new Set()
     };
 
     this.attachControlledHandlers(entry, page);
@@ -681,14 +966,124 @@ class MirrorManager extends EventEmitter {
         return false;
       }
 
-      if (state.isContentEditable) {
-        element.innerText = state.value || '';
+      const tagName = (state.tagName || '').toLowerCase();
+      const fieldType = (state.fieldType || '').toLowerCase();
+      const isContentEditable = Boolean(state.isContentEditable ?? element.isContentEditable);
+      const textualField =
+        Boolean(state.isTextual) ||
+        isContentEditable ||
+        tagName === 'textarea' ||
+        (tagName === 'input' &&
+          !['button', 'checkbox', 'color', 'file', 'hidden', 'image', 'radio', 'range', 'reset', 'submit'].includes(fieldType));
+
+      const readValue = () => {
+        if (isContentEditable) {
+          return element.innerText || '';
+        }
+
+        if (typeof element.value === 'string') {
+          return element.value;
+        }
+
+        if (typeof element.value === 'number') {
+          return String(element.value);
+        }
+
+        return '';
+      };
+
+      const writeValue = (value) => {
+        if (isContentEditable) {
+          element.innerText = value;
+          return;
+        }
+
+        const proto = Object.getPrototypeOf(element);
+        const descriptor =
+          (proto && Object.getOwnPropertyDescriptor(proto, 'value')) ||
+          Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value') ||
+          Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
+
+        if (descriptor && typeof descriptor.set === 'function') {
+          descriptor.set.call(element, value);
+        } else {
+          element.value = value;
+        }
+      };
+
+      const dispatchInputEvent = (detail) => {
+        try {
+          const init = {
+            bubbles: true,
+            cancelable: false,
+            composed: false,
+            inputType: detail.inputType || 'insertText',
+            data: typeof detail.data === 'string' ? detail.data : null
+          };
+          const inputEvent = typeof InputEvent === 'function'
+            ? new InputEvent('input', init)
+            : null;
+
+          if (inputEvent) {
+            element.dispatchEvent(inputEvent);
+            return;
+          }
+        } catch (error) {
+          // ignorar falhas e fazer fallback para Event padrao
+        }
+
         element.dispatchEvent(new Event('input', { bubbles: true }));
+      };
+
+      if (
+        textualField &&
+        !state.skipTextSync &&
+        typeof state.rangeStart === 'number' &&
+        typeof state.rangeEnd === 'number' &&
+        state.insertedText !== undefined
+      ) {
+        const currentValue = readValue();
+        const maxLength = currentValue.length;
+        const start = Math.max(0, Math.min(state.rangeStart, maxLength));
+        const end = Math.max(start, Math.min(state.rangeEnd, maxLength));
+        const insertedText = typeof state.insertedText === 'string' ? state.insertedText : '';
+
+        if (!isContentEditable && typeof element.setRangeText === 'function') {
+          try {
+            element.setRangeText(insertedText, start, end, 'preserve');
+          } catch (error) {
+            const updated = currentValue.slice(0, start) + insertedText + currentValue.slice(end);
+            writeValue(updated);
+          }
+        } else {
+          const updated = currentValue.slice(0, start) + insertedText + currentValue.slice(end);
+          writeValue(updated);
+        }
+
+        if (
+          !isContentEditable &&
+          typeof state.finalSelectionStart === 'number' &&
+          typeof state.finalSelectionEnd === 'number' &&
+          typeof element.setSelectionRange === 'function'
+        ) {
+          try {
+            element.setSelectionRange(
+              state.finalSelectionStart,
+              state.finalSelectionEnd,
+              state.finalSelectionDirection || 'none'
+            );
+          } catch (error) {
+            // ignorar erros de selecao
+          }
+        }
+
+        dispatchInputEvent({
+          inputType: state.inputType || null,
+          data: state.data !== undefined ? state.data : insertedText
+        });
+
         return true;
       }
-
-      const tagName = state.tagName;
-      const fieldType = state.fieldType;
 
       if (tagName === 'input' && (fieldType === 'checkbox' || fieldType === 'radio')) {
         element.checked = Boolean(state.checked);
@@ -697,47 +1092,55 @@ class MirrorManager extends EventEmitter {
         return true;
       }
 
-      if (state.value !== undefined) {
-        const proto = Object.getPrototypeOf(element);
-        const descriptor =
-          (proto && Object.getOwnPropertyDescriptor(proto, 'value')) ||
-          Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value') ||
-          Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
-
-        if (descriptor && typeof descriptor.set === 'function') {
-          descriptor.set.call(element, state.value);
-        } else {
+      if (tagName === 'select') {
+        if (state.value !== undefined) {
           element.value = state.value;
         }
-      }
 
-      if (
-        typeof state.selectionStart === 'number' &&
-        typeof state.selectionEnd === 'number' &&
-        typeof element.setSelectionRange === 'function'
-      ) {
-        try {
-          element.setSelectionRange(state.selectionStart, state.selectionEnd);
-        } catch (error) {
-          // ignorar erros de selecao
-        }
-      }
-
-      element.dispatchEvent(new Event('input', { bubbles: true }));
-
-      if (tagName === 'select') {
+        element.dispatchEvent(new Event('input', { bubbles: true }));
         element.dispatchEvent(new Event('change', { bubbles: true }));
+        return true;
       }
 
-      return true;
+      if (state.value !== undefined) {
+        writeValue(state.value);
+
+        if (
+          typeof state.selectionStart === 'number' &&
+          typeof state.selectionEnd === 'number' &&
+          typeof element.setSelectionRange === 'function'
+        ) {
+          try {
+            element.setSelectionRange(state.selectionStart, state.selectionEnd);
+          } catch (error) {
+            // ignorar erros de selecao
+          }
+        }
+
+        element.dispatchEvent(new Event('input', { bubbles: true }));
+        element.dispatchEvent(new Event('change', { bubbles: true }));
+        return true;
+      }
+
+      return false;
     }, payload.selector, {
-      value: payload.value,
       tagName: payload.tagName,
       fieldType: payload.fieldType,
+      isContentEditable: payload.isContentEditable,
+      isTextual: payload.isTextual,
+      rangeStart: payload.rangeStart,
+      rangeEnd: payload.rangeEnd,
+      insertedText: payload.insertedText,
+      data: payload.data,
+      inputType: payload.inputType,
+      skipTextSync: payload.skipTextSync,
+      finalSelectionStart: payload.finalSelectionStart,
+      finalSelectionEnd: payload.finalSelectionEnd,
+      finalSelectionDirection: payload.finalSelectionDirection,
+      value: payload.value,
       checked: payload.checked,
       selectionStart: payload.selectionStart,
-      selectionEnd: payload.selectionEnd,
-      isContentEditable: payload.isContentEditable
+      selectionEnd: payload.selectionEnd
     });
   }
 
@@ -756,26 +1159,50 @@ class MirrorManager extends EventEmitter {
       }
     }
 
-    const modifiers = [
-      { active: payload.ctrlKey, code: 'Control' },
-      { active: payload.altKey, code: 'Alt' },
-      { active: payload.metaKey, code: 'Meta' },
-      { active: payload.shiftKey, code: 'Shift' }
-    ];
+    const eventType = payload.eventType === 'keyup' ? 'keyup' : 'keydown';
+    const keyIdentifier = payload.code || payload.key;
 
-    for (const modifier of modifiers) {
-      if (modifier.active) {
-        await page.keyboard.down(modifier.code);
-      }
+    if (!keyIdentifier || typeof keyIdentifier !== 'string') {
+      return;
     }
 
-    await page.keyboard.press(payload.key);
+    const pressedKeys = entry.pressedKeys || (entry.pressedKeys = new Set());
+    const keyToken = keyIdentifier;
 
-    for (let index = modifiers.length - 1; index >= 0; index -= 1) {
-      const modifier = modifiers[index];
-      if (modifier.active) {
-        await page.keyboard.up(modifier.code);
+    try {
+      if (eventType === 'keydown') {
+        if (pressedKeys.has(keyToken) && !payload.repeat) {
+          try {
+            await page.keyboard.up(keyIdentifier);
+          } catch (internalError) {
+            // ignorar tentativa de soltar tecla presa
+          }
+          pressedKeys.delete(keyToken);
+        }
+
+        if (!pressedKeys.has(keyToken)) {
+          await page.keyboard.down(keyIdentifier);
+          pressedKeys.add(keyToken);
+        } else if (payload.repeat) {
+          try {
+            await page.keyboard.down(keyIdentifier);
+          } catch (internalError) {
+            // ignorar repeticoes que o chromium rejeitar
+          }
+        }
+
+        return;
       }
+
+      if (eventType === 'keyup') {
+        if (pressedKeys.has(keyToken)) {
+          pressedKeys.delete(keyToken);
+        }
+
+        await page.keyboard.up(keyIdentifier);
+      }
+    } catch (error) {
+      this.logger.debug('[Mirror] Falha ao replicar evento de tecla %s (%s): %s', keyIdentifier, eventType, error.message);
     }
   }
 
@@ -824,7 +1251,7 @@ class MirrorManager extends EventEmitter {
         }
         break;
       case 'key':
-        if (payload.key && MIRROR_ALLOWED_KEYS.has(payload.key)) {
+        if (payload && payload.key) {
           this.dispatch('key', (entry) => this.replicateKey(entry, payload));
         }
         break;
