@@ -213,7 +213,109 @@ const mirrorControllerInjection = `
     }
   };
 
-  const pointerHandler = (event) => {
+  const buildPointerPayload = (event, phase, overrides = {}) => {
+    if (!event) {
+      return null;
+    }
+
+    const pointerType = overrides.pointerType ||
+      (event.pointerType ? String(event.pointerType).toLowerCase() : (
+        event.type && event.type.startsWith('touch') ? 'touch' : 'mouse'
+      ));
+
+    const pointerId = overrides.pointerId ??
+      (typeof event.pointerId === 'number' ? event.pointerId :
+        typeof overrides.pointerId === 'number' ? overrides.pointerId :
+          (pointerType === 'mouse' ? 1 : 0));
+
+    const clientX = typeof overrides.clientX === 'number'
+      ? overrides.clientX
+      : (typeof event.clientX === 'number' ? event.clientX : (overrides.clientX || 0));
+
+    const clientY = typeof overrides.clientY === 'number'
+      ? overrides.clientY
+      : (typeof event.clientY === 'number' ? event.clientY : (overrides.clientY || 0));
+
+    const pageX = typeof overrides.pageX === 'number'
+      ? overrides.pageX
+      : (typeof event.pageX === 'number' ? event.pageX : clientX);
+
+    const pageY = typeof overrides.pageY === 'number'
+      ? overrides.pageY
+      : (typeof event.pageY === 'number' ? event.pageY : clientY);
+
+    const pressure = typeof overrides.pressure === 'number'
+      ? overrides.pressure
+      : (typeof event.pressure === 'number'
+        ? event.pressure
+        : (phase === 'up' || phase === 'cancel' ? 0 : 0.5));
+
+    const radiusX = typeof overrides.radiusX === 'number'
+      ? overrides.radiusX
+      : (typeof event.width === 'number' && event.width > 0 ? event.width / 2 : 15);
+
+    const radiusY = typeof overrides.radiusY === 'number'
+      ? overrides.radiusY
+      : (typeof event.height === 'number' && event.height > 0 ? event.height / 2 : 15);
+
+    const rawButton = typeof overrides.button === 'number'
+      ? overrides.button
+      : (typeof event.button === 'number' ? event.button : 0);
+
+    const normalizedButton = phase === 'move' && rawButton === -1 ? 0 : rawButton;
+
+    const payload = {
+      phase,
+      pointerType,
+      pointerId,
+      button: normalizedButton,
+      buttons: typeof overrides.buttons === 'number'
+        ? overrides.buttons
+        : (typeof event.buttons === 'number' ? event.buttons : (phase === 'down' || phase === 'move' ? 1 : 0)),
+      x: clientX,
+      y: clientY,
+      pageX,
+      pageY,
+      screenX: typeof overrides.screenX === 'number'
+        ? overrides.screenX
+        : (typeof event.screenX === 'number' ? event.screenX : clientX),
+      screenY: typeof overrides.screenY === 'number'
+        ? overrides.screenY
+        : (typeof event.screenY === 'number' ? event.screenY : clientY),
+      pressure,
+      radiusX,
+      radiusY,
+      rotationAngle: typeof overrides.rotationAngle === 'number'
+        ? overrides.rotationAngle
+        : (typeof event.rotationAngle === 'number' ? event.rotationAngle : 0),
+      tiltX: typeof overrides.tiltX === 'number'
+        ? overrides.tiltX
+        : (typeof event.tiltX === 'number' ? event.tiltX : 0),
+      tiltY: typeof overrides.tiltY === 'number'
+        ? overrides.tiltY
+        : (typeof event.tiltY === 'number' ? event.tiltY : 0),
+      altitudeAngle: typeof overrides.altitudeAngle === 'number'
+        ? overrides.altitudeAngle
+        : (typeof event.altitudeAngle === 'number' ? event.altitudeAngle : null),
+      azimuthAngle: typeof overrides.azimuthAngle === 'number'
+        ? overrides.azimuthAngle
+        : (typeof event.azimuthAngle === 'number' ? event.azimuthAngle : null),
+      isPrimary: typeof overrides.isPrimary === 'boolean'
+        ? overrides.isPrimary
+        : !!event.isPrimary,
+      altKey: !!event.altKey,
+      ctrlKey: !!event.ctrlKey,
+      metaKey: !!event.metaKey,
+      shiftKey: !!event.shiftKey,
+      timestamp: typeof performance !== 'undefined' && performance && typeof performance.now === 'function'
+        ? performance.now()
+        : Date.now()
+    };
+
+    return payload;
+  };
+
+  const pointerEventHandler = (phase) => (event) => {
     if (!window.__megabotMirrorEnabled) {
       return;
     }
@@ -222,46 +324,91 @@ const mirrorControllerInjection = `
       return;
     }
 
-    let pointerType = 'mouse';
-    let clientX = 0;
-    let clientY = 0;
-    let button = 0;
-
-    if (event.type.startsWith('pointer')) {
-      pointerType = event.pointerType || 'mouse';
-      clientX = typeof event.clientX === 'number' ? event.clientX : 0;
-      clientY = typeof event.clientY === 'number' ? event.clientY : 0;
-      button = typeof event.button === 'number' ? event.button : 0;
-    } else if (event.type.startsWith('touch')) {
-      pointerType = 'touch';
-      const touch = event.touches && event.touches.length > 0
-        ? event.touches[0]
-        : (event.changedTouches && event.changedTouches.length > 0 ? event.changedTouches[0] : null);
-      if (touch) {
-        clientX = typeof touch.clientX === 'number' ? touch.clientX : 0;
-        clientY = typeof touch.clientY === 'number' ? touch.clientY : 0;
-      }
-    } else {
-      pointerType = 'mouse';
-      clientX = typeof event.clientX === 'number' ? event.clientX : 0;
-      clientY = typeof event.clientY === 'number' ? event.clientY : 0;
-      button = typeof event.button === 'number' ? event.button : 0;
+    const payload = buildPointerPayload(event, phase);
+    if (!payload) {
+      return;
     }
 
-    relay('pointer', {
-      pointerType,
-      button,
-      x: clientX,
-      y: clientY,
-      detail: typeof event.detail === 'number' ? event.detail : 1
+    relay('pointer', payload);
+  };
+
+  const touchEventHandler = (phase) => (event) => {
+    if (!window.__megabotMirrorEnabled) {
+      return;
+    }
+
+    if (!event || event.isTrusted === false) {
+      return;
+    }
+
+    if (!event.changedTouches || event.changedTouches.length === 0) {
+      return;
+    }
+
+    for (let index = 0; index < event.changedTouches.length; index += 1) {
+      const touch = event.changedTouches[index];
+      if (!touch) {
+        continue;
+      }
+
+      const payload = buildPointerPayload(event, phase, {
+        pointerType: 'touch',
+        pointerId: typeof touch.identifier === 'number' ? touch.identifier : index,
+        clientX: typeof touch.clientX === 'number' ? touch.clientX : 0,
+        clientY: typeof touch.clientY === 'number' ? touch.clientY : 0,
+        pageX: typeof touch.pageX === 'number' ? touch.pageX : touch.clientX,
+        pageY: typeof touch.pageY === 'number' ? touch.pageY : touch.clientY,
+        screenX: typeof touch.screenX === 'number' ? touch.screenX : touch.clientX,
+        screenY: typeof touch.screenY === 'number' ? touch.screenY : touch.clientY,
+        radiusX: typeof touch.radiusX === 'number' ? touch.radiusX : 15,
+        radiusY: typeof touch.radiusY === 'number' ? touch.radiusY : 15,
+        rotationAngle: typeof touch.rotationAngle === 'number' ? touch.rotationAngle : 0,
+        pressure: typeof touch.force === 'number' ? touch.force : (phase === 'up' ? 0 : 0.5),
+        isPrimary: index === 0
+      });
+
+      if (payload) {
+        relay('pointer', payload);
+      }
+    }
+  };
+
+  const mouseFallbackHandler = (phase) => (event) => {
+    if (!window.__megabotMirrorEnabled) {
+      return;
+    }
+
+    if (!event || event.isTrusted === false) {
+      return;
+    }
+
+    if (phase === 'move' && typeof event.buttons === 'number' && event.buttons === 0) {
+      return;
+    }
+
+    const payload = buildPointerPayload(event, phase, {
+      pointerType: 'mouse',
+      pointerId: 1
     });
+
+    if (payload) {
+      relay('pointer', payload);
+    }
   };
 
   if (window.PointerEvent) {
-    window.addEventListener('pointerdown', pointerHandler, true);
+    window.addEventListener('pointerdown', pointerEventHandler('down'), true);
+    window.addEventListener('pointermove', pointerEventHandler('move'), true);
+    window.addEventListener('pointerup', pointerEventHandler('up'), true);
+    window.addEventListener('pointercancel', pointerEventHandler('cancel'), true);
   } else {
-    window.addEventListener('mousedown', pointerHandler, true);
-    window.addEventListener('touchstart', pointerHandler, true);
+    window.addEventListener('mousedown', mouseFallbackHandler('down'), true);
+    window.addEventListener('mousemove', mouseFallbackHandler('move'), true);
+    window.addEventListener('mouseup', mouseFallbackHandler('up'), true);
+    document.addEventListener('touchstart', touchEventHandler('down'), true);
+    document.addEventListener('touchmove', touchEventHandler('move'), true);
+    document.addEventListener('touchend', touchEventHandler('up'), true);
+    document.addEventListener('touchcancel', touchEventHandler('cancel'), true);
   }
 
   const shouldRelayKeyEvent = (event) => {
@@ -635,6 +782,24 @@ class MirrorManager extends EventEmitter {
         entry.page.removeListener('close', entry.closeHandler);
       }
 
+      if (entry.touchSession && typeof entry.touchSession.detach === 'function') {
+        try {
+          entry.touchSession.detach();
+        } catch (error) {
+          // ignorar falhas ao encerrar sessao cdp
+        }
+      }
+
+      entry.touchSession = null;
+
+      if (entry.activePointers && typeof entry.activePointers.clear === 'function') {
+        entry.activePointers.clear();
+      }
+
+      if (entry.mouseButtons && typeof entry.mouseButtons.clear === 'function') {
+        entry.mouseButtons.clear();
+      }
+
       if (!detachOnly) {
         this.controlled.delete(navigatorId);
       }
@@ -807,7 +972,10 @@ class MirrorManager extends EventEmitter {
         scroll: Promise.resolve()
       },
       closeHandler: null,
-      pressedKeys: new Set()
+      pressedKeys: new Set(),
+      activePointers: new Map(),
+      touchSession: null,
+      mouseButtons: new Set()
     };
 
     this.attachControlledHandlers(entry, page);
@@ -824,6 +992,18 @@ class MirrorManager extends EventEmitter {
     }
 
     entry.page = page;
+    entry.activePointers = new Map();
+    entry.mouseButtons = new Set();
+
+    if (entry.touchSession && typeof entry.touchSession.detach === 'function') {
+      try {
+        entry.touchSession.detach();
+      } catch (error) {
+        // ignorar falhas ao encerrar sessao anterior
+      }
+    }
+
+    entry.touchSession = null;
 
     const closeHandler = () => {
       if (!this.enabled) {
@@ -928,6 +1108,32 @@ class MirrorManager extends EventEmitter {
     }
   }
 
+  computeModifierMask(payload) {
+    if (!payload || typeof payload !== 'object') {
+      return 0;
+    }
+
+    let mask = 0;
+
+    if (payload.altKey) {
+      mask |= 1;
+    }
+
+    if (payload.ctrlKey) {
+      mask |= 2;
+    }
+
+    if (payload.metaKey) {
+      mask |= 4;
+    }
+
+    if (payload.shiftKey) {
+      mask |= 8;
+    }
+
+    return mask;
+  }
+
   async replicatePointer(entry, payload) {
     const page = entry.page;
 
@@ -935,18 +1141,225 @@ class MirrorManager extends EventEmitter {
       return;
     }
 
-    const buttonName = MIRROR_BUTTON_MAP.hasOwnProperty(payload.button) ? MIRROR_BUTTON_MAP[payload.button] : 'left';
-    const x = typeof payload.x === 'number' ? payload.x : 0;
-    const y = typeof payload.y === 'number' ? payload.y : 0;
-
-    if (payload.pointerType === 'touch') {
-      await page.touchscreen.tap(x, y);
+    if (!payload || typeof payload !== 'object') {
       return;
     }
 
-    await page.mouse.move(x, y, { steps: 1 });
-    await page.mouse.down({ button: buttonName });
-    await page.mouse.up({ button: buttonName });
+    let phase = typeof payload.phase === 'string' ? payload.phase.toLowerCase() : null;
+    const pointerType = typeof payload.pointerType === 'string' ? payload.pointerType.toLowerCase() : 'mouse';
+    const pointerId = typeof payload.pointerId === 'number' ? payload.pointerId : 1;
+    const button = typeof payload.button === 'number' ? payload.button : 0;
+    const x = typeof payload.x === 'number' ? payload.x : 0;
+    const y = typeof payload.y === 'number' ? payload.y : 0;
+    const buttonsState =
+      typeof payload.buttons === 'number' ? payload.buttons : (phase === 'down' ? 1 : 0);
+
+    const fallbackSimpleTap = !phase || !['down', 'move', 'up', 'cancel'].includes(phase);
+    const shouldUseMouse =
+      pointerType === 'mouse' &&
+      (button !== 0 || buttonsState === 2 || buttonsState === 4);
+
+    const hasPointer =
+      entry.activePointers &&
+      typeof entry.activePointers.has === 'function' &&
+      entry.activePointers.has(pointerId);
+
+    if (phase === 'move' && buttonsState > 0 && !hasPointer) {
+      phase = 'down';
+    } else if (phase === 'move' && buttonsState === 0 && pointerType !== 'touch' && !hasPointer) {
+      return;
+    }
+
+    if (fallbackSimpleTap) {
+      if (entry.activePointers && typeof entry.activePointers.clear === 'function') {
+        entry.activePointers.clear();
+      }
+
+      if (pointerType === 'touch' && page.touchscreen && typeof page.touchscreen.tap === 'function') {
+        await page.touchscreen.tap(x, y);
+        return;
+      }
+
+      const buttonName = MIRROR_BUTTON_MAP.hasOwnProperty(button) ? MIRROR_BUTTON_MAP[button] : 'left';
+      await page.mouse.move(x, y, { steps: 1 });
+      await page.mouse.down({ button: buttonName });
+      await page.mouse.up({ button: buttonName });
+      return;
+    }
+
+    if (shouldUseMouse) {
+      if (entry.activePointers && typeof entry.activePointers.clear === 'function') {
+        entry.activePointers.clear();
+      }
+
+      if (!entry.mouseButtons || typeof entry.mouseButtons.add !== 'function') {
+        entry.mouseButtons = new Set();
+      }
+
+      const buttonName = MIRROR_BUTTON_MAP.hasOwnProperty(button) ? MIRROR_BUTTON_MAP[button] : 'left';
+
+      if (phase === 'down') {
+        await page.mouse.move(x, y, { steps: 1 });
+        await page.mouse.down({ button: buttonName });
+        entry.mouseButtons.add(buttonName);
+        return;
+      }
+
+      if (phase === 'move') {
+        await page.mouse.move(x, y, { steps: 1 });
+        return;
+      }
+
+      if (phase === 'up' || phase === 'cancel') {
+        if (entry.mouseButtons.has(buttonName)) {
+          await page.mouse.move(x, y, { steps: 1 });
+          await page.mouse.up({ button: buttonName });
+          entry.mouseButtons.delete(buttonName);
+        } else {
+          await page.mouse.move(x, y, { steps: 1 });
+          await page.mouse.up({ button: buttonName });
+        }
+        return;
+      }
+    }
+
+    if (!entry.activePointers || typeof entry.activePointers.set !== 'function') {
+      entry.activePointers = new Map();
+    }
+
+    let session = entry.touchSession;
+
+    if (!session) {
+      try {
+        if (typeof page.createCDPSession === 'function') {
+          session = await page.createCDPSession();
+        } else if (typeof page.target === 'function' && page.target()) {
+          session = await page.target().createCDPSession();
+        } else if (typeof page._client === 'function') {
+          session = page._client();
+        }
+        entry.touchSession = session;
+      } catch (error) {
+        this.logger.debug('[Mirror] Falha ao criar sessao CDP para toque: %s', error.message);
+        session = null;
+      }
+    }
+
+    if (!session) {
+      const buttonName = MIRROR_BUTTON_MAP.hasOwnProperty(button) ? MIRROR_BUTTON_MAP[button] : 'left';
+      await page.mouse.move(x, y, { steps: 1 });
+      await page.mouse.down({ button: buttonName });
+      await page.mouse.up({ button: buttonName });
+      return;
+    }
+
+    const clamp = (value, min, max, fallback) => {
+      if (typeof value !== 'number' || Number.isNaN(value)) {
+        return fallback;
+      }
+      return Math.min(Math.max(value, min), max);
+    };
+
+    const force = clamp(
+      typeof payload.pressure === 'number' ? payload.pressure : (phase === 'up' || phase === 'cancel' ? 0 : 0.5),
+      0,
+      1,
+      phase === 'up' || phase === 'cancel' ? 0 : 0.5
+    );
+
+    const radiusX = clamp(
+      typeof payload.radiusX === 'number' ? payload.radiusX : 15,
+      1,
+      100,
+      15
+    );
+
+    const radiusY = clamp(
+      typeof payload.radiusY === 'number' ? payload.radiusY : 15,
+      1,
+      100,
+      15
+    );
+
+    const rotationAngle = typeof payload.rotationAngle === 'number' ? payload.rotationAngle : 0;
+
+    const pointerState = {
+      x,
+      y,
+      radiusX,
+      radiusY,
+      rotationAngle,
+      force,
+      id: pointerId
+    };
+
+    const activePointers = entry.activePointers;
+
+    if (phase === 'down') {
+      activePointers.set(pointerId, pointerState);
+    } else if (phase === 'move') {
+      if (activePointers.has(pointerId)) {
+        activePointers.set(pointerId, pointerState);
+      } else {
+        // se nao houver registro, tratar como novo toque
+        activePointers.set(pointerId, pointerState);
+      }
+    } else if (phase === 'up') {
+      if (activePointers.has(pointerId)) {
+        activePointers.delete(pointerId);
+      }
+    } else if (phase === 'cancel') {
+      activePointers.clear();
+    }
+
+    const typeMap = {
+      down: 'touchStart',
+      move: 'touchMove',
+      up: 'touchEnd',
+      cancel: 'touchCancel'
+    };
+
+    const eventType = typeMap[phase] || 'touchStart';
+    const touchPoints =
+      eventType === 'touchEnd' || eventType === 'touchCancel'
+        ? Array.from(activePointers.values())
+        : Array.from(activePointers.entries()).map(([id, state]) => {
+            if (!state || typeof state !== 'object') {
+              return { x, y, radiusX, radiusY, rotationAngle, force, id };
+            }
+            return Object.assign({ id }, state);
+          });
+
+    const modifiers = this.computeModifierMask(payload);
+    const timestamp = typeof payload.timestamp === 'number' ? payload.timestamp / 1000 : undefined;
+
+    try {
+      await session.send('Input.dispatchTouchEvent', {
+        type: eventType,
+        touchPoints,
+        modifiers,
+        timestamp,
+        pointerType: pointerType === 'pen' ? 'pen' : 'touch'
+      });
+    } catch (error) {
+      this.logger.debug('[Mirror] Falha ao enviar evento de toque (%s): %s', eventType, error.message);
+      if (activePointers && typeof activePointers.clear === 'function') {
+        activePointers.clear();
+      }
+      if (
+        error.message &&
+        (error.message.includes('detached') || error.message.includes('closed') || error.message.includes('target closed'))
+      ) {
+        if (entry.touchSession && typeof entry.touchSession.detach === 'function') {
+          try {
+            entry.touchSession.detach();
+          } catch (detachError) {
+            // ignorar
+          }
+        }
+        entry.touchSession = null;
+      }
+    }
   }
 
   async replicateInput(entry, payload) {
